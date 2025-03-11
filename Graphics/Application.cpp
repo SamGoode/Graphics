@@ -2,6 +2,7 @@
 
 using aie::Gizmos;
 
+
 static mat4 genViewMatrix(vec3 location, vec3 forward, vec3 worldUp) {
 	vec3 zaxis = normalize(-forward);
 	vec3 xaxis = normalize(cross(normalize(worldUp), zaxis));
@@ -103,6 +104,14 @@ bool Application::update() {
 		camera.m_pos += cross(worldUp, camera.m_forward) * camera.m_movementSpeed * deltaTime;
 	}
 
+	ball.m_acc += vec3(0, -2.f, 0);
+
+	ball.update(deltaTime);
+
+	if (ball.m_pos.y <= ball.m_radius) {
+		ball.m_vel = -ball.m_vel * 0.95f;
+	}
+
 	return true;
 }
 
@@ -124,7 +133,9 @@ void Application::draw() {
 		Gizmos::addLine(vec3(10, 0, -10 + i), vec3(-10, 0, -10 + i), i == 10 ? white : black);
 	}
 
-	Gizmos::addAABBFilled(vec3(0, 0, 0), vec3(2, 2, 2), vec4(0.8f, 0.8f, 0.8f, 1));
+	//Gizmos::addAABBFilled(vec3(0, 0, 0), vec3(2, 2, 2), vec4(0.8f, 0.8f, 0.8f, 1));
+
+	ball.draw();
 
 	Gizmos::draw(projection * view);
 

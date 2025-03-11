@@ -7,29 +7,15 @@
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 
+#include "Camera.h"
+#include "Ball.h"
+
 using glm::vec3;
 using glm::vec4;
 using glm::mat4;
 using glm::quat;
 
 static mat4 genViewMatrix(vec3 location, vec3 forward, vec3 worldUp);
-
-class Camera {
-public:
-	vec3 m_pos;
-	vec3 m_forward;
-
-	float m_movementSpeed;
-
-public:
-	Camera() {}
-	Camera(vec3 pos, vec3 forward, float movementSpeed) {
-		m_pos = pos;
-		m_forward = forward;
-		m_movementSpeed = movementSpeed;
-	}
-};
-
 
 class Application {
 public:
@@ -47,6 +33,12 @@ protected:
 
 	float rotPitch = 0.f;
 	float rotYaw = 0.f;
+
+	Ball ball = {
+		.m_radius = 0.5f,
+		.m_mass = 5.f,
+		.m_pos = vec3(0, 10, 0)
+	};
 
 public:
 	Application();
