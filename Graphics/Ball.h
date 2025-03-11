@@ -18,13 +18,15 @@ struct Ball {
 	vec3 m_vel;
 	vec3 m_acc;
 
+	vec4 m_color = vec4(0.f, 0.f, 0.f, 1.f);
+
 	void update(float deltaTime) {
 		m_pos += m_vel * deltaTime;
 		m_vel += m_acc * deltaTime;
 		m_acc = vec3(0);
 	}
 
-	void draw() {
-		Gizmos::addSphere(m_pos, m_radius, 10, 10, vec4(0.8f, 0, 0, 1));
-	}
+	void draw() { Gizmos::addSphere(m_pos, m_radius, 10, 10, m_color); }
+
+	void setColor(vec4 color) { m_color = color; }
 };

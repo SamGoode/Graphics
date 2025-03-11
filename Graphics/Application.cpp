@@ -1,7 +1,10 @@
 #include "Application.h"
 
+#include <iostream>
+
 using aie::Gizmos;
 
+static void print(vec2 v) { std::cout << "x: " << v.x << ", y: " << v.y << std::endl; }
 
 static mat4 genViewMatrix(vec3 location, vec3 forward, vec3 worldUp) {
 	vec3 zaxis = normalize(-forward);
@@ -23,13 +26,15 @@ static mat4 genViewMatrix(vec3 location, vec3 forward, vec3 worldUp) {
 }
 
 Application::Application() {
-	running = false;
-
 	window = nullptr;
 	runtime = 0.f;
 
 	camera = Camera(vec3(10, 10, 10), normalize(vec3(-1, -1, -1)), 20.f);
 	worldUp = vec3(0, 1, 0);
+
+	bodies[0] = new Sphere(vec3(0, 10, 0), 5.f, 0.5f);
+	bodies[0]->setColor(vec4(0.8f, 0, 0, 1));
+	bodyCount++;
 }
 
 bool Application::startup(int windowWidth, int windowHeight) {
@@ -38,7 +43,6 @@ bool Application::startup(int windowWidth, int windowHeight) {
 	}
 
 	window = glfwCreateWindow(windowWidth, windowHeight, "Graphics Demo", nullptr, nullptr);
-
 	if (window == nullptr) {
 		glfwTerminate();
 		return false;
@@ -65,30 +69,23 @@ bool Application::startup(int windowWidth, int windowHeight) {
 	};
 
 	glfwSetCursorPosCallback(window, func);
-
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-	running = true;
 }
 
 bool Application::update() {
-	if (glfwWindowShouldClose(window) == true || glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-		shutdown();
-		return false;
-	}
-
 	float deltaTime = glfwGetTime() - runtime;
 	runtime = glfwGetTime();
 
-	if (rotYaw != 0 || rotPitch != 0) {
+	if (mouse.input != vec2(0)) {
+		vec2 rot = -mouse.input;
+
 		quat q = quatLookAt(vec3(0, 0, -1), worldUp);
-		q = rotate(q, rotYaw, worldUp);
-		q = rotate(q, rotPitch, cross(worldUp, -camera.m_forward));
+		q = rotate(q, glm::radians(rot.x), worldUp);
+		q = rotate(q, glm::radians(rot.y), cross(worldUp, -camera.m_forward));
 
 		camera.m_forward = q * camera.m_forward * conjugate(q);
 
-		rotYaw = 0.f;
-		rotPitch = 0.f;
+		mouse.input = vec2(0);
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
@@ -104,13 +101,22 @@ bool Application::update() {
 		camera.m_pos += cross(worldUp, camera.m_forward) * camera.m_movementSpeed * deltaTime;
 	}
 
-	ball.m_acc += vec3(0, -2.f, 0);
 
-	ball.update(deltaTime);
+	//bodies[0]->acc += vec3(0, -2.f, 0);
+	//bodies[0]->update(deltaTime);
 
-	if (ball.m_pos.y <= ball.m_radius) {
-		ball.m_vel = -ball.m_vel * 0.95f;
+	for (int i = 0; i < bodyCount; i++) {
+		vec3 gravity = vec3(0, -2.f, 0);
+
+		bodies[i]->acc += gravity;
+		bodies[i]->update(deltaTime);
 	}
+
+	//ball.update(deltaTime);
+
+	//if (ball.m_pos.y <= ball.m_radius) {
+	//	ball.m_vel = -ball.m_vel * 0.95f;
+	//}
 
 	return true;
 }
@@ -135,7 +141,11 @@ void Application::draw() {
 
 	//Gizmos::addAABBFilled(vec3(0, 0, 0), vec3(2, 2, 2), vec4(0.8f, 0.8f, 0.8f, 1));
 
-	ball.draw();
+	//ball.draw();
+
+	for (int i = 0; i < bodyCount; i++) {
+		bodies[i]->draw();
+	}
 
 	Gizmos::draw(projection * view);
 
@@ -147,19 +157,15 @@ void Application::shutdown() {
 	Gizmos::destroy();
 	glfwDestroyWindow(window);
 	glfwTerminate();
-
-	running = false;
 }
 
+
 void Application::mouseCursorCallback(GLFWwindow* window, double xpos, double ypos) {
-	float deltaMouseX = xpos - mouseX;
-	float deltaMouseY = ypos - mouseY;
+	mouse.prevPos = mouse.pos;
+	mouse.pos = vec2((float)xpos, (float)ypos);
+	vec2 deltaPos = mouse.pos - mouse.prevPos;
 
-	mouseX = xpos;
-	mouseY = ypos;
+	mouse.input += deltaPos * mouse.scaling / (abs(deltaPos.x) + abs(deltaPos.y));
 
-	float length = sqrt(deltaMouseX * deltaMouseX + deltaMouseY * deltaMouseY);
-
-	rotYaw -= (deltaMouseX / length) * 0.015f;
-	rotPitch -= (deltaMouseY / length) * 0.015f;
+	print(mouse.input);
 }
