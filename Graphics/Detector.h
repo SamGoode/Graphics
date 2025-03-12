@@ -11,6 +11,7 @@ public:
     Collision collisions[MAX_COLLISIONS];
 
 public:
+
     //void CheckBoundaryCollision(class PhysicsBody* body, Vector4 boundary);
 
     //void CheckCollision(class PhysicsBody* A, PhysicsBody* B);

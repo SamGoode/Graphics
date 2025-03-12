@@ -30,11 +30,14 @@ Application::Application() {
 	runtime = 0.f;
 
 	camera = Camera(vec3(10, 10, 10), normalize(vec3(-1, -1, -1)), 20.f);
-	worldUp = vec3(0, 1, 0);
+	worldUp = vec3(0, 0, 1);
 
-	bodies[0] = new Sphere(vec3(0, 10, 0), 5.f, 0.5f);
-	bodies[0]->setColor(vec4(0.8f, 0, 0, 1));
-	bodyCount++;
+	ground = Plane(vec3(0, 0, 1), 0.f);
+
+	addPhysicsBody((new Sphere(vec3(-5, 5, 10), 5.f, 0.5f))->setColor(vec4(0.8f, 0, 0, 1)));
+	addPhysicsBody((new Box(vec3(0, 0, 10), 5.f, vec3(1.f, 1.f, 2.f), vec3(glm::radians(30.f), glm::radians(30.f), glm::radians(0.f))))->setColor(vec4(0.8f, 0, 0, 1)));
+
+	//bodies[1]->rot = rotate(bodies[1]->rot, glm::radians(20.f), vec3(1, 0, 0));
 }
 
 bool Application::startup(int windowWidth, int windowHeight) {
@@ -88,35 +91,62 @@ bool Application::update() {
 		mouse.input = vec2(0);
 	}
 
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-		camera.m_pos += camera.m_forward * camera.m_movementSpeed * deltaTime;
-	}
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-		camera.m_pos += -camera.m_forward * camera.m_movementSpeed * deltaTime;
-	}
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-		camera.m_pos += -cross(worldUp, camera.m_forward) * camera.m_movementSpeed * deltaTime;
-	}
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-		camera.m_pos += cross(worldUp, camera.m_forward) * camera.m_movementSpeed * deltaTime;
-	}
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) { camera.m_pos += camera.m_forward * camera.m_movementSpeed * deltaTime; }
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) { camera.m_pos += -camera.m_forward * camera.m_movementSpeed * deltaTime; }
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) { camera.m_pos += -cross(worldUp, camera.m_forward) * camera.m_movementSpeed * deltaTime; }
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) { camera.m_pos += cross(worldUp, camera.m_forward) * camera.m_movementSpeed * deltaTime; }
 
-
-	//bodies[0]->acc += vec3(0, -2.f, 0);
-	//bodies[0]->update(deltaTime);
 
 	for (int i = 0; i < bodyCount; i++) {
-		vec3 gravity = vec3(0, -2.f, 0);
-
-		bodies[i]->acc += gravity;
 		bodies[i]->update(deltaTime);
+
+		//bodies[i]->rot = rotate(bodies[i]->rot, glm::radians(45.f * deltaTime), worldUp);
+
+		//bodies[i]->rot = glm::quat(vec3(0, 0, glm::radians(45.f * deltaTime))) * bodies[i]->rot;//quat(, 0, 0, 1);
+
+		vec3 gravity = vec3(0, 0, -1.5f);
+		bodies[i]->acc += gravity;
 	}
 
-	//ball.update(deltaTime);
+	for (int i = 0; i < bodyCount; i++) {
+		if (bodies[i]->getID() == 0) {
+			Box* box = dynamic_cast<Box*>(bodies[i]);
 
-	//if (ball.m_pos.y <= ball.m_radius) {
-	//	ball.m_vel = -ball.m_vel * 0.95f;
-	//}
+			vec3 vertices[8] = {
+				vec3(box->extents.x, box->extents.y, box->extents.z),
+				vec3(box->extents.x, box->extents.y, -box->extents.z),
+				vec3(box->extents.x, -box->extents.y, box->extents.z),
+				vec3(box->extents.x, -box->extents.y, -box->extents.z),
+				vec3(-box->extents.x, box->extents.y, box->extents.z),
+				vec3(-box->extents.x, box->extents.y, -box->extents.z),
+				vec3(-box->extents.x, -box->extents.y, box->extents.z),
+				vec3(-box->extents.x, -box->extents.y, -box->extents.z)
+			};
+
+			//quat q = quatLookAt(vec3(1, 0, 0), vec3(0, 0, 1));
+			//q = rotate(q, box->rot.x, vec3(1, 0, 0));
+			//q = rotate(q, box->rot.y, vec3(0, 1, 0));
+			//q = rotate(q, box->rot.z, vec3(0, 0, 1));
+
+			quat q = quat(box->rot);
+
+			for (int n = 0; n < 8; n++) {
+				vec3 vertex = box->pos + (quat(q.w, -q.x, -q.y, -q.z) * vertices[n]);
+
+				if (!ground.isPointUnderPlane(vertex)) { continue; }
+
+				std::cout << "collided" << std::endl;
+
+				//box->pos += (0, 0, 1);
+				box->applyImpulse(ground.normal * (dot(-ground.normal, box->vel)/box->invMass) * 1.f, vertex);
+				break;
+			}
+		}
+	}
+
+	for (int i = 0; i < bodyCount; i++) {
+		bodies[i]->finaliseUpdate(deltaTime);
+	}
 
 	return true;
 }
@@ -135,13 +165,9 @@ void Application::draw() {
 	vec4 black(0, 0, 0, 1);
 
 	for (int i = 0; i < 21; i++) {
-		Gizmos::addLine(vec3(-10 + i, 0, 10), vec3(-10 + i, 0, -10), i == 10 ? white : black);
-		Gizmos::addLine(vec3(10, 0, -10 + i), vec3(-10, 0, -10 + i), i == 10 ? white : black);
+		Gizmos::addLine(vec3(-10 + i, 10, 0), vec3(-10 + i, -10, 0), i == 10 ? white : black);
+		Gizmos::addLine(vec3(10, -10 + i, 0), vec3(-10, -10 + i, 0), i == 10 ? white : black);
 	}
-
-	//Gizmos::addAABBFilled(vec3(0, 0, 0), vec3(2, 2, 2), vec4(0.8f, 0.8f, 0.8f, 1));
-
-	//ball.draw();
 
 	for (int i = 0; i < bodyCount; i++) {
 		bodies[i]->draw();
@@ -167,5 +193,16 @@ void Application::mouseCursorCallback(GLFWwindow* window, double xpos, double yp
 
 	mouse.input += deltaPos * mouse.scaling / (abs(deltaPos.x) + abs(deltaPos.y));
 
-	print(mouse.input);
+	//print(mouse.input);
+}
+
+PhysicsBody* Application::addPhysicsBody(PhysicsBody* physicsBody) {
+	if (bodyCount >= bodyMaxCount) {
+		return nullptr;
+	}
+
+	bodies[bodyCount] = physicsBody;
+	bodyCount++;
+
+	return physicsBody;
 }

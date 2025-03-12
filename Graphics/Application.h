@@ -20,6 +20,7 @@ using glm::quat;
 
 static mat4 genViewMatrix(vec3 location, vec3 forward, vec3 worldUp);
 
+
 static void print(vec2);
 
 struct Mouse {
@@ -27,9 +28,10 @@ struct Mouse {
 	vec2 pos;
 	vec2 input;
 
-	float scaling = 0.3f;
+	float scaling = 1.f;
 };
 
+#define PHYSICSBODY_CAP 32
 
 class Application {
 protected:
@@ -41,18 +43,11 @@ protected:
 
 	Mouse mouse;
 
-	float rotPitch = 0.f;
-	float rotYaw = 0.f;
-
 	int bodyCount = 0;
-	PhysicsBody* bodies[32];
+	const int bodyMaxCount = PHYSICSBODY_CAP;
+	PhysicsBody* bodies[PHYSICSBODY_CAP];
 
-	//Ball ball = {
-	//	.m_radius = 0.5f,
-	//	.m_mass = 5.f,
-	//	.m_pos = vec3(0, 10, 0),
-	//	.m_color = vec4(0.8f, 0, 0, 1)
-	//};
+	Plane ground;
 
 public:
 	Application();
@@ -67,4 +62,6 @@ public:
 
 	bool keyPressed(int key) { return glfwGetKey(window, key) == GLFW_PRESS; }
 	void mouseCursorCallback(GLFWwindow* window, double xpos, double ypos);
+
+	PhysicsBody* addPhysicsBody(PhysicsBody* physicsBody);
 };
