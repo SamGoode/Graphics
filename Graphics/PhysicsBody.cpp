@@ -16,38 +16,22 @@ PhysicsBody::PhysicsBody(vec3 _pos, float _mass) {
 
 
 void PhysicsBody::applyImpulse(vec3 impulse, vec3 hitPos) {
+    vel += impulse * invMass;
+
     vec3 rad = hitPos - pos;
 
-    vel += impulse * invMass;
-    quat q(rot);
-    
-    quat angularImpulse = quat(cross(rad, impulse));
-    quat localAngularImpulse = q * angularImpulse;
+    vec3 angularImpulse = cross(rad, impulse);
+    vec3 localAngularImpulse = angularImpulse * rot;
 
-    vec3 angles = glm::eulerAngles(localAngularImpulse);
-    vec3 localAngImpulse = vec3(angles.y, angles.x, angles.z);
-
-    vec3 localAngVel = invInertia * localAngImpulse;
-
-    vec3 deltaAngVel = glm::eulerAngles(quat(q.w, -q.x, -q.y, -q.z) * quat(localAngVel));
-
-    angVel += vec3(deltaAngVel.y, deltaAngVel.x, deltaAngVel.z);
-
-    //vec3 localImpulse = quat(q.w, -q.x, -q.y, -q.z) * impulse;
-    //vec3 localRad = quat(q.w, -q.x, -q.y, -q.z) * rad;
-    //vec3 localAngVel = invInertia * cross(localRad, localImpulse);
-    
-    
-
-
-
-    //angVel += q * localAngVel;
-
-    float test = 8;
+    vec3 localAngVel = invInertia * localAngularImpulse;
+    angVel += rot * localAngVel;
 }
 
 void PhysicsBody::applyAngularImpulse(vec3 angularImpulse) {
-    //angVel += invMOI * angularImpulse;
+    vec3 localAngularImpulse = angularImpulse * rot;
+
+    vec3 localAngVel = invInertia * localAngularImpulse;
+    angVel += rot * localAngVel;
 }
 
 void PhysicsBody::update(float deltaTime) {
@@ -58,7 +42,8 @@ void PhysicsBody::update(float deltaTime) {
     acc = vec3(0);
 
     angVel += angAcc * deltaTime * 0.5f;
-    rot += angVel * deltaTime;
+    rot += ((quat(0, angVel) * rot) * (deltaTime * 0.5f));
+    normalize(rot);
     angAcc = vec3(0);
 }
 
@@ -70,10 +55,17 @@ void PhysicsBody::finaliseUpdate(float DeltaTime) {
 }
 
 
-Box::Box(vec3 _pos, float _mass, vec3 _extents, vec3 _rotation) : PhysicsBody(_pos, _mass) {
-    rot = _rotation;
+Box::Box(vec3 _pos, float _mass, vec3 _extents, vec3 _eulerRotation) : PhysicsBody(_pos, _mass) {
+    vec3 euler = glm::radians(_eulerRotation);
+    quat qx = quat(cos(euler.x / 2), sin(euler.x / 2) * vec3(1, 0, 0));
+    quat qy = quat(cos(euler.y / 2), sin(euler.y / 2) * vec3(0, 1, 0));
+    quat qz = quat(cos(euler.z / 2), sin(euler.z / 2) * vec3(0, 0, 1));
+    rot = (qx * qy * qz);
+    //rot = rot * qy;
+    //rot = qz * rot;
+    //rot = rot * qx;
 
-    vec3 dimensions = _extents * 0.5f;
+    vec3 dimensions = _extents * 2.f;
 
     if (_mass > 0.f) {
         invInertia[0][0] = 12.f / (_mass * (dimensions.y * dimensions.y + dimensions.z * dimensions.z));
@@ -91,9 +83,10 @@ void Box::draw() {
     //q = rotate(q, rot.y, vec3(0, 0, 1));
     //q = rotate(q, rot.z, vec3(0, 1, 0));
 
-    mat4 rotMat = glm::mat4_cast(quat(rot));
+    mat4 rotMat = glm::mat4_cast(rot);
+    //mat4 rotMat = glm::identity<mat4>();
 
-    Gizmos::addAABBFilled(pos, vec3(extents.x, extents.y, extents.z), color, &rotMat);
+    Gizmos::addAABBFilled(pos, extents, color, &rotMat);
 }
 
 

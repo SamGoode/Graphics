@@ -1,10 +1,10 @@
-//#include "Solver.h"
-//
-//#include "Collision.h"
-//
-//#include <algorithm>
-//
-//
+#include "Solver.h"
+
+#include "Collision.h"
+
+#include <algorithm>
+
+
 //// Normal Impulses
 //void Solver::SolvePosition(Collision& collision) {
 //    RigidBody* A = collision.bodyA;
@@ -44,55 +44,55 @@
 //        B->rot += Vector2DotProduct(norm, radPerpB) * invMOIB * lambda;
 //    }
 //}
-//
-//void Solver::SolveImpulse(Collision& collision) {
-//    RigidBody* A = collision.bodyA;
-//    RigidBody* B = collision.bodyB;
-//
-//    Vector2 norm = collision.worldNormal;
-//
-//    Vector2 velA = A->vel;
-//    float angVelA = A->angVel;
-//
-//    float invMassA = A->invMass;
-//    float invMOIA = A->invMOI;
-//
-//    Vector2 radA = collision.pointA - A->pos;
-//    Vector2 radPerpA = { -radA.y, radA.x };
-//
-//    Vector2 velB = { 0.f, 0.f };
-//    float angVelB = 0.f;
-//
-//    float invMassB = 0.f;
-//    float invMOIB = 0.f;
-//
-//    Vector2 radB = { 0.f, 0.f };
-//    Vector2 radPerpB = { 0.f, 0.f };
-//
-//    if (B) {
-//        velB = B->vel;
-//        angVelB = B->angVel;
-//
-//        invMassB = B->invMass;
-//        invMOIB = B->invMOI;
-//
-//        radB = collision.pointB - B->pos;
-//        radPerpB = { -radB.y, radB.x };
-//    }
-//
-//    float JV = Vector2DotProduct(norm * -1, velA) + (Vector2DotProduct(norm * -1, radPerpA) * angVelA) + Vector2DotProduct(norm, velB) + (Vector2DotProduct(norm, radPerpB) * angVelB);
-//    float effMass = invMassA + (Vector2DotProduct(norm * -1, radPerpA) * Vector2DotProduct(norm * -1, radPerpA) * invMOIA) + invMassB + (Vector2DotProduct(norm, radPerpB) * Vector2DotProduct(norm, radPerpB) * invMOIB);
-//
-//    float lambda = -JV / effMass;
-//    float newSum = std::max(collision.lambdaSum + lambda, 0.f);
-//
-//    lambda = newSum - collision.lambdaSum;
-//    collision.lambdaSum += lambda;
-//
-//    A->ApplyImpulse(norm * -lambda, collision.pointA);
-//    if (B) { B->ApplyImpulse(norm * lambda, collision.pointB); }
-//}
-//
+
+
+void Solver::SolveImpulse(Collision& collision) {
+    PhysicsBody* A = collision.bodyA;
+    PhysicsBody* B = collision.bodyB;
+
+    vec3 norm = collision.worldNormal;
+
+    vec3 velA = A->vel;
+    vec3 angVelA = A->angVel;
+
+    float invMassA = A->invMass;
+    mat3 invInertiaA = A->invInertia;
+
+    vec3 radA = collision.pointA - A->pos;
+    
+    vec3 velB = vec3(0);
+    vec3 angVelB = vec3(0);
+
+    float invMassB = 0.f;
+    mat3 invInertiaB = mat3(0);
+
+    vec3 radB = vec3(0);
+
+    if (B) {
+        velB = B->vel;
+        angVelB = B->angVel;
+
+        invMassB = B->invMass;
+        invInertiaB = B->invInertia;
+
+        radB = collision.pointB - B->pos;
+    }
+
+    float JV = dot(-norm, velA) + dot(cross(-radA, norm), angVelA) + dot(norm, velB) + dot(cross(radB, norm), angVelB);
+    float effMass = invMassA + dot(cross(-radA, norm), quat(A->rot) * (invInertiaA * (quat(-A->rot) * cross(-radA, norm))));
+    if (B) { effMass += invMassB + dot(cross(radB, norm), quat(B->rot) * (invInertiaB * (quat(-B->rot) * cross(radB, norm)))); }
+
+    float lambda = -JV / effMass;
+    float newSum = std::max(collision.lambdaSum + lambda, 0.f);
+
+    lambda = newSum - collision.lambdaSum;
+    collision.lambdaSum += lambda;
+
+    A->applyImpulse(norm * -lambda, collision.pointA);
+    if (B) { B->applyImpulse(norm * lambda, collision.pointB); }
+}
+
+
 //void Solver::SolveImpulsePair(Collision& collision1, Collision& collision2) {
 //    RigidBody* A = collision1.bodyA;
 //    RigidBody* B = collision1.bodyB;

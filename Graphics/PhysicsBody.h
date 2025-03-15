@@ -19,7 +19,7 @@ public:
     vec3 acc = vec3(0);
     float invMass;
 
-    vec3 rot = vec3(0);
+    quat rot = quat(1, 0, 0, 0);
     vec3 angVel = vec3(0);
     vec3 angAcc = vec3(0);
     mat3 invInertia = mat3(0);

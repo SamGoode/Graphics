@@ -10,6 +10,7 @@
 #include "Camera.h"
 #include "Ball.h"
 #include "PhysicsBody.h"
+#include "Collision.h"
 
 using glm::vec2;
 using glm::vec3;
@@ -20,7 +21,6 @@ using glm::quat;
 
 static mat4 genViewMatrix(vec3 location, vec3 forward, vec3 worldUp);
 
-
 static void print(vec2);
 
 struct Mouse {
@@ -28,7 +28,7 @@ struct Mouse {
 	vec2 pos;
 	vec2 input;
 
-	float scaling = 1.f;
+	float scaling = 0.001f;
 };
 
 #define PHYSICSBODY_CAP 32
@@ -39,6 +39,8 @@ protected:
 	float runtime;
 
 	Camera camera;
+	vec3 forward = vec3(1, 0, 0);
+	vec3 right = vec3(0, 1, 0);
 	vec3 worldUp;
 
 	Mouse mouse;
@@ -46,6 +48,10 @@ protected:
 	int bodyCount = 0;
 	const int bodyMaxCount = PHYSICSBODY_CAP;
 	PhysicsBody* bodies[PHYSICSBODY_CAP];
+
+	int collisionCount = 0;
+	const int maxCollisions = 32;
+	Collision collisions[32];
 
 	Plane ground;
 
@@ -64,4 +70,6 @@ public:
 	void mouseCursorCallback(GLFWwindow* window, double xpos, double ypos);
 
 	PhysicsBody* addPhysicsBody(PhysicsBody* physicsBody);
+	void addCollision(Collision collision);
+	void clearCollisions();
 };
