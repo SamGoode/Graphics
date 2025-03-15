@@ -135,22 +135,26 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Application.cpp" />
+    <ClCompile Include="GameEngine.cpp" />
+    <ClCompile Include="BaseAppClasses.cpp" />
     <ClCompile Include="Detector.cpp" />
     <ClCompile Include="Gizmos.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PhysicsBody.cpp" />
+    <ClCompile Include="PhysicsEngine.cpp" />
     <ClCompile Include="Solver.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Application.h" />
-    <ClInclude Include="Ball.h" />
+    <ClInclude Include="GameEngine.h" />
+    <ClInclude Include="BaseAppClasses.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Collision.h" />
     <ClInclude Include="Detector.h" />
     <ClInclude Include="Gizmos.h" />
+    <ClInclude Include="glmAddon.h" />
     <ClInclude Include="PhysicsBody.h" />
+    <ClInclude Include="PhysicsEngine.h" />
     <ClInclude Include="Solver.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
