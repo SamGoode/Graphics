@@ -6,34 +6,20 @@
 
 void PhysicsEngine::update(float deltaTime) {
 	Plane ground = parent->ground;
-	int bodyCount = parent->bodyCount;
-	GameObject** bodies = parent->bodies;
-	//PhysicsBody* bodies = dynamic_cast<PhysicsBody*>(parent->bodies);
+	int bodyCount = registry<PhysicsBody>::count;
+	PhysicsBody** bodies = registry<PhysicsBody>::entries;
 
 	// Kinematic updates and gravity
 	for (int i = 0; i < bodyCount; i++) {
-		PhysicsBody* body = dynamic_cast<PhysicsBody*>(bodies[i]);
-
-		body->update(deltaTime);
+		bodies[i]->update(deltaTime);
 
 		vec3 gravity = vec3(0, 0, -1.5f);
-		body->acc += gravity;
+		bodies[i]->acc += gravity;
 	}
 
 	// Ground collisions
 	for (int i = 0; i < bodyCount; i++) {
-		PhysicsBody* body = dynamic_cast<PhysicsBody*>(bodies[i]);
-
-		checkCollision(body, ground);
-		//switch(bodies[i]->getID()) {
-		//case 0:
-		//	checkCollision(dynamic_cast<Box*>(bodies[i]), ground);
-		//	break;
-
-		//case 1:
-		//	checkCollision(dynamic_cast<Sphere*>(bodies[i]), ground);
-		//	break;
-		//}
+		checkCollision(bodies[i], ground);
 	}
 
 	// Calculates collision impulses
@@ -46,8 +32,7 @@ void PhysicsEngine::update(float deltaTime) {
 
 	// Velocity-verlet related
 	for (int i = 0; i < bodyCount; i++) {
-		PhysicsBody* body = dynamic_cast<PhysicsBody*>(bodies[i]);
-		body->finaliseUpdate(deltaTime);
+		bodies[i]->finaliseUpdate(deltaTime);
 	}
 }
 
@@ -116,7 +101,7 @@ void PhysicsEngine::solveImpulseSingleBody(Collision& collision) {
 void PhysicsEngine::checkCollision(PhysicsBody* body, Plane plane) {
 	switch (body->getID()) {
 	case 0:
-		vec3 extents = dynamic_cast<Box*>(body->geometry)->extents;
+		vec3 extents = dynamic_cast<Box*>(body->shape)->extents;
 
 		for (int n = 0; n < 8; n++) {
 			vec3 vertOffset = vec3((n >> 2) & 1, (n >> 1) & 1, n & 1);
@@ -136,7 +121,7 @@ void PhysicsEngine::checkCollision(PhysicsBody* body, Plane plane) {
 		break;
 
 	case 1:
-		float radius = dynamic_cast<Sphere*>(body->geometry)->radius;
+		float radius = dynamic_cast<Sphere*>(body->shape)->radius;
 
 		if (dot(body->pos, plane.normal) - radius < -plane.distanceFromOrigin) {
 			Collision collision = {
@@ -148,32 +133,4 @@ void PhysicsEngine::checkCollision(PhysicsBody* body, Plane plane) {
 			addCollision(collision);
 		}
 	}
-	
-	//for (int n = 0; n < 8; n++) {
-	//	vec3 vertOffset = vec3((n >> 2) & 1, (n >> 1) & 1, n & 1);
-	//	vertOffset = box->extents * (vertOffset * 2.f - vec3(1));
-
-	//	vec3 vertex = box->pos + (box->rot * vertOffset);
-	//	if (!plane.isPointUnderPlane(vertex)) { continue; }
-
-	//	Collision collision = {
-	//		.bodyA = box,
-	//		.worldNormal = -plane.normal,
-	//		.pointA = vertex
-	//	};
-
-	//	addCollision(collision);
-	//}
 }
-
-//void PhysicsEngine::checkCollision(Sphere* sphere, Plane plane) {
-//	if (dot(sphere->pos, plane.normal) - sphere->radius < -plane.distanceFromOrigin) {
-//		Collision collision = {
-//			.bodyA = sphere,
-//			.worldNormal = -plane.normal,
-//			.pointA = sphere->pos - (plane.normal * sphere->radius)
-//		};
-//
-//		addCollision(collision);
-//	}
-//}

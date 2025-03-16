@@ -32,3 +32,12 @@ static mat4 genViewMatrix(vec3 location, vec3 forward, vec3 worldUp) {
 
 	return rotation * translation;
 }
+
+static quat deltaRotation(vec3 angularVelocity, float deltaTime) {
+	vec3 w = angularVelocity * (deltaTime * 0.5f);
+	float theta = length(w);
+	if (theta > 0.f) {
+		w = w / theta;
+	}
+	return quat(cos(theta), sin(theta) * w);
+}

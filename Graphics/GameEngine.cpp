@@ -1,7 +1,7 @@
 #include "GameEngine.h"
 
 #include "glmAddon.h"
-
+#include "Geometry.h"
 
 GameEngine::GameEngine() {
 	worldUp = vec3(0, 0, 1);
@@ -17,8 +17,7 @@ GameEngine::GameEngine() {
 	sphere->setColor(vec4(0.8f, 0, 0, 1));
 	box->setColor(vec4(0, 0, 0.8f, 1));
 
-	addGameObject(sphere);
-	addGameObject(box);
+	std::cout << registry<GameObject>::count << std::endl;
 }
 
 bool GameEngine::startup(int windowWidth, int windowHeight) {
@@ -31,7 +30,6 @@ bool GameEngine::startup(int windowWidth, int windowHeight) {
 
 bool GameEngine::update()  {
 	if (!App3D::update()) return false;
-
 	if (keyPressed(GLFW_KEY_ESCAPE)) return false;
 	
 	float deltaTime = getFrameTime();
@@ -52,8 +50,9 @@ bool GameEngine::update()  {
 void GameEngine::draw() {
 	startDrawing();
 
-	for (int i = 0; i < bodyCount; i++) {
-		bodies[i]->draw();
+	int objectCount = registry<GameObject>::count;
+	for (int i = 0; i < objectCount; i++) {
+		registry<GameObject>::entries[i]->draw();
 	}
 
 	view = genViewMatrix(camera.pos, camera.orientation * vec3(1, 0, 0), worldUp);
@@ -77,15 +76,6 @@ void GameEngine::onMouseMoved(MouseInfo mouse) {
 
 	camera.orientation = yaw * camera.orientation * pitch;
 	camera.orientation = normalize(camera.orientation);
-}
-
-GameObject* GameEngine::addGameObject(GameObject* gameObject) {
-	if (bodyCount >= maxBodies) {
-		return nullptr;
-	}
-
-	bodies[bodyCount++] = gameObject;
-	return gameObject;
 }
 
 

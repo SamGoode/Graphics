@@ -7,7 +7,7 @@
 #include "PhysicsBody.h"
 
 
-#define MAX_BODIES 32
+#define MAX_OBJECTS 32
 
 class GameEngine : public App3D {
 protected:
@@ -17,15 +17,14 @@ protected:
 	PhysicsEngine physEng;
 
 public:
-	int bodyCount = 0;
-	const int maxBodies = MAX_BODIES;
-	GameObject* bodies[MAX_BODIES];
-
 	Plane ground;
 
 public:
 	GameEngine();
-	virtual ~GameEngine() { for (int i = 0; i < bodyCount; i++) { delete bodies[i]; } }
+	virtual ~GameEngine() { 
+		int objectCount = registry<GameObject>::count;
+		for (int i = 0; i < objectCount; i++) { delete registry<GameObject>::entries[0]; }
+	}
 
 	virtual bool startup(int windowWidth, int windowHeight) override;
 	virtual bool update() override;
@@ -33,6 +32,4 @@ public:
 	virtual void shutdown() override;
 
 	virtual void onMouseMoved(MouseInfo mouse) override;
-
-	GameObject* addGameObject(GameObject* gameObject);
 };
