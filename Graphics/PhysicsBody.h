@@ -4,7 +4,8 @@
 #include <glm/ext.hpp>
 
 #include "Geometry.h"
-#include "registry.h"
+#include "Registry.h"
+
 
 using glm::vec3;
 using glm::vec4;
@@ -12,7 +13,14 @@ using glm::mat3;
 using glm::quat;
 
 
-class GameObject : public registry<GameObject> {
+class GameObject : public Registry<GameObject> {
+public:
+    GameObject() {}
+    virtual ~GameObject() {};
+};
+
+
+class RenderObject : public GameObject, public Registry<RenderObject> {
 public:
     vec3 pos = vec3(0);
     quat rot = quat(1, 0, 0, 0);
@@ -21,18 +29,21 @@ public:
     Geometry* shape = nullptr;
 
 public:
-    GameObject() {}
-    GameObject(vec3 _pos, vec3 _eulerRot, Geometry* _geometry);
-    virtual ~GameObject() { delete shape; }
+    RenderObject() {}
+    RenderObject(vec3 _pos, vec3 _eulerRot, Geometry* _geometry);
+    virtual ~RenderObject() { delete shape; }
 
     virtual void draw() { shape->draw(pos, rot, color); }
     void setColor(vec4 _color) { color = _color; }
-
     int getID() { return shape->getID(); };
 };
 
+//class CollisionObject : public RenderObject, public Registry<RenderObject> {
+//public:
+//    virtual int getID() { return shape->getID(); };
+//};
 
-class PhysicsBody : public GameObject, public registry<PhysicsBody> {
+class PhysicsObject : public RenderObject, public Registry<PhysicsObject> {
 public:
     bool isStatic;
 
@@ -45,15 +56,15 @@ public:
     mat3 invInertia = mat3(0);
 
 public:
-    PhysicsBody() {}
-    PhysicsBody(vec3 _pos, vec3 _eulerRot, Geometry* _geometry, float _mass);
-    virtual ~PhysicsBody() {}
+    PhysicsObject() {}
+    PhysicsObject(vec3 _pos, vec3 _eulerRot, Geometry* _geometry, float _mass);
+    virtual ~PhysicsObject() {}
 
-    void applyImpulse(vec3 impulse, vec3 hitPos);
-    void applyAngularImpulse(vec3 angularImpulse);
+    virtual void applyImpulse(vec3 impulse, vec3 hitPos);
+    virtual void applyAngularImpulse(vec3 angularImpulse);
 
-    void update(float deltaTime);
-    void finaliseUpdate(float deltaTime);
+    virtual void update(float deltaTime);
+    virtual void finaliseUpdate(float deltaTime);
 };
 
 

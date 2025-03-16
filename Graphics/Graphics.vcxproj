@@ -156,7 +156,7 @@
     <ClInclude Include="glmAddon.h" />
     <ClInclude Include="PhysicsBody.h" />
     <ClInclude Include="PhysicsEngine.h" />
-    <ClInclude Include="registry.h" />
+    <ClInclude Include="Registry.h" />
     <ClInclude Include="Solver.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

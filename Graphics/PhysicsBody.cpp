@@ -7,7 +7,7 @@
 using aie::Gizmos;
 
 
-GameObject::GameObject(vec3 _pos, vec3 _eulerRot, Geometry* _geometry) {
+RenderObject::RenderObject(vec3 _pos, vec3 _eulerRot, Geometry* _geometry) {
     pos = _pos;
     
     vec3 euler = glm::radians(_eulerRot);
@@ -20,7 +20,7 @@ GameObject::GameObject(vec3 _pos, vec3 _eulerRot, Geometry* _geometry) {
 }
 
 
-PhysicsBody::PhysicsBody(vec3 _pos, vec3 _eulerRot, Geometry* _geometry, float _mass) : GameObject(_pos, _eulerRot, _geometry) {
+PhysicsObject::PhysicsObject(vec3 _pos, vec3 _eulerRot, Geometry* _geometry, float _mass) : RenderObject(_pos, _eulerRot, _geometry) {
     isStatic = _mass <= 0.f;
 
     invMass = isStatic ? 0.f : (1 / _mass);
@@ -28,7 +28,7 @@ PhysicsBody::PhysicsBody(vec3 _pos, vec3 _eulerRot, Geometry* _geometry, float _
 }
 
 
-void PhysicsBody::applyImpulse(vec3 impulse, vec3 hitPos) {
+void PhysicsObject::applyImpulse(vec3 impulse, vec3 hitPos) {
     vel += impulse * invMass;
 
     vec3 rad = hitPos - pos;
@@ -40,16 +40,14 @@ void PhysicsBody::applyImpulse(vec3 impulse, vec3 hitPos) {
     angVel += rot * localAngVel;
 }
 
-void PhysicsBody::applyAngularImpulse(vec3 angularImpulse) {
+void PhysicsObject::applyAngularImpulse(vec3 angularImpulse) {
     vec3 localAngularImpulse = angularImpulse * rot;
 
     vec3 localAngVel = invInertia * localAngularImpulse;
     angVel += rot * localAngVel;
 }
 
-
-
-void PhysicsBody::update(float deltaTime) {
+void PhysicsObject::update(float deltaTime) {
     if (isStatic) { return; }
 
     vel += acc * deltaTime * 0.5f;
@@ -69,7 +67,7 @@ void PhysicsBody::update(float deltaTime) {
     angAcc = vec3(0);
 }
 
-void PhysicsBody::finaliseUpdate(float DeltaTime) {
+void PhysicsObject::finaliseUpdate(float DeltaTime) {
     if (isStatic) { return; }
 
     vel += acc * DeltaTime * 0.5f;

@@ -77,7 +77,7 @@
     <ClInclude Include="Geometry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="registry.h">
+    <ClInclude Include="Registry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

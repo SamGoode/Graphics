@@ -47,8 +47,8 @@
 
 
 void Solver::SolveImpulse(Collision& collision) {
-    PhysicsBody* A = collision.bodyA;
-    PhysicsBody* B = collision.bodyB;
+    PhysicsObject* A = collision.bodyA;
+    PhysicsObject* B = collision.bodyB;
 
     vec3 norm = collision.worldNormal;
 

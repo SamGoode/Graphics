@@ -5,7 +5,7 @@
 #include "Camera.h"
 #include "PhysicsEngine.h"
 #include "PhysicsBody.h"
-
+#include "Registry.h"
 
 #define MAX_OBJECTS 32
 
@@ -22,8 +22,12 @@ public:
 public:
 	GameEngine();
 	virtual ~GameEngine() { 
-		int objectCount = registry<GameObject>::count;
-		for (int i = 0; i < objectCount; i++) { delete registry<GameObject>::entries[0]; }
+		int objectCount = Registry<GameObject>::count;
+		for (int i = 0; i < objectCount; i++) { 
+			GameObject* test = Registry<GameObject>::entries[0];
+			float a = 5;
+			delete test;
+		}
 	}
 
 	virtual bool startup(int windowWidth, int windowHeight) override;

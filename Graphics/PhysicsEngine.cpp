@@ -6,8 +6,8 @@
 
 void PhysicsEngine::update(float deltaTime) {
 	Plane ground = parent->ground;
-	int bodyCount = registry<PhysicsBody>::count;
-	PhysicsBody** bodies = registry<PhysicsBody>::entries;
+	int bodyCount = Registry<PhysicsObject>::count;
+	PhysicsObject** bodies = Registry<PhysicsObject>::entries;
 
 	// Kinematic updates and gravity
 	for (int i = 0; i < bodyCount; i++) {
@@ -20,6 +20,10 @@ void PhysicsEngine::update(float deltaTime) {
 	// Ground collisions
 	for (int i = 0; i < bodyCount; i++) {
 		checkCollision(bodies[i], ground);
+
+		for (int n = i + 1; n < bodyCount; n++) {
+			checkCollision(bodies[i], bodies[n]);
+		}
 	}
 
 	// Calculates collision impulses
@@ -43,8 +47,8 @@ void PhysicsEngine::solveImpulse(Collision& collision) {
 		return;
 	}
 
-	PhysicsBody* A = collision.bodyA;
-	PhysicsBody* B = collision.bodyB;
+	PhysicsObject* A = collision.bodyA;
+	PhysicsObject* B = collision.bodyB;
 
 	vec3 Va = A->vel;
 	vec3 Wa = A->angVel;
@@ -74,7 +78,7 @@ void PhysicsEngine::solveImpulse(Collision& collision) {
 }
 
 void PhysicsEngine::solveImpulseSingleBody(Collision& collision) {
-	PhysicsBody* A = collision.bodyA;
+	PhysicsObject* A = collision.bodyA;
 	
 	vec3 Va = A->vel;
 	vec3 Wa = A->angVel;
@@ -98,7 +102,7 @@ void PhysicsEngine::solveImpulseSingleBody(Collision& collision) {
 	A->applyImpulse(norm * -lambda, collision.pointA);
 }
 
-void PhysicsEngine::checkCollision(PhysicsBody* body, Plane plane) {
+void PhysicsEngine::checkCollision(PhysicsObject* body, Plane plane) {
 	switch (body->getID()) {
 	case 0:
 		vec3 extents = dynamic_cast<Box*>(body->shape)->extents;
@@ -133,4 +137,50 @@ void PhysicsEngine::checkCollision(PhysicsBody* body, Plane plane) {
 			addCollision(collision);
 		}
 	}
+}
+
+
+void PhysicsEngine::checkCollision(PhysicsObject* A, PhysicsObject* B) {
+	if (A->getID() >= B->getID()) {
+		PhysicsObject* temp = A;
+		A = B;
+		B = temp;
+	}
+
+	int type = A->getID() + B->getID();
+	(*this.*f[type])(A, B);
+}
+
+
+void PhysicsEngine::checkCollision00(PhysicsObject* boxA, PhysicsObject* boxB) {
+
+}
+
+void PhysicsEngine::checkCollision01(PhysicsObject* box, PhysicsObject* sphere) {
+
+}
+
+void PhysicsEngine::checkCollision11(PhysicsObject* sphereA, PhysicsObject* sphereB) { 
+	float radiusA = static_cast<Sphere*>(sphereA->shape)->radius;
+	float radiusB = static_cast<Sphere*>(sphereB->shape)->radius;
+	float radii = radiusA + radiusB;
+
+	vec3 AtoB = sphereB->pos - sphereA->pos;
+	float sqrDist = dot(AtoB, AtoB);
+
+	if (sqrDist > radii * radii) {
+		return;
+	}
+
+	vec3 norm = AtoB * (1 / sqrt(sqrDist));
+
+	Collision collision = {
+		.bodyA = sphereA,
+		.bodyB = sphereB,
+		.worldNormal = norm,
+		.pointA = sphereA->pos + norm * radiusA,
+		.pointB = sphereB->pos - norm * radiusB
+	};
+
+	addCollision(collision);
 }

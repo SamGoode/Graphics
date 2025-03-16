@@ -7,8 +7,8 @@
 using glm::vec3;
 
 struct Collision {
-    PhysicsBody* bodyA = nullptr;
-    PhysicsBody* bodyB = nullptr;
+    PhysicsObject* bodyA = nullptr;
+    PhysicsObject* bodyB = nullptr;
 
     vec3 worldNormal;
     vec3 pointA;
@@ -20,8 +20,8 @@ struct Collision {
 };
 
 struct Joint {
-    PhysicsBody* bodyA = nullptr;
-    PhysicsBody* bodyB = nullptr;
+    PhysicsObject* bodyA = nullptr;
+    PhysicsObject* bodyB = nullptr;
 
     vec3 localA;
     vec3 localB;

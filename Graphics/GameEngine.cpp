@@ -11,13 +11,15 @@ GameEngine::GameEngine() {
 
 	ground = Plane(vec3(0, 0, 1), 0.f);
 
-	PhysicsBody* sphere = new PhysicsBody(vec3(-5, 5, 10), vec3(0, 0, 0), new Sphere(0.5f), 5.f);
-	PhysicsBody* box = new PhysicsBody(vec3(0, 0, 10), vec3(45.f, 45.f, 0), new Box(1.f, 2.f, 3.f), 50.f);
+	PhysicsObject* sphere = new PhysicsObject(vec3(-5, 5, 10), vec3(0, 0, 0), new Sphere(0.5f), 10.f);
+	PhysicsObject* sphere2 = new PhysicsObject(vec3(-5, 5, 5), vec3(0, 0, 0), new Sphere(0.8f), 5.f);
+	PhysicsObject* box = new PhysicsObject(vec3(0, 0, 10), vec3(45.f, 45.f, 0), new Box(1.f, 2.f, 3.f), 50.f);
 
 	sphere->setColor(vec4(0.8f, 0, 0, 1));
+	sphere2->setColor(vec4(0, 0.8f, 0, 1));
 	box->setColor(vec4(0, 0, 0.8f, 1));
 
-	std::cout << registry<GameObject>::count << std::endl;
+	std::cout << Registry<GameObject>::count << std::endl;
 }
 
 bool GameEngine::startup(int windowWidth, int windowHeight) {
@@ -50,9 +52,9 @@ bool GameEngine::update()  {
 void GameEngine::draw() {
 	startDrawing();
 
-	int objectCount = registry<GameObject>::count;
+	int objectCount = Registry<RenderObject>::count;
 	for (int i = 0; i < objectCount; i++) {
-		registry<GameObject>::entries[i]->draw();
+		Registry<RenderObject>::entries[i]->draw();
 	}
 
 	view = genViewMatrix(camera.pos, camera.orientation * vec3(1, 0, 0), worldUp);
