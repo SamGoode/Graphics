@@ -5,7 +5,6 @@
 #define MAX_COLLISIONS 32
 
 
-
 class PhysicsEngine {
 public:
 	class GameEngine* parent = nullptr;
