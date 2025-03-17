@@ -143,7 +143,8 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PhysicsBody.cpp" />
     <ClCompile Include="PhysicsEngine.cpp" />
-    <ClCompile Include="Solver.cpp" />
+    <ClCompile Include="RenderObject.cpp" />
+    <ClCompile Include="PhysicsSolver.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameEngine.h" />
@@ -151,13 +152,16 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Collision.h" />
     <ClInclude Include="Detector.h" />
+    <ClInclude Include="GameObject.h" />
     <ClInclude Include="Geometry.h" />
     <ClInclude Include="Gizmos.h" />
     <ClInclude Include="glmAddon.h" />
+    <ClInclude Include="IPhysicsEngine.h" />
     <ClInclude Include="PhysicsBody.h" />
     <ClInclude Include="PhysicsEngine.h" />
     <ClInclude Include="Registry.h" />
-    <ClInclude Include="Solver.h" />
+    <ClInclude Include="RenderObject.h" />
+    <ClInclude Include="PhysicsSolver.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

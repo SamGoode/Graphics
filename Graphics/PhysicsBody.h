@@ -1,42 +1,8 @@
 #pragma once
 
-#include <glm/glm.hpp>
-#include <glm/ext.hpp>
+#include "GameObject.h"
+#include "RenderObject.h"
 
-#include "Geometry.h"
-#include "Registry.h"
-
-
-using glm::vec3;
-using glm::vec4;
-using glm::mat3;
-using glm::quat;
-
-
-class GameObject : public Registry<GameObject> {
-public:
-    GameObject() {}
-    virtual ~GameObject() {};
-};
-
-
-class RenderObject : public GameObject, public Registry<RenderObject> {
-public:
-    vec3 pos = vec3(0);
-    quat rot = quat(1, 0, 0, 0);
-
-    vec4 color = vec4(0, 0, 0, 1);
-    Geometry* shape = nullptr;
-
-public:
-    RenderObject() {}
-    RenderObject(vec3 _pos, vec3 _eulerRot, Geometry* _geometry);
-    virtual ~RenderObject() { delete shape; }
-
-    virtual void draw() { shape->draw(pos, rot, color); }
-    void setColor(vec4 _color) { color = _color; }
-    int getID() { return shape->getID(); };
-};
 
 //class CollisionObject : public RenderObject, public Registry<RenderObject> {
 //public:
@@ -60,8 +26,10 @@ public:
     PhysicsObject(vec3 _pos, vec3 _eulerRot, Geometry* _geometry, float _mass);
     virtual ~PhysicsObject() {}
 
-    virtual void applyImpulse(vec3 impulse, vec3 hitPos);
-    virtual void applyAngularImpulse(vec3 angularImpulse);
+    void applyImpulse(vec3 impulse, vec3 hitPos);
+    void applyAngularImpulse(vec3 angularImpulse);
+
+    void applyPositionImpulse(vec3 impulse, vec3 hitPos);
 
     virtual void update(float deltaTime);
     virtual void finaliseUpdate(float deltaTime);

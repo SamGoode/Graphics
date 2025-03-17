@@ -1,6 +1,5 @@
 #pragma once
 
-
 // this is cursed figure something else out
 
 template<typename T>

@@ -7,6 +7,7 @@
 #include "PhysicsBody.h"
 #include "Registry.h"
 
+
 #define MAX_OBJECTS 32
 
 class GameEngine : public App3D {
@@ -17,16 +18,11 @@ protected:
 	PhysicsEngine physEng;
 
 public:
-	Plane ground;
-
-public:
 	GameEngine();
 	virtual ~GameEngine() { 
 		int objectCount = Registry<GameObject>::count;
 		for (int i = 0; i < objectCount; i++) { 
-			GameObject* test = Registry<GameObject>::entries[0];
-			float a = 5;
-			delete test;
+			delete Registry<GameObject>::entries[0];
 		}
 	}
 

@@ -7,19 +7,6 @@
 using aie::Gizmos;
 
 
-RenderObject::RenderObject(vec3 _pos, vec3 _eulerRot, Geometry* _geometry) {
-    pos = _pos;
-    
-    vec3 euler = glm::radians(_eulerRot);
-    quat qx = quat(cos(euler.x / 2), sin(euler.x / 2) * vec3(1, 0, 0));
-    quat qy = quat(cos(euler.y / 2), sin(euler.y / 2) * vec3(0, 1, 0));
-    quat qz = quat(cos(euler.z / 2), sin(euler.z / 2) * vec3(0, 0, 1));
-    rot = normalize(qx * qy * qz);
-
-    shape = _geometry;
-}
-
-
 PhysicsObject::PhysicsObject(vec3 _pos, vec3 _eulerRot, Geometry* _geometry, float _mass) : RenderObject(_pos, _eulerRot, _geometry) {
     isStatic = _mass <= 0.f;
 
@@ -45,6 +32,25 @@ void PhysicsObject::applyAngularImpulse(vec3 angularImpulse) {
 
     vec3 localAngVel = invInertia * localAngularImpulse;
     angVel += rot * localAngVel;
+}
+
+void PhysicsObject::applyPositionImpulse(vec3 impulse, vec3 hitPos) {
+    pos += impulse * invMass;
+
+    vec3 rad = hitPos - pos;
+
+    vec3 rotImpulse = cross(rad, impulse);
+    vec3 localRotImpulse = rotImpulse * rot;
+
+    vec3 deltaRot = invInertia * localRotImpulse;
+
+    vec3 w = deltaRot;
+    float theta = length(w);
+    if (theta > 0.f) {
+        w = w / theta;
+    }
+    
+    rot = quat(cos(theta), sin(theta) * w) * rot;
 }
 
 void PhysicsObject::update(float deltaTime) {

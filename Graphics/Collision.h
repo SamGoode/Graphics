@@ -1,13 +1,12 @@
 #pragma once
 
-#include "PhysicsBody.h"
-
 #include <glm/glm.hpp>
 
 using glm::vec3;
 
+
 struct Collision {
-    PhysicsObject* bodyA = nullptr;
+    class PhysicsObject* bodyA = nullptr;
     PhysicsObject* bodyB = nullptr;
 
     vec3 worldNormal;

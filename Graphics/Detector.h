@@ -1,26 +1,25 @@
 #pragma once
 
-#include "Collision.h"
 
-#define MAX_COLLISIONS 64
+struct Detector {
+private:
+    struct IPhysicsEngine* physEngInterface;
 
-class Detector {
+    typedef void (Detector::*func)(class PhysicsObject* A, PhysicsObject* B);
+    func f[3] = {
+        &Detector::checkCollision00,
+        &Detector::checkCollision01,
+        &Detector::checkCollision11
+    };
+
 public:
-    int collisionCount = 0;
-    const int maxCollisions = MAX_COLLISIONS;
-    Collision collisions[MAX_COLLISIONS];
+    Detector(IPhysicsEngine* interface) : physEngInterface(interface) {}
 
-public:
+    void checkCollision(PhysicsObject* body, struct Plane plane);
+    void checkCollision(PhysicsObject* A, PhysicsObject* B);
 
-    //void CheckBoundaryCollision(class PhysicsBody* body, Vector4 boundary);
-
-    //void CheckCollision(class PhysicsBody* A, PhysicsBody* B);
-    //void CheckCollisionRR(PhysicsBody* A, PhysicsBody* B);
-    //void CheckCollisionRC(PhysicsBody* A, PhysicsBody* B);
-    //void CheckCollisionCC(PhysicsBody* A, PhysicsBody* B);
-
-    //void AddCollision(Collision collision) { collisions[collisionCount++] = collision; }
-    //void ClearCollisions() { collisionCount = 0; }
-
-    //bool IsWithinBody(PhysicsBody* body, Vector2 pos);
+private:
+    void checkCollision00(PhysicsObject* boxA, PhysicsObject* boxB);
+    void checkCollision01(PhysicsObject* box, PhysicsObject* sphere);
+    void checkCollision11(PhysicsObject* sphereA, PhysicsObject* sphereB);
 };

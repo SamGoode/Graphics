@@ -1,46 +1,41 @@
 #pragma once
 
+#include "IPhysicsEngine.h"
+#include "Detector.h"
+#include "PhysicsSolver.h"
+
 #include "Collision.h"
+#include "PhysicsBody.h"
 
 #define MAX_COLLISIONS 32
 
 
-class PhysicsEngine {
+class PhysicsEngine : public IPhysicsEngine {
 public:
-	class GameEngine* parent = nullptr;
-
 	vec3 gravity = vec3(0, 0, -1.5f);
+	Plane ground = Plane(vec3(0, 0, 1), 0.f);
 
-	int iterations = 2;
+private:
+	Detector detector = Detector(this);
+	PhysicsSolver solver = PhysicsSolver(this);
 
 	int collisionCount = 0;
 	const int maxCollisions = MAX_COLLISIONS;
 	Collision collisions[MAX_COLLISIONS];
 
-	typedef void (PhysicsEngine::* func)(PhysicsObject* A, PhysicsObject* B);
-	func f[3] = {
-		&PhysicsEngine::checkCollision00,
-		&PhysicsEngine::checkCollision01,
-		&PhysicsEngine::checkCollision11
-	};
-
 public:
-	PhysicsEngine() {}
+	PhysicsEngine() {
+		iterations = 2;
 
-	void setParentApp(GameEngine* _parent) { parent = _parent; }
+		biasSlop = 0.005f;
+		biasFactor = 0.1f;
+
+		elasticity = 0.2f;
+		friction = 0.95f;
+	}
 
 	void update(float deltaTime);
 
-	void solveImpulse(Collision& collision);
-	void solveImpulseSingleBody(Collision& collision);
-
-	void checkCollision(PhysicsObject* body, Plane plane);
-	void checkCollision(PhysicsObject* A, PhysicsObject* B);
-
-	void checkCollision00(PhysicsObject* boxA, PhysicsObject* boxB);
-	void checkCollision01(PhysicsObject* box, PhysicsObject* sphere);
-	void checkCollision11(PhysicsObject* sphereA, PhysicsObject* sphereB);
-
-	void addCollision(Collision collision) { if (collisionCount >= maxCollisions) { return; } collisions[collisionCount++] = collision; }
-	void clearCollisions() { collisionCount = 0; }
+	virtual void addCollision(Collision collision) override { if (collisionCount >= maxCollisions) return; collisions[collisionCount++] = collision; }
+	virtual void clearCollisions() override { collisionCount = 0; }
 };

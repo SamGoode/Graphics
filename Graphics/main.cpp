@@ -4,11 +4,11 @@
 
 
 int main() {
-	GameEngine app;
+	BaseApp* app = new App3D();
 
-	if (!app.startup(1280, 720)) return -1;
-	while (app.update()) app.draw();
-	app.shutdown();
+	if (!app->startup(1280, 720)) return -1;
+	while (app->update()) app->draw();
+	app->shutdown();
 
 	return 0;
 }
