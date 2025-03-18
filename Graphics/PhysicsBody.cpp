@@ -44,7 +44,7 @@ void PhysicsObject::applyPositionImpulse(vec3 impulse, vec3 hitPos) {
 
     vec3 deltaRot = invInertia * localRotImpulse;
 
-    vec3 w = deltaRot;
+    vec3 w = deltaRot * 0.5f;
     float theta = length(w);
     if (theta > 0.f) {
         w = w / theta;

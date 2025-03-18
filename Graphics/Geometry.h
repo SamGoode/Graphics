@@ -1,7 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include "Gizmos.h"
+//#include "Gizmos.h"
 
 using glm::vec3;
 using glm::vec4;
@@ -9,14 +9,14 @@ using glm::mat3;
 using glm::mat4;
 using glm::quat;
 
-using aie::Gizmos;
+//using aie::Gizmos;
 
 
 class Geometry {
 public:
     virtual ~Geometry() {}
     virtual int getID() = 0;
-    virtual void draw(vec3 pos, quat orientation, vec4 color) = 0;
+    //virtual void draw(vec3 pos, quat orientation, vec4 color) = 0;
     virtual mat3 calculateInertiaTensor(float mass) = 0;
 };
 
@@ -39,10 +39,10 @@ public:
         return invInertia;
     }
 
-    virtual void draw(vec3 pos, quat orientation, vec4 color) override {
-        mat4 rotMat = glm::mat4_cast(orientation);
-        Gizmos::addAABBFilled(pos, extents, color, &rotMat);
-    }
+    //virtual void draw(vec3 pos, quat orientation, vec4 color) override {
+    //    mat4 rotMat = glm::mat4_cast(orientation);
+    //    Gizmos::addAABBFilled(pos, extents, color, &rotMat);
+    //}
 };
 
 
@@ -61,8 +61,8 @@ public:
         return invInertia;
     }
 
-    virtual void draw(vec3 pos, quat orientation, vec4 color) override {
-        mat4 rotMat = glm::mat4_cast(orientation);
-        Gizmos::addSphere(pos, radius, 10, 10, color, &rotMat);
-    }
+    //virtual void draw(vec3 pos, quat orientation, vec4 color) override {
+    //    mat4 rotMat = glm::mat4_cast(orientation);
+    //    Gizmos::addSphere(pos, radius, 10, 10, color, &rotMat);
+    //}
 };

@@ -47,10 +47,6 @@ bool BaseApp::update() {
 	return true;
 }
 
-
-
-
-
 // App3D Class
 //bool App3D::startup(int windowWidth, int windowHeight) {
 //	if (!BaseApp::startup(windowWidth, windowHeight)) {
@@ -68,19 +64,9 @@ bool BaseApp::update() {
 
 void App3D::startDrawing() {
 	BaseApp::startDrawing();
-	//Gizmos::clear();
+	gl->clear();
 
 	//if (showOrigin) {
 	//	Gizmos::addTransform(glm::mat4(1));
-	//}
-
-	//if (showGrid) {
-	//	vec4 white(1);
-	//	vec4 black(0, 0, 0, 1);
-
-	//	for (int i = 0; i < 21; i++) {
-	//		Gizmos::addLine(vec3(-10 + i, 10, 0), vec3(-10 + i, -10, 0), i == 10 ? white : black);
-	//		Gizmos::addLine(vec3(10, -10 + i, 0), vec3(-10, -10 + i, 0), i == 10 ? white : black);
-	//	}
 	//}
 }

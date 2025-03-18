@@ -15,7 +15,7 @@ public:
     RenderObject(vec3 _pos, vec3 _eulerRot, Geometry* _geometry);
     virtual ~RenderObject() { delete shape; }
 
-    virtual void draw() { shape->draw(pos, rot, color); }
+    //virtual void draw() { shape->draw(pos, rot, color); }
     void setColor(vec4 _color) { color = _color; }
     int getID() { return shape->getID(); };
 };

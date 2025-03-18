@@ -27,7 +27,7 @@ public:
 	PhysicsEngine() {
 		iterations = 2;
 
-		biasSlop = 0.005f;
+		biasSlop = 0.05f;
 		biasFactor = 0.1f;
 
 		elasticity = 0.2f;

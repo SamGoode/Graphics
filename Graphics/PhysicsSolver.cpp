@@ -43,9 +43,8 @@ void PhysicsSolver::solveImpulse(Collision& collision) {
     vec3 rB = collision.pointB - B->pos;
     vec3 norm = collision.worldNormal;
 
-    float effMass = calcEffectiveMass(collision);
-
     float JV = dot(-norm, Va) + dot(cross(-rA, norm), Wa) + dot(norm, Vb) + dot(cross(rB, norm), Wb);
+    float effMass = calcEffectiveMass(collision);
 
     float lambda = -JV / effMass;
     float newSum = std::max(collision.lambdaSum + lambda, 0.f);

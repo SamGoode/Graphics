@@ -46,12 +46,14 @@ void Detector::checkCollision(PhysicsObject* body, Plane plane) {
 			vertOffset = extents * (vertOffset * 2.f - vec3(1));
 
 			vec3 vertex = body->pos + (body->rot * vertOffset);
-			if (!plane.isPointUnderPlane(vertex)) { continue; }
+			float separation = dot(vertex, plane.normal) + plane.distanceFromOrigin;
+			if (separation > 0.f) { continue; }
 
 			Collision collision = {
 				.bodyA = body,
 				.worldNormal = -plane.normal,
-				.pointA = vertex
+				.pointA = vertex,
+				.depth = -separation
 			};
 
 			physEngInterface->addCollision(collision);
@@ -61,11 +63,13 @@ void Detector::checkCollision(PhysicsObject* body, Plane plane) {
 	case 1:
 		float radius = dynamic_cast<Sphere*>(body->shape)->radius;
 
-		if (dot(body->pos, plane.normal) - radius < -plane.distanceFromOrigin) {
+		float separation = dot(body->pos, plane.normal) - radius + plane.distanceFromOrigin;
+		if (separation < 0.f) {
 			Collision collision = {
 				.bodyA = body,
 				.worldNormal = -plane.normal,
-				.pointA = body->pos - (plane.normal * radius)
+				.pointA = body->pos - (plane.normal * radius),
+				.depth = -separation
 			};
 
 			physEngInterface->addCollision(collision);
@@ -182,7 +186,7 @@ void Detector::checkCollision00(PhysicsObject* boxA, PhysicsObject* boxB) {
 			if (abs(projectedPointA - dot(vertsA[i], axes[minIndex])) < 0.001f) {
 				// Found matching projection
 				pointA = vertsA[i];
-				pointB = pointA - worldNorm * minOverlap;
+				pointB = pointA + worldNorm * minOverlap;
 				depth = minOverlap;
 				break;
 			}
@@ -209,9 +213,9 @@ void Detector::checkCollision00(PhysicsObject* boxA, PhysicsObject* boxB) {
 		vec3 edgeA = axes[(minIndex - 6) / 3];
 		vec3 edgeB = axes[(minIndex - 6) % 3];
 
-		pointA = vertA + edgeA * (dot(edgeA, vertB - vertA));
-		pointB = vertB + edgeB * (dot(edgeB, vertA - vertB));
-		depth = length(pointA - pointB);
+		pointA = vertA + edgeA * (dot(edgeA, vertB) - dot(edgeA, vertA));
+		pointB = vertB + edgeB * (dot(edgeB, vertA) - dot(edgeB, vertB));
+		depth = minOverlap;
 	}
 
 	Collision collision = {

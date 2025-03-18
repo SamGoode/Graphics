@@ -140,6 +140,7 @@
     <ClCompile Include="Detector.cpp" />
     <ClCompile Include="Gizmos.cpp" />
     <ClCompile Include="glad.c" />
+    <ClCompile Include="GLManager.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PhysicsBody.cpp" />
     <ClCompile Include="PhysicsEngine.cpp" />
@@ -156,6 +157,7 @@
     <ClInclude Include="Geometry.h" />
     <ClInclude Include="Gizmos.h" />
     <ClInclude Include="glmAddon.h" />
+    <ClInclude Include="GLManager.h" />
     <ClInclude Include="IPhysicsEngine.h" />
     <ClInclude Include="PhysicsBody.h" />
     <ClInclude Include="PhysicsEngine.h" />
