@@ -6,7 +6,7 @@
 #include <glm/ext.hpp>
 #include <glm/fwd.hpp>
 
-#include "GLManager.h"
+#include "Shader.h"
 
 using glm::vec2;
 using glm::vec3;
@@ -38,7 +38,7 @@ protected:
 	double timeLastFrame = 0;
 	double runtime = 0;
 
-	MouseInfo mouse;
+	Shader shader;
 
 	mat4 view;
 	mat4 projection;
@@ -48,19 +48,16 @@ protected:
 	bool showGrid = true;
 	bool showOrigin = true;
 
-	GLwrapper* gl = nullptr;
+	MouseInfo mouse;
 
 public:
-	virtual ~App3D() { delete gl; }
+	virtual ~App3D() = default;
 
 	virtual bool startup(int windowWidth, int windowHeight) override;
 	virtual bool update() override;
 	virtual void shutdown() override;
 
 	double getFrameTime() { return runtime - timeLastFrame; }
-
-	virtual void startDrawing() { glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); gl->clear(); }
-	virtual void endDrawing() { gl->draw(projection * view, directionalLight); glfwSwapBuffers(window); glfwPollEvents(); }
 
 	bool keyPressed(int key) { return glfwGetKey(window, key) == GLFW_PRESS; }
 	void mouseCursorCallback(GLFWwindow* window, double xpos, double ypos) { mouse.prevPos = mouse.pos; mouse.pos = vec2((float)xpos, (float)ypos); onMouseMoved(mouse); }

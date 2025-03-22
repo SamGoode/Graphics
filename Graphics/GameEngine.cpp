@@ -27,6 +27,12 @@ bool GameEngine::startup(int windowWidth, int windowHeight) {
 
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
+	int objectCount = Registry<RenderObject>::count;
+	for (int i = 0; i < objectCount; i++) {
+		Registry<RenderObject>::entries[i]->initMesh();
+		//drawObject(Registry<RenderObject>::entries[i]);
+	}
+
 	return true;
 }
 
@@ -49,29 +55,43 @@ bool GameEngine::update()  {
 	return true;
 }
 
+
 void GameEngine::draw() {
-	startDrawing();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	int objectCount = Registry<RenderObject>::count;
-	for (int i = 0; i < objectCount; i++) {
-		//Registry<RenderObject>::entries[i]->draw();
-		drawObject(Registry<RenderObject>::entries[i]);
-	}
-
-
-	if (showGrid) {
-		vec4 white(1);
-		vec4 black(0, 0, 0, 1);
-
-		for (int i = 0; i < 21; i++) {
-			gl->addLine(vec3(-10 + i, 10, 0), vec3(-10 + i, -10, 0), i == 10 ? white : black);
-			gl->addLine(vec3(10, -10 + i, 0), vec3(-10, -10 + i, 0), i == 10 ? white : black);
-		}
-	}
 
 	view = genViewMatrix(camera.pos, camera.orientation * vec3(1, 0, 0), worldUp);
 
-	endDrawing();
+	shader.bind();
+	shader.bindUniform(directionalLight, "LightDirection");
+
+	mat4 projectionView = projection * view;
+
+	int objectCount = Registry<RenderObject>::count;
+	for (int i = 0; i < objectCount; i++) {
+		mat4 transform = Registry<RenderObject>::entries[i]->getTransform();
+
+		mat4 pvm = projectionView * transform;
+		shader.bindUniform(pvm, "ProjectionViewModel");
+		shader.bindUniform(transform, "ModelTransform");
+		shader.bindUniform(vec3(Registry<RenderObject>::entries[i]->color), "BaseColor");
+
+		Registry<RenderObject>::entries[i]->mesh.draw();
+	}
+
+
+	//if (showGrid) {
+	//	vec4 white(1);
+	//	vec4 black(0, 0, 0, 1);
+
+	//	for (int i = 0; i < 21; i++) {
+	//		gl->addLine(vec3(-10 + i, 10, 0), vec3(-10 + i, -10, 0), i == 10 ? white : black);
+	//		gl->addLine(vec3(10, -10 + i, 0), vec3(-10, -10 + i, 0), i == 10 ? white : black);
+	//	}
+	//}
+
+	glfwSwapBuffers(window);
+	glfwPollEvents();
 }
 
 void GameEngine::shutdown() {
