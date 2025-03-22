@@ -73,7 +73,9 @@ void Detector::checkCollision(PhysicsObject* body, Plane plane) {
 			};
 
 			physEngInterface->addCollision(collision);
+			
 		}
+		break;
 	}
 }
 
@@ -303,14 +305,16 @@ void Detector::checkCollision11(PhysicsObject* sphereA, PhysicsObject* sphereB) 
 		return;
 	}
 
-	vec3 norm = AtoB * (1 / sqrt(sqrDist));
+	float dist = sqrt(sqrDist);
+	vec3 norm = AtoB * (1 / dist);
 
 	Collision collision = {
 		.bodyA = sphereA,
 		.bodyB = sphereB,
 		.worldNormal = norm,
 		.pointA = sphereA->pos + norm * radiusA,
-		.pointB = sphereB->pos - norm * radiusB
+		.pointB = sphereB->pos - norm * radiusB,
+		.depth = radii - dist
 	};
 
 	physEngInterface->addCollision(collision);

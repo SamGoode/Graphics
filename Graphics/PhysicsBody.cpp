@@ -50,7 +50,7 @@ void PhysicsObject::applyPositionImpulse(vec3 impulse, vec3 hitPos) {
         w = w / theta;
     }
     
-    rot = quat(cos(theta), sin(theta) * w) * rot;
+    rot = rot * quat(cos(theta), sin(theta) * w);
 }
 
 void PhysicsObject::update(float deltaTime) {

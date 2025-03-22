@@ -15,8 +15,18 @@ using glm::mat4;
 using glm::quat;
 
 
-
 class BaseApp {
+public:
+	virtual ~BaseApp() = default;
+
+	virtual bool startup(int windowWidth, int windowHeight) = 0;
+	virtual bool update() = 0;
+	virtual void draw() = 0;
+	virtual void shutdown() = 0; 
+};
+
+
+class App3D : public BaseApp {
 protected:
 	struct MouseInfo {
 		vec2 prevPos;
@@ -30,38 +40,8 @@ protected:
 
 	MouseInfo mouse;
 
-public:
-	virtual ~BaseApp() {}
-
-	virtual bool startup(int windowWidth, int windowHeight);
-	virtual bool update();
-	virtual void draw() = 0;
-	virtual void shutdown() { glfwDestroyWindow(window); glfwTerminate(); }
-
-	double getFrameTime() { return runtime - timeLastFrame; }
-
-	virtual void startDrawing() { glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); }
-	virtual void endDrawing() { 
-		glfwSwapBuffers(window);
-		glfwPollEvents();
-	}
-
-	bool keyPressed(int key) { return glfwGetKey(window, key) == GLFW_PRESS; }
-	void mouseCursorCallback(GLFWwindow* window, double xpos, double ypos) { mouse.prevPos = mouse.pos; mouse.pos = vec2((float)xpos, (float)ypos); onMouseMoved(mouse); }
-
-	virtual void onMouseMoved(MouseInfo mouse) = 0;
-};
-
-
-
-
-
-class App3D : public BaseApp {
-protected:
 	mat4 view;
 	mat4 projection;
-
-	mat4 m_quadTransform;
 
 	bool showGrid = true;
 	bool showOrigin = true;
@@ -71,30 +51,17 @@ protected:
 public:
 	virtual ~App3D() { delete gl; }
 
-	virtual bool startup(int windowWidth, int windowHeight) override {
-		if (!BaseApp::startup(windowWidth, windowHeight)) {
-			return false;
-		}
+	virtual bool startup(int windowWidth, int windowHeight) override;
+	virtual bool update() override;
+	virtual void shutdown() override;
 
-		gl = new GLwrapper();
-		glClearColor(0.25f, 0.25f, 0.25f, 0);
-		glEnable(GL_DEPTH_TEST);
+	double getFrameTime() { return runtime - timeLastFrame; }
 
-		//view = glm::lookAt(vec3(10, 10, 10), vec3(0), vec3(0, 1, 0));
-		projection = glm::perspective(glm::pi<float>() * 0.25f, 16 / 9.f, 0.1f, 1000.f);
+	virtual void startDrawing() { glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); gl->clear(); }
+	virtual void endDrawing() { gl->draw(projection * view); glfwSwapBuffers(window); glfwPollEvents(); }
 
-		return true;
-	}
-	virtual void shutdown() override { 
-		//Gizmos::destroy(); 
-		BaseApp::shutdown(); 
-	}
-
-	virtual void startDrawing() override;
-	virtual void endDrawing() override {
-		gl->draw(projection * view);
-		BaseApp::endDrawing(); 
-	}
+	bool keyPressed(int key) { return glfwGetKey(window, key) == GLFW_PRESS; }
+	void mouseCursorCallback(GLFWwindow* window, double xpos, double ypos) { mouse.prevPos = mouse.pos; mouse.pos = vec2((float)xpos, (float)ypos); onMouseMoved(mouse); }
 	
-	virtual void onMouseMoved(MouseInfo mouse) override {}
+	virtual void onMouseMoved(MouseInfo mouse) = 0;
 };
