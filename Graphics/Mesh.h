@@ -33,9 +33,6 @@ private:
 	const int maxIndexCount = 512;
 
 public:
-	mat4 transform = glm::identity<mat4>();
-
-public:
 	Mesh() {}
 	~Mesh() {
 		glDeleteBuffers(1, &ibo);

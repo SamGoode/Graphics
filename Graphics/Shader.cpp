@@ -62,6 +62,12 @@ unsigned int Shader::loadShaderFromFile(GLenum type, const char* fileName) {
 }
 
 
+void Shader::bindUniform(const float& f, const char* name) {
+	unsigned int uniform = glGetUniformLocation(shader_id, name);
+	//glUniform3fv(uniform, 1, glm::value_ptr(f));
+	glUniform1f(uniform, f);
+}
+
 void Shader::bindUniform(const vec3& v3, const char* name) {
 	unsigned int uniform = glGetUniformLocation(shader_id, name);
 	glUniform3fv(uniform, 1, glm::value_ptr(v3));
@@ -71,59 +77,3 @@ void Shader::bindUniform(const mat4& m4, const char* name) {
 	unsigned int uniform = glGetUniformLocation(shader_id, name);
 	glUniformMatrix4fv(uniform, 1, false, glm::value_ptr(m4));
 }
-
-
-//void Shader::addSphere(vec3 center, float radius, vec4 color) {
-//	//vec3 points[12 * 6];
-//	vert verts[12 * 6];
-//
-//	for (int i = 0; i < 12; i++) {
-//		float theta = i * (0.167f * glm::pi<float>());
-//		float x = radius * cos(theta);
-//		float y = radius * sin(theta);
-//
-//		for (int n = 0; n < 6; n++) {
-//			float beta = n * (0.167f * glm::pi<float>());
-//			//points[i * 6 + n] = vec3(x * sin(beta), y * sin(beta), radius * cos(beta));
-//			vec3 offsetFromCenter = vec3(x * sin(beta), y * sin(beta), radius * cos(beta));
-//			verts[i * 6 + n].position = vec4(center + offsetFromCenter, 1);
-//			verts[i * 6 + n].normal = vec4(offsetFromCenter, 1);
-//			verts[i * 6 + n].color = color;
-//		}
-//	}
-//
-//	unsigned int count = 0;
-//	unsigned int sphereIndices[324];
-//
-//	for (int i = 0; i < 72; i++) {
-//		int nextArc = (i + 6) % 72;
-//
-//		if (i % 6 == 5) {
-//			continue;
-//		}
-//
-//		//addLine(center + points[i], center + points[i + 1], vec4(1));
-//		addLine(verts[i].position, verts[i + 1].position, vec4(1));
-//
-//		if (i % 6 != 0) {
-//			//addLine(center + points[i], center + points[nextArc], vec4(1));
-//			addLine(verts[i].position, verts[nextArc].position, vec4(1));
-//			//addTri(center + points[i], center + points[nextArc], center + points[i + 1], color);
-//			sphereIndices[count++] = vertCount + i;
-//			sphereIndices[count++] = vertCount + nextArc;
-//			sphereIndices[count++] = vertCount + i + 1;
-//		}
-//
-//		//addTri(center + points[i + 1], center + points[nextArc], center + points[nextArc + 1], color);
-//		sphereIndices[count++] = vertCount + i + 1;
-//		sphereIndices[count++] = vertCount + nextArc;
-//		sphereIndices[count++] = vertCount + nextArc + 1;
-//	}
-//
-//	std::memcpy(&vertices[vertCount], verts, 72 * sizeof(vert));
-//	vertCount += 72;
-//
-//	std::memcpy(&indices[iboCount], sphereIndices, 324 * sizeof(unsigned int));
-//	iboCount += 324;
-//}
-

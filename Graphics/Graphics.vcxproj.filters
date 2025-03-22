@@ -106,10 +106,16 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="vert.glsl">
+    <None Include="mesh_vert.glsl">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="frag.glsl">
+    <None Include="mesh_frag.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="line_frag.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="line_vert.glsl">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

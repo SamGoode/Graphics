@@ -1,16 +1,16 @@
-#version 150
+#version 410
 
 in vec4 Position;
 in vec4 Normal;
 
-//out vec4 vColor;
+out vec4 vPosition;
 out vec3 vNormal;
 
 uniform mat4 ProjectionViewModel;
 uniform mat4 ModelTransform;
 
 void main() {
-	//vColor = vec4(vec3(0.8f), 1);
-	vNormal = (ModelTransform * Normal).xyz;//(ModelTransform * vec4(Normal.xyz, 0)).xyz;
+	vPosition = ModelTransform * Position;
+	vNormal = (ModelTransform * Normal).xyz;
 	gl_Position = ProjectionViewModel * Position;
 }

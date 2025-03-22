@@ -59,36 +59,38 @@ bool GameEngine::update()  {
 void GameEngine::draw() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
 	view = genViewMatrix(camera.pos, camera.orientation * vec3(1, 0, 0), worldUp);
-
-	shader.bind();
-	shader.bindUniform(directionalLight, "LightDirection");
-
 	mat4 projectionView = projection * view;
+
+	// Draws grid
+	lineShader.bind();
+	lineShader.bindUniform(projectionView, "ProjectionView");
+	lineShader.bindUniform(vec3(0.8f), "BaseColor");
+
+	glBindVertexArray(lineVAO);
+	glDrawArrays(GL_LINES, 0, 42 * 2);
+
+	// Renders Meshes
+	meshShader.bind();
+	meshShader.bindUniform(directionalLight, "LightDirection");
+	meshShader.bindUniform(camera.pos, "cameraPos");
+
+	meshShader.bindUniform(vec3(0.2f, 0.1f, 0.5f), "Kd");
+	meshShader.bindUniform(vec3(0.9f), "Ks");
+	meshShader.bindUniform(32.f, "specExp");
 
 	int objectCount = Registry<RenderObject>::count;
 	for (int i = 0; i < objectCount; i++) {
 		mat4 transform = Registry<RenderObject>::entries[i]->getTransform();
 
 		mat4 pvm = projectionView * transform;
-		shader.bindUniform(pvm, "ProjectionViewModel");
-		shader.bindUniform(transform, "ModelTransform");
-		shader.bindUniform(vec3(Registry<RenderObject>::entries[i]->color), "BaseColor");
+		meshShader.bindUniform(pvm, "ProjectionViewModel");
+		meshShader.bindUniform(transform, "ModelTransform");
+		meshShader.bindUniform(vec3(Registry<RenderObject>::entries[i]->color), "Ka");
 
 		Registry<RenderObject>::entries[i]->mesh.draw();
 	}
 
-
-	//if (showGrid) {
-	//	vec4 white(1);
-	//	vec4 black(0, 0, 0, 1);
-
-	//	for (int i = 0; i < 21; i++) {
-	//		gl->addLine(vec3(-10 + i, 10, 0), vec3(-10 + i, -10, 0), i == 10 ? white : black);
-	//		gl->addLine(vec3(10, -10 + i, 0), vec3(-10, -10 + i, 0), i == 10 ? white : black);
-	//	}
-	//}
 
 	glfwSwapBuffers(window);
 	glfwPollEvents();

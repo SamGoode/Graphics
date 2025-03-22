@@ -28,6 +28,7 @@ public:
 	unsigned int loadShaderFromFile(GLenum type, const char* fileName);
 
 	void bind() { glUseProgram(shader_id); }
+	void bindUniform(const float& f, const char* name);
 	void bindUniform(const vec3& v3, const char* name);
 	void bindUniform(const mat4& m4, const char* name);
 };
