@@ -1,35 +1,13 @@
 #include "GLManager.h"
 
+#include <fstream>
+
 
 GLwrapper::GLwrapper() {
-	const char* vsSource = "#version 150\n \
-					in vec4 Position; \
-					in vec4 Colour; \
-					out vec4 vColour; \
-					in vec4 Normal; \
-					out vec3 vNormal; \
-					uniform mat4 ProjectionView; \
-					void main() { vColour = Colour; vNormal = normalize(Normal.xyz); gl_Position = ProjectionView * Position; }";
-
-	const char* fsSource = "#version 150\n \
-					in vec4 vColour; \
-                    out vec4 FragColor; \
-					in vec3 vNormal; \
-					uniform vec3 LightDirection; \
-					void main() { \
-					vec3 N = vNormal; \
-					vec3 L = normalize(LightDirection); \
-					float lambert = max(0, min(1, dot(N, -L)));\
-					FragColor = vec4(min(vec3(1), vColour.xyz * (lambert + 0.2f)), 1);  \
-					}";
-
-	unsigned int vs = glCreateShader(GL_VERTEX_SHADER);
-	unsigned int fs = glCreateShader(GL_FRAGMENT_SHADER);
-
-	glShaderSource(vs, 1, (const char**)&vsSource, 0);
+	unsigned int vs = loadShaderFromFile(GL_VERTEX_SHADER, "vert.glsl");
 	glCompileShader(vs);
 
-	glShaderSource(fs, 1, (const char**)&fsSource, 0);
+	unsigned int fs = loadShaderFromFile(GL_FRAGMENT_SHADER, "frag.glsl");
 	glCompileShader(fs);
 
 	m_shader = glCreateProgram();
@@ -59,10 +37,6 @@ GLwrapper::GLwrapper() {
 	glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
 	glBufferData(GL_ARRAY_BUFFER, lineMaxCount * sizeof(line), lines, GL_DYNAMIC_DRAW);
 
-	//glGenBuffers(1, &triVBO);
-	//glBindBuffer(GL_ARRAY_BUFFER, triVBO);
-	//glBufferData(GL_ARRAY_BUFFER, triMaxCount * sizeof(tri), tris, GL_DYNAMIC_DRAW);
-
 	glGenVertexArrays(1, &lineVAO);
 	glBindVertexArray(lineVAO);
 	glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
@@ -73,17 +47,7 @@ GLwrapper::GLwrapper() {
 	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(vert), (void*)16); // color
 	glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(vert), (void*)32); // normal
 
-	//glGenVertexArrays(1, &triVAO);
-	//glBindVertexArray(triVAO);
-	//glBindBuffer(GL_ARRAY_BUFFER, triVBO);
-	//glEnableVertexAttribArray(0);
-	//glEnableVertexAttribArray(1);
-	//glEnableVertexAttribArray(2);
-	//glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(vert), 0); // position
-	//glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(vert), (void*)16); // color
-	//glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(vert), (void*)32); // normal
-
-	// Index buffer test
+	// Index buffer
 	glGenBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, vertMaxCount * sizeof(vert), vertices, GL_DYNAMIC_DRAW);
@@ -112,9 +76,6 @@ GLwrapper::~GLwrapper() {
 	delete[] lines;
 	glDeleteBuffers(1, &lineVBO);
 	glDeleteVertexArrays(1, &lineVAO);
-	//delete[] tris;
-	//glDeleteBuffers(1, &triVBO);
-	//glDeleteVertexArrays(1, &triVAO);
 
 	delete[] vertices;
 	delete[] indices;
@@ -125,8 +86,29 @@ GLwrapper::~GLwrapper() {
 	glDeleteProgram(m_shader);
 }
 
+unsigned int GLwrapper::loadShaderFromFile(GLenum type, const char* fileName) {
+	unsigned int shader = glCreateShader(type);
 
-void GLwrapper::draw(const glm::mat4& projectionView) {
+	std::ifstream fileStream;
+	fileStream.open(fileName, std::ios::in | std::ios::binary);
+
+	fileStream.seekg(0, fileStream.end);
+	int fileLength = fileStream.tellg();
+	fileStream.seekg(0, fileStream.beg);
+
+	char* fileText = new char[fileLength + 1];
+	fileStream.read(fileText, fileLength);
+	fileText[fileLength] = NULL;
+
+	glShaderSource(shader, 1, (const char**)&fileText, 0);
+
+	fileStream.close();
+	delete[] fileText;
+
+	return shader;
+}
+
+void GLwrapper::draw(const mat4& projectionView, const vec3& directionalLight) {
 	int shader = 0;
 	glGetIntegerv(GL_CURRENT_PROGRAM, &shader); // save current shader program id
 
@@ -135,9 +117,8 @@ void GLwrapper::draw(const glm::mat4& projectionView) {
 	unsigned int projectionViewUniform = glGetUniformLocation(m_shader, "ProjectionView");
 	glUniformMatrix4fv(projectionViewUniform, 1, false, glm::value_ptr(projectionView));
 
-	vec3 light = normalize(vec3(-1, 1, -1));
 	unsigned int lightUniform = glGetUniformLocation(m_shader, "LightDirection");
-	glUniform3fv(lightUniform, 1, glm::value_ptr(light));
+	glUniform3fv(lightUniform, 1, glm::value_ptr(directionalLight));
 
 	// Draw lines
 	glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
@@ -145,13 +126,6 @@ void GLwrapper::draw(const glm::mat4& projectionView) {
 
 	glBindVertexArray(lineVAO);
 	glDrawArrays(GL_LINES, 0, lineCount * 2);
-
-	// Draw triangles
-	//glBindBuffer(GL_ARRAY_BUFFER, triVBO);
-	//glBufferSubData(GL_ARRAY_BUFFER, 0, triCount * sizeof(tri), tris);
-
-	//glBindVertexArray(triVAO);
-	//glDrawArrays(GL_TRIANGLES, 0, triCount * 3);
 
 
 	// Index buffer test
@@ -163,11 +137,9 @@ void GLwrapper::draw(const glm::mat4& projectionView) {
 
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, iboCount, GL_UNSIGNED_INT, 0);
-	
-	
-	
 
-	glUseProgram(shader); // switch back to old shader program
+
+	glUseProgram(shader); // switch back to previous shader program
 }
 
 
@@ -279,7 +251,6 @@ void GLwrapper::addQuad(vec3 v0, vec3 v1, vec3 v2, vec3 v3, vec4 color, vec3 fac
 
 void GLwrapper::addCuboid(vec3 center, vec3 extents, quat rotation, vec4 color) {
 	vec3 verts[8];
-	//vert verts[8];
 
 	// rotated axis-aligned extents
 	vec3 vX = rotation * vec3(extents.x, 0, 0);
@@ -298,6 +269,7 @@ void GLwrapper::addCuboid(vec3 center, vec3 extents, quat rotation, vec4 color) 
 	verts[6] = center + vX + vZ + vY;
 	verts[7] = center + vX - vZ + vY;
 
+
 	addQuad(verts[1], verts[0], verts[4], verts[5], color, -vX); // Back
 	addQuad(verts[2], verts[3], verts[7], verts[6], color, vX); // Front
 	addQuad(verts[0], verts[1], verts[2], verts[3], color, -vY); // Right
@@ -306,19 +278,19 @@ void GLwrapper::addCuboid(vec3 center, vec3 extents, quat rotation, vec4 color) 
 	addQuad(verts[2], verts[1], verts[5], verts[6], color, vZ); // Top
 
 
-	//addLine(verts[0], verts[1], vec4(1));
-	//addLine(verts[1], verts[2], vec4(1));
-	//addLine(verts[2], verts[3], vec4(1));
-	//addLine(verts[3], verts[0], vec4(1));
+	addLine(verts[0], verts[1], vec4(1));
+	addLine(verts[1], verts[2], vec4(1));
+	addLine(verts[2], verts[3], vec4(1));
+	addLine(verts[3], verts[0], vec4(1));
 
-	//addLine(verts[4], verts[5], vec4(1));
-	//addLine(verts[5], verts[6], vec4(1));
-	//addLine(verts[6], verts[7], vec4(1));
-	//addLine(verts[7], verts[4], vec4(1));
+	addLine(verts[4], verts[5], vec4(1));
+	addLine(verts[5], verts[6], vec4(1));
+	addLine(verts[6], verts[7], vec4(1));
+	addLine(verts[7], verts[4], vec4(1));
 
-	//addLine(verts[0], verts[4], vec4(1));
-	//addLine(verts[1], verts[5], vec4(1));
-	//addLine(verts[2], verts[6], vec4(1));
-	//addLine(verts[3], verts[7], vec4(1));
+	addLine(verts[0], verts[4], vec4(1));
+	addLine(verts[1], verts[5], vec4(1));
+	addLine(verts[2], verts[6], vec4(1));
+	addLine(verts[3], verts[7], vec4(1));
 }
 

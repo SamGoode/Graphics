@@ -27,27 +27,15 @@ private:
 		vert v1;
 	};
 
-	//struct tri {
-	//	vert v0;
-	//	vert v1;
-	//	vert v2;
-	//};
-
 	unsigned int m_shader;
 
 	unsigned int lineVBO;
 	unsigned int lineVAO;
 
-	//unsigned int triVBO;
-	//unsigned int triVAO;
-
 	line lines[2048];
 	int lineCount = 0;
 	const int lineMaxCount = 2048;
 
-	//tri tris[2048];
-	//int triCount = 0;
-	//const int triMaxCount = 2048;
 
 	unsigned int VAO;
 	unsigned int VBO;
@@ -66,14 +54,11 @@ public:
 	GLwrapper();
 	~GLwrapper();
 
-	void draw(const glm::mat4& projectionView);
+	unsigned int loadShaderFromFile(GLenum type, const char* fileName);
 
-	void clear() { 
-		lineCount = 0; 
-		//triCount = 0; 
-		vertCount = 0; 
-		iboCount = 0; 
-	}
+	void draw(const mat4& projectionView, const vec3& directionalLight);
+
+	void clear() { lineCount = 0; vertCount = 0; iboCount = 0; }
 
 	void addLine(vec3 v0, vec3 v1, vec4 color);
 	void addTri(vec3 v0, vec3 v1, vec3 v2, vec4 color);

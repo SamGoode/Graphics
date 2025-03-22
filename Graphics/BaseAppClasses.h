@@ -43,6 +43,8 @@ protected:
 	mat4 view;
 	mat4 projection;
 
+	vec3 directionalLight;
+
 	bool showGrid = true;
 	bool showOrigin = true;
 
@@ -58,7 +60,7 @@ public:
 	double getFrameTime() { return runtime - timeLastFrame; }
 
 	virtual void startDrawing() { glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); gl->clear(); }
-	virtual void endDrawing() { gl->draw(projection * view); glfwSwapBuffers(window); glfwPollEvents(); }
+	virtual void endDrawing() { gl->draw(projection * view, directionalLight); glfwSwapBuffers(window); glfwPollEvents(); }
 
 	bool keyPressed(int key) { return glfwGetKey(window, key) == GLFW_PRESS; }
 	void mouseCursorCallback(GLFWwindow* window, double xpos, double ypos) { mouse.prevPos = mouse.pos; mouse.pos = vec2((float)xpos, (float)ypos); onMouseMoved(mouse); }
