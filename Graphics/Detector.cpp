@@ -68,28 +68,19 @@ void Detector::checkCollision00(PhysicsObject* boxA, PhysicsObject* boxB) {
 	getGlobalBoxVerts(vertsA, boxA);
 	getGlobalBoxVerts(vertsB, boxB);
 
-	vec3 axisNorms[3] = {
-		vec3(1, 0, 0), // Front
-		vec3(0, 1, 0), // Left
-		vec3(0, 0, 1)  // Top
-	};
+	// axes[0-15]
+	// 0-2 A face norms
+	// 3-5 B face norms
+	// 6-14 edge plane norms
 
 	vec3 axes[15];
-
 	for (int i = 0; i < 3; i++) {
-		axes[i] = boxA->rot * axisNorms[i]; // A face normals
-		axes[i + 3] = boxB->rot * axisNorms[i]; // B face normals
+		vec3 axis = vec3(0);
+		axis[i] = 1;
+
+		axes[i] = boxA->rot * axis; // A face normals
+		axes[i + 3] = boxB->rot * axis; // B face normals
 	}
-
-	//vec3 extentsA = static_cast<Box*>(boxA->shape)->extents;
-	//vec3 x = axes[0] * extentsA.x;
-	//vec3 y = axes[1] * extentsA.y;
-	//vec3 z = axes[2] * extentsA.z;
-	//vec3 pos = boxA->pos;
-	//vertsA[8] = {
-	//	
-	//};
-
 
 	// co-planar edge plane normals
 	for (int i = 0; i < 3; i++) {
@@ -98,17 +89,9 @@ void Detector::checkCollision00(PhysicsObject* boxA, PhysicsObject* boxB) {
 		}
 	}
 
-	vec3 worldNorm = vec3(0);
-	float projectedPointA = 0;
-	float projectedPointB = 0;
-
-	float minOverlap = FLT_MAX;
 	int minIndex = -1;
-
-	// axes[0-15]
-	// 0-2 A face norms
-	// 3-5 B face norms
-	// 6-14 edge plane norms
+	float minOverlap = FLT_MAX;
+	vec3 worldNorm = vec3(0);
 
 	for (int i = 0; i < 15; i++) {
 		vec3 axis = axes[i];
@@ -134,23 +117,16 @@ void Detector::checkCollision00(PhysicsObject* boxA, PhysicsObject* boxB) {
 		minOverlap = overlap;
 		minIndex = i;
 
+		// worldNorm should always be facing A to B
 		if (maxA - minB < maxB - minA) {
 			// axis direction A to B
 			worldNorm = axis;
-			projectedPointA = maxA;
-			projectedPointB = minB;
 		}
 		else {
 			// axis direction B to A
 			worldNorm = -axis; // flips to A to B
-
-			// remains unflipped
-			projectedPointA = minA;
-			projectedPointB = maxB;
 		}
 	}
-
-	// worldNorm should always be facing A to B
 
 	Collision collision = {
 		.bodyA = boxA,
@@ -158,37 +134,36 @@ void Detector::checkCollision00(PhysicsObject* boxA, PhysicsObject* boxB) {
 		.worldNormal = worldNorm
 	};
 
+	vec3 extentsA = static_cast<Box*>(boxA->shape)->extents;
+	vec3 extentsB = static_cast<Box*>(boxB->shape)->extents;
+
 	// Vert B on Face A
 	if (minIndex < 3) {
-		vec3 extentsA = static_cast<Box*>(boxA->shape)->extents;
 		vec3 faceA = boxA->pos + worldNorm * extentsA[minIndex]; // x,y,z index should line up.
 
 		for (int i = 0; i < 8; i++) {
 			if (dot(vertsB[i] - faceA, worldNorm) < 0.f) {
 				collision.pointB = vertsB[i];
-
 				collision.depth = dot(faceA, worldNorm) - dot(collision.pointB, worldNorm);
-
 				collision.pointA = collision.pointB + worldNorm * collision.depth;
 
 				physEngInterface->addCollision(collision);
+				break;
 			}
 		}
 	}
 	// Vert A on Face B
 	else if (minIndex < 6) {
-		vec3 extentsB = static_cast<Box*>(boxB->shape)->extents;
 		vec3 faceB = boxB->pos - worldNorm * extentsB[minIndex - 3]; // x,y,z index should line up.
 
 		for (int i = 0; i < 8; i++) {
-			if (dot(vertsA[i] - faceB, -worldNorm) < 0.001f) {
+			if (dot(vertsA[i] - faceB, -worldNorm) < 0.f) {
 				collision.pointA = vertsA[i];
-
 				collision.depth = dot(faceB, -worldNorm) - dot(collision.pointA, -worldNorm);
-
 				collision.pointB = collision.pointA - worldNorm * collision.depth;
 				
 				physEngInterface->addCollision(collision);
+				break;
 			}
 		}
 	}
@@ -199,20 +174,14 @@ void Detector::checkCollision00(PhysicsObject* boxA, PhysicsObject* boxB) {
 
 		vec3 edgeNormA = axes[edgeNormIndexA];
 		vec3 edgeNormB = axes[edgeNormIndexB + 3];
-
-		struct edge {
-			vec3 base;
-			vec3 dir;
-		};
 		
-		// If one is zero then goes through all combinations where other two are non-zero
+		// If one value is zero then goes through all combinations where other two are non-zero
 		//vec3 midPoint = temp[0] - temp[1] - temp[2];
 		//vec3 midPoint = -temp[0] + temp[1] - temp[2];
 		//vec3 midPoint = -temp[0] - temp[1] + temp[2];
 		//vec3 midPoint = temp[0] + temp[1] + temp[2];
 
 		// Finding closest edge A
-		vec3 extentsA = static_cast<Box*>(boxA->shape)->extents;
 		vec3 temp[3] = {
 			axes[0] * extentsA.x,
 			axes[1] * extentsA.y,
@@ -233,14 +202,9 @@ void Detector::checkCollision00(PhysicsObject* boxA, PhysicsObject* boxB) {
 				closestEdgeMidpointA = boxA->pos + midPoint;
 			}
 		}
-
-		edge edgeA = {
-			closestEdgeMidpointA - edgeNormA * extentsA[edgeNormIndexA],
-			edgeNormA
-		};
+		vec3 edgeBaseA = closestEdgeMidpointA - edgeNormA * extentsA[edgeNormIndexA];
 
 		// Finding closest edge B
-		vec3 extentsB = static_cast<Box*>(boxB->shape)->extents;
 		vec3 tempB[3] = {
 			axes[3] * extentsB.x,
 			axes[4] * extentsB.y,
@@ -262,61 +226,28 @@ void Detector::checkCollision00(PhysicsObject* boxA, PhysicsObject* boxB) {
 				closestEdgeMidpointB = boxB->pos + midPoint;
 			}
 		}
+		vec3 edgeBaseB = closestEdgeMidpointB - edgeNormB * extentsB[edgeNormIndexB];
 
-		edge edgeB = {
-			closestEdgeMidpointB - edgeNormB * extentsB[edgeNormIndexB],
-			edgeNormB
-		};
-
-		vec3 a = edgeB.base - edgeA.base;
-		float x = dot(edgeA.dir, edgeB.dir);
-
-		float t1 = dot(a, x * edgeB.dir + edgeA.dir) / (1 - (x * x));
-		float t2 = t1 * x - dot(a, edgeB.dir);
 
 		// Bishmallah let my math be right
+		vec3 a = edgeBaseB - edgeBaseA;
+		float x = dot(edgeNormA, edgeNormB);
+
+		float t1 = dot(a, x * edgeNormB + edgeNormA) / (1 - (x * x));
+		float t2 = t1 * x - dot(a, edgeNormB);
 
 		// clamp to edge length
-		collision.pointA = edgeA.base + edgeA.dir * t1;//std::max(std::min(t1, extentsA[edgeNormIndexA] * 2.f), 0.f);
-		collision.pointB = edgeB.base + edgeB.dir * t2;//std::max(std::min(t2, extentsB[edgeNormIndexB] * 2.f), 0.f);
-		
+		collision.pointA = edgeBaseA + edgeNormA * std::max(std::min(t1, extentsA[edgeNormIndexA] * 2.f), 0.f);
+		collision.pointB = edgeBaseB + edgeNormB * std::max(std::min(t2, extentsB[edgeNormIndexB] * 2.f), 0.f);
 		collision.depth = minOverlap;
-		//collision.depth = length(collision.pointA - collision.pointB);
 
-		std::cout << "t1: " << t1 << std::endl << "t2: " << t2 << std::endl;
-
-		std::cout << minOverlap << std::endl;
-		std::cout << length(collision.pointA - collision.pointB) << std::endl;
-
-		std::cout << "length: " << glm::distance(edgeB.base, edgeB.base + edgeB.dir * extentsB[edgeNormIndexB]) << std::endl;
-		
-
-		//vec3 vertA;
-		//vec3 vertB;
-		//for (int i = 0; i < 8; i++) {
-		//	if (abs(projectedPointA - dot(vertsA[i], axes[minIndex])) < 0.001f) {
-		//		// Found matching projection
-		//		vertA = vertsA[i];
-		//		break;
-		//	}
-		//}
-		//for (int i = 0; i < 8; i++) {
-		//	if (abs(projectedPointB - dot(vertsB[i], axes[minIndex])) < 0.001f) {
-		//		// Found matching projection
-		//		vertB = vertsB[i];
-		//		break;
-		//	}
-		//}
-
-		// This is really incorrect
-
-		//collision.pointA = vertA + edgeA * (dot(edgeA, vertB) - dot(edgeA, vertA));
-		//collision.pointB = vertB + edgeB * (dot(edgeB, vertA) - dot(edgeB, vertB));
-		//collision.depth = minOverlap;
-		
 		physEngInterface->addCollision(collision);
-	}
 
+		//std::cout << "t1: " << t1 << std::endl << "t2: " << t2 << std::endl;
+		//std::cout << minOverlap << std::endl;
+		//std::cout << length(collision.pointA - collision.pointB) << std::endl;
+		//std::cout << "length: " << glm::distance(edgeBaseB, edgeBaseB + edgeNormB * extentsB[edgeNormIndexB]) << std::endl;
+	}
 }
 
 

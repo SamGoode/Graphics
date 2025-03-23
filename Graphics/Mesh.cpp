@@ -1,5 +1,9 @@
 #include "Mesh.h"
 
+#include <assimp/scene.h>
+#include <assimp/cimport.h>
+#include <vector>
+
 
 bool Mesh::init() {
 	if (vao != 0) return false;
@@ -25,7 +29,44 @@ bool Mesh::init() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
+void Mesh::loadFromFile(const char* name) {
+	const aiScene* scene = aiImportFile(name, 0);
+
+	aiMesh* mesh = scene->mMeshes[0];
+
+	int faceCount = mesh->mNumFaces;
+	std::vector<unsigned int> indices;
+	for (int i = 0; i < faceCount; i++) {
+		indices.push_back(mesh->mFaces[i].mIndices[0]);
+		indices.push_back(mesh->mFaces[i].mIndices[2]);
+		indices.push_back(mesh->mFaces[i].mIndices[1]);
+
+		if (mesh->mFaces[i].mNumIndices == 4) {
+			indices.push_back(mesh->mFaces[i].mIndices[0]);
+			indices.push_back(mesh->mFaces[i].mIndices[3]);
+			indices.push_back(mesh->mFaces[i].mIndices[2]);
+		}
+	}
+
+	int vCount = mesh->mNumVertices;
+	vertexBuffer = new vert[vCount];
+	for (int i = 0; i < vCount; i++) {
+		vertexBuffer[i].position = vec4(mesh->mVertices[i].x, mesh->mVertices[i].z, mesh->mVertices[i].y, 1);
+		vertexBuffer[i].normal = vec4(mesh->mNormals[i].x, mesh->mNormals[i].z, mesh->mNormals[i].y, 0);
+	}
+	vertexCount += vCount;
+
+	indexBuffer = new unsigned int[indices.size()];
+	std::memcpy(&indexBuffer[indexCount], indices.data(), indices.size() * sizeof(unsigned int));
+	indexCount += indices.size();
+
+	//delete[] vertices;
+}
+
 void Mesh::genCubeVerts() {
+	vertexBuffer = new vert[24];
+	indexBuffer = new unsigned int[36];
+
 	vec4 vertices[8] = {
 		vec4(0.5, 0.5, -0.5, 1),
 		vec4(0.5, -0.5, -0.5, 1),
@@ -46,6 +87,9 @@ void Mesh::genCubeVerts() {
 }
 
 void Mesh::genSphereVerts() {
+	vertexBuffer = new vert[84];
+	indexBuffer = new unsigned int[360];
+
 	vert verts[12 * 7];
 	for (int i = 0; i < 12; i++) {
 		float theta = i * (0.1667f * glm::pi<float>());

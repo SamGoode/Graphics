@@ -24,18 +24,18 @@ private:
 	unsigned int vbo = 0;
 	unsigned int ibo = 0;
 
-	vert vertexBuffer[256];
+	vert* vertexBuffer;
 	int vertexCount = 0;
-	const int maxVertexCount = 256;
 
-	unsigned int indexBuffer[512];
+	unsigned int* indexBuffer;
 	int indexCount = 0;
-	const int maxIndexCount = 512;
 
 public:
 	Mesh() {}
 	~Mesh() {
+		delete[] indexBuffer;
 		glDeleteBuffers(1, &ibo);
+		delete[] vertexBuffer;
 		glDeleteBuffers(1, &vbo);
 		glDeleteVertexArrays(1, &vao);
 	}
@@ -45,6 +45,8 @@ public:
 		glBindVertexArray(vao);
 		glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
 	}
+
+	void loadFromFile(const char* name);
 
 	void genCubeVerts();
 	void genSphereVerts();

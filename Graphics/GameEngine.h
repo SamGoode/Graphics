@@ -18,6 +18,8 @@ protected:
 
 	PhysicsEngine physEng;
 
+	Mesh bunny;
+
 public:
 	GameEngine();
 	virtual ~GameEngine() { 

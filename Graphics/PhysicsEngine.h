@@ -10,8 +10,6 @@
 
 #define MAX_COLLISIONS 64
 
-// Physics can be greatly improved by identifying 'collisions'
-// that occur between two bodies and treating them as a single contact
 
 class PhysicsEngine : public IPhysicsEngine {
 public:
@@ -28,12 +26,12 @@ private:
 
 public:
 	PhysicsEngine() {
-		iterations = 3;
+		iterations = 2;
 
 		biasSlop = 0.01f;
 		biasFactor = 0.1f;
 
-		elasticity = 0.f;
+		elasticity = 0.3f;
 		friction = 0.55f;
 	}
 
