@@ -1,7 +1,7 @@
 #include "Detector.h"
 
 #include "IPhysicsEngine.h"
-#include "PhysicsBody.h"
+#include "PhysicsObject.h"
 #include "Collision.h"
 
 #include <algorithm>

@@ -5,7 +5,7 @@
 #include "PhysicsSolver.h"
 
 #include "Collision.h"
-#include "PhysicsBody.h"
+#include "PhysicsObject.h"
 
 
 #define MAX_COLLISIONS 64

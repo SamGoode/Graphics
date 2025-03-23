@@ -2,7 +2,7 @@
 
 #include "IPhysicsEngine.h"
 #include "Collision.h"
-#include "PhysicsBody.h"
+#include "PhysicsObject.h"
 
 #include <algorithm>
 #include "glmAddon.h"

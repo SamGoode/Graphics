@@ -14,6 +14,13 @@ RenderObject::RenderObject(vec3 _pos, vec3 _eulerRot, Geometry* _geometry) {
 }
 
 void RenderObject::initMesh() {
+    if (!shape) {
+        mesh.loadFromFile("stanford/Bunny.obj"); // temporary
+        mesh.init();
+
+        return;
+    }
+
     switch (shape->getID()) {
     case 0:
         mesh.genCubeVerts();
@@ -29,17 +36,21 @@ void RenderObject::initMesh() {
 mat4 RenderObject::getTransform() {
     mat4 scale = glm::identity<mat4>();
     
-    switch (shape->getID()) {
-    case 0:
-        vec3 dimensions = static_cast<Box*>(shape)->extents * 2.f;
-        scale[0][0] = dimensions.x;
-        scale[1][1] = dimensions.y;
-        scale[2][2] = dimensions.z;
-        break;
-    case 1:
-        scale *= vec4(vec3(static_cast<Sphere*>(shape)->radius), 1);
-        break;
+    if (shape) {
+
+        switch (shape->getID()) {
+        case 0:
+            vec3 dimensions = static_cast<Box*>(shape)->extents * 2.f;
+            scale[0][0] = dimensions.x;
+            scale[1][1] = dimensions.y;
+            scale[2][2] = dimensions.z;
+            break;
+        case 1:
+            scale *= vec4(vec3(static_cast<Sphere*>(shape)->radius), 1);
+            break;
+        }
     }
+
 
     mat4 rotMat = glm::mat4_cast(rot);
     mat4 out = rotMat * scale;

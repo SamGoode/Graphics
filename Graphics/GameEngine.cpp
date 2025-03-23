@@ -14,6 +14,9 @@ GameEngine::GameEngine() {
 	//PhysicsObject* box = new PhysicsObject(vec3(0, 0, 5), vec3(0, 0, 0), new Box(1.f, 2.f, 1.f), 100.f);
 	//PhysicsObject* box2 = new PhysicsObject(vec3(0, 0, 10), vec3(0, 0, 0), new Box(3.f, 1.f, 1.f), 50.f);
 
+	RenderObject* bunny = new RenderObject();
+	bunny->setColor(vec4(0.1f, 0.5f, 0.5f, 1));
+
 	sphere->setColor(vec4(0.8f, 0.1f, 0.1f, 1));
 	sphere2->setColor(vec4(0.1f, 0.8f, 0.1f, 1));
 	box->setColor(vec4(0.1f, 0.1f, 0.8f, 1));
@@ -31,9 +34,6 @@ bool GameEngine::startup(int windowWidth, int windowHeight) {
 	for (int i = 0; i < objectCount; i++) {
 		Registry<RenderObject>::entries[i]->initMesh();
 	}
-
-	bunny.loadFromFile("stanford/Bunny.obj");
-	bunny.init();
 
 	return true;
 }
@@ -93,17 +93,6 @@ void GameEngine::draw() {
 		Registry<RenderObject>::entries[i]->mesh.draw();
 	}
 
-	// Draws bunny
-	mat4 transform = glm::identity<mat4>();
-	transform *= 0.5f;
-	transform[3][3] = 1.f;
-
-	mat4 pvm = projectionView * transform;
-	meshShader.bindUniform(pvm, "ProjectionViewModel");
-	meshShader.bindUniform(transform, "ModelTransform");
-	meshShader.bindUniform(vec3(0.8f, 0.5f, 0.3f), "Ka");
-
-	bunny.draw();
 
 	glfwSwapBuffers(window);
 	glfwPollEvents();

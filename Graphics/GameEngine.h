@@ -4,7 +4,7 @@
 
 #include "Camera.h"
 #include "PhysicsEngine.h"
-#include "PhysicsBody.h"
+#include "PhysicsObject.h"
 #include "Registry.h"
 
 
@@ -17,8 +17,6 @@ protected:
 	Camera camera;
 
 	PhysicsEngine physEng;
-
-	Mesh bunny;
 
 public:
 	GameEngine();

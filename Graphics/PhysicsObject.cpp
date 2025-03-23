@@ -1,10 +1,7 @@
-#include "PhysicsBody.h"
+#include "PhysicsObject.h"
 
-#include "Gizmos.h"
 #include "glmAddon.h"
 
-
-using aie::Gizmos;
 
 
 PhysicsObject::PhysicsObject(vec3 _pos, vec3 _eulerRot, Geometry* _geometry, float _mass) : RenderObject(_pos, _eulerRot, _geometry) {

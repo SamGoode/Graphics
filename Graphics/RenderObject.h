@@ -3,6 +3,7 @@
 #include "GameObject.h"
 #include "Mesh.h"
 
+
 class RenderObject : public GameObject, public Registry<RenderObject> {
 public:
     vec3 pos = vec3(0);
