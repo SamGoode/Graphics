@@ -15,7 +15,8 @@ struct Collision {
     float depth = 0.f;
 
     float lambdaSum = 0.f;
-    float tangentLambdaSum = 0.f;
+    float tangentLambdaSum1 = 0.f;
+    float tangentLambdaSum2 = 0.f;
 };
 
 struct Joint {

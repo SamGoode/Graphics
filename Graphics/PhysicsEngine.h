@@ -7,8 +7,11 @@
 #include "Collision.h"
 #include "PhysicsBody.h"
 
-#define MAX_COLLISIONS 32
 
+#define MAX_COLLISIONS 64
+
+// Physics can be greatly improved by identifying 'collisions'
+// that occur between two bodies and treating them as a single contact
 
 class PhysicsEngine : public IPhysicsEngine {
 public:
@@ -25,13 +28,13 @@ private:
 
 public:
 	PhysicsEngine() {
-		iterations = 2;
+		iterations = 3;
 
 		biasSlop = 0.01f;
 		biasFactor = 0.1f;
 
-		elasticity = 0.2f;
-		friction = 0.95f;
+		elasticity = 0.f;
+		friction = 0.55f;
 	}
 
 	void update(float deltaTime);

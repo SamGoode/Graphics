@@ -8,7 +8,7 @@
 #include "Registry.h"
 
 
-#define MAX_OBJECTS 32
+
 
 
 class GameEngine : public App3D {

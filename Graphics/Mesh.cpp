@@ -1,7 +1,6 @@
 #include "Mesh.h"
 
 
-
 bool Mesh::init() {
 	if (vao != 0) return false;
 
@@ -38,8 +37,8 @@ void Mesh::genCubeVerts() {
 		vec4(-0.5, 0.5, 0.5, 1)
 	};
 
-	addQuad(vertices[0], vertices[1], vertices[2], vertices[3], vec3(0, 0, -1)); // Top
-	addQuad(vertices[4], vertices[5], vertices[6], vertices[7], vec3(0, 0, 1)); // Bottom
+	addQuad(vertices[4], vertices[5], vertices[6], vertices[7], vec3(0, 0, 1)); // Top
+	addQuad(vertices[0], vertices[1], vertices[2], vertices[3], vec3(0, 0, -1)); // Bottom
 	addQuad(vertices[1], vertices[0], vertices[4], vertices[5], vec3(1, 0, 0)); // Front
 	addQuad(vertices[3], vertices[2], vertices[6], vertices[7], vec3(-1, 0, 0)); // Back
 	addQuad(vertices[3], vertices[0], vertices[4], vertices[7], vec3(0, 1, 0)); // Left
@@ -47,55 +46,47 @@ void Mesh::genCubeVerts() {
 }
 
 void Mesh::genSphereVerts() {
-	vert verts[12 * 6];
-
+	vert verts[12 * 7];
 	for (int i = 0; i < 12; i++) {
-		float theta = i * (0.167f * glm::pi<float>());
+		float theta = i * (0.1667f * glm::pi<float>());
 		float x = cos(theta);
 		float y = sin(theta);
 
-		for (int n = 0; n < 6; n++) {
-			float beta = n * (0.167f * glm::pi<float>());
-			//points[i * 6 + n] = vec3(x * sin(beta), y * sin(beta), radius * cos(beta));
+		// top and bottom most vertex are duplicated every arc so tex coords can be used later on
+		for (int n = 0; n < 7; n++) {
+			float beta = n * (0.1667f * glm::pi<float>());
 			vec3 offsetFromCenter = vec3(x * sin(beta), y * sin(beta), cos(beta));
-			verts[i * 6 + n].position = vec4(offsetFromCenter, 1);
-			verts[i * 6 + n].normal = vec4(offsetFromCenter, 0);
+			verts[i * 7 + n].position = vec4(offsetFromCenter, 1);
+			verts[i * 7 + n].normal = vec4(offsetFromCenter, 0);
 		}
 	}
 
 	unsigned int count = 0;
-	unsigned int sphereIndices[324];
+	unsigned int sphereIndices[360];
 
-	for (int i = 0; i < 72; i++) {
-		int nextArc = (i + 6) % 72;
+	for (int i = 0; i < 84; i++) {
+		int nextArc = (i + 7) % 84;
 
-		if (i % 6 == 5) {
-			continue;
-		}
+		if (i % 7 == 6) continue;
 
-		//addLine(center + points[i], center + points[i + 1], vec4(1));
-		//addLine(verts[i].position, verts[i + 1].position, vec4(1));
-
-		if (i % 6 != 0) {
-			//addLine(center + points[i], center + points[nextArc], vec4(1));
-			//addLine(verts[i].position, verts[nextArc].position, vec4(1));
-			//addTri(center + points[i], center + points[nextArc], center + points[i + 1], color);
+		if (i % 7 != 0) {
 			sphereIndices[count++] = vertexCount + i;
 			sphereIndices[count++] = vertexCount + nextArc;
 			sphereIndices[count++] = vertexCount + i + 1;
 		}
 
-		//addTri(center + points[i + 1], center + points[nextArc], center + points[nextArc + 1], color);
-		sphereIndices[count++] = vertexCount + i + 1;
-		sphereIndices[count++] = vertexCount + nextArc;
-		sphereIndices[count++] = vertexCount + nextArc + 1;
+		if (i % 7 != 5) {
+			sphereIndices[count++] = vertexCount + nextArc;
+			sphereIndices[count++] = vertexCount + nextArc + 1;
+			sphereIndices[count++] = vertexCount + i + 1;
+		}
 	}
 
-	std::memcpy(&vertexBuffer[vertexCount], verts, 72 * sizeof(vert));
-	vertexCount += 72;
+	std::memcpy(&vertexBuffer[vertexCount], verts, 84 * sizeof(vert));
+	vertexCount += 84;
 
-	std::memcpy(&indexBuffer[indexCount], sphereIndices, 324 * sizeof(unsigned int));
-	indexCount += 324;
+	std::memcpy(&indexBuffer[indexCount], sphereIndices, 360 * sizeof(unsigned int));
+	indexCount += 360;
 }
 
 void Mesh::addQuad(vec4 v0, vec4 v1, vec4 v2, vec4 v3, vec3 faceNormal) {

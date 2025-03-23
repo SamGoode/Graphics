@@ -1,39 +1,11 @@
 #include "Detector.h"
 
-#include <algorithm>
-
 #include "IPhysicsEngine.h"
 #include "PhysicsBody.h"
 #include "Collision.h"
 
-
-void getGlobalBoxVerts(vec3 verts[8], PhysicsObject* box) {
-	vec3 extents = static_cast<Box*>(box->shape)->extents;
-
-	for (int i = 0; i < 8; i++) {
-		vec3 permutation = vec3((i >> 2) & 1, (i >> 1) & 1, i & 1);
-		vec3 vertex = extents * (permutation * 2.f - vec3(1));
-
-		verts[i] = box->pos + box->rot * vertex;
-	}
-}
-
-void getMinMaxProjection(vec3 axis, vec3 points[8], float& min, float& max) {
-	float projection = dot(points[0], axis);
-	max = projection;
-	min = projection;
-
-	for (int i = 1; i < 8; i++) {
-		projection = dot(points[i], axis);
-
-		if (projection > max) {
-			max = projection;
-		}
-		if (projection < min) {
-			min = projection;
-		}
-	}
-}
+#include <algorithm>
+#include "glmAddon.h"
 
 
 void Detector::checkCollision(PhysicsObject* body, Plane plane) {
@@ -97,9 +69,9 @@ void Detector::checkCollision00(PhysicsObject* boxA, PhysicsObject* boxB) {
 	getGlobalBoxVerts(vertsB, boxB);
 
 	vec3 axisNorms[3] = {
-		vec3(1, 0, 0),
-		vec3(0, 1, 0),
-		vec3(0, 0, 1)
+		vec3(1, 0, 0), // Front
+		vec3(0, 1, 0), // Left
+		vec3(0, 0, 1)  // Top
 	};
 
 	vec3 axes[15];
@@ -108,6 +80,16 @@ void Detector::checkCollision00(PhysicsObject* boxA, PhysicsObject* boxB) {
 		axes[i] = boxA->rot * axisNorms[i]; // A face normals
 		axes[i + 3] = boxB->rot * axisNorms[i]; // B face normals
 	}
+
+	//vec3 extentsA = static_cast<Box*>(boxA->shape)->extents;
+	//vec3 x = axes[0] * extentsA.x;
+	//vec3 y = axes[1] * extentsA.y;
+	//vec3 z = axes[2] * extentsA.z;
+	//vec3 pos = boxA->pos;
+	//vertsA[8] = {
+	//	
+	//};
+
 
 	// co-planar edge plane normals
 	for (int i = 0; i < 3; i++) {
@@ -168,69 +150,152 @@ void Detector::checkCollision00(PhysicsObject* boxA, PhysicsObject* boxB) {
 		}
 	}
 
-	vec3 pointA;
-	vec3 pointB;
-	float depth;
-
-	if (minIndex < 3) {
-		for (int i = 0; i < 8; i++) {
-			if (abs(projectedPointB - dot(vertsB[i], axes[minIndex])) < 0.001f) {
-				// Found matching projection
-				pointB = vertsB[i];
-				pointA = pointB + worldNorm * minOverlap;
-				depth = minOverlap;
-				break;
-			}
-		}
-	}
-	else if (minIndex < 6) {
-		for (int i = 0; i < 8; i++) {
-			if (abs(projectedPointA - dot(vertsA[i], axes[minIndex])) < 0.001f) {
-				// Found matching projection
-				pointA = vertsA[i];
-				pointB = pointA + worldNorm * minOverlap;
-				depth = minOverlap;
-				break;
-			}
-		}
-	}
-	else {
-		vec3 vertA;
-		vec3 vertB;
-		for (int i = 0; i < 8; i++) {
-			if (abs(projectedPointA - dot(vertsA[i], axes[minIndex])) < 0.001f) {
-				// Found matching projection
-				vertA = vertsA[i];
-				break;
-			}
-		}
-		for (int i = 0; i < 8; i++) {
-			if (abs(projectedPointB - dot(vertsB[i], axes[minIndex])) < 0.001f) {
-				// Found matching projection
-				vertB = vertsB[i];
-				break;
-			}
-		}
-
-		vec3 edgeA = axes[(minIndex - 6) / 3];
-		vec3 edgeB = axes[(minIndex - 6) % 3];
-
-		pointA = vertA + edgeA * (dot(edgeA, vertB) - dot(edgeA, vertA));
-		pointB = vertB + edgeB * (dot(edgeB, vertA) - dot(edgeB, vertB));
-		depth = minOverlap;
-	}
+	// worldNorm should always be facing A to B
 
 	Collision collision = {
 		.bodyA = boxA,
 		.bodyB = boxB,
-		.worldNormal = worldNorm,
-		.pointA = pointA,
-		.pointB = pointB,
-		.depth = depth
+		.worldNormal = worldNorm
 	};
 
+	// Vert B on Face A
+	if (minIndex < 3) {
+		vec3 extentsA = static_cast<Box*>(boxA->shape)->extents;
+		vec3 faceA = boxA->pos + worldNorm * extentsA[minIndex]; // x,y,z index should line up.
 
-	physEngInterface->addCollision(collision);
+		for (int i = 0; i < 8; i++) {
+			if (dot(vertsB[i] - faceA, worldNorm) < 0.f) {
+				collision.pointB = vertsB[i];
+
+				collision.depth = dot(faceA, worldNorm) - dot(collision.pointB, worldNorm);
+
+				collision.pointA = collision.pointB + worldNorm * collision.depth;
+
+				physEngInterface->addCollision(collision);
+			}
+		}
+	}
+	// Vert A on Face B
+	else if (minIndex < 6) {
+		vec3 extentsB = static_cast<Box*>(boxB->shape)->extents;
+		vec3 faceB = boxB->pos - worldNorm * extentsB[minIndex - 3]; // x,y,z index should line up.
+
+		for (int i = 0; i < 8; i++) {
+			if (dot(vertsA[i] - faceB, -worldNorm) < 0.001f) {
+				collision.pointA = vertsA[i];
+
+				collision.depth = dot(faceB, -worldNorm) - dot(collision.pointA, -worldNorm);
+
+				collision.pointB = collision.pointA - worldNorm * collision.depth;
+				
+				physEngInterface->addCollision(collision);
+			}
+		}
+	}
+	// Edge on Edge collision
+	else {
+		int edgeNormIndexA = (minIndex - 6) / 3;
+		int edgeNormIndexB = (minIndex - 6) % 3;
+
+		vec3 edgeNormA = axes[edgeNormIndexA];
+		vec3 edgeNormB = axes[edgeNormIndexB + 3];
+
+		struct edge {
+			vec3 v0;
+			vec3 v1;
+		};
+		
+		// If one is zero then goes through all combinations where other two are non-zero
+		//vec3 midPoint = temp[0] - temp[1] - temp[2];
+		//vec3 midPoint = -temp[0] + temp[1] - temp[2];
+		//vec3 midPoint = -temp[0] - temp[1] + temp[2];
+		//vec3 midPoint = temp[0] + temp[1] + temp[2];
+
+		// Finding closest edge A
+		vec3 extentsA = static_cast<Box*>(boxA->shape)->extents;
+		vec3 temp[3] = {
+			axes[0] * extentsA.x,
+			axes[1] * extentsA.y,
+			axes[2] * extentsA.z
+		};
+		temp[edgeNormIndexA] = vec3(0);
+
+		vec3 closestEdgeMidpointA;
+		float maxProjectionA = -FLT_MAX;
+		for (int i = 0; i < 4; i++) {
+			vec3 midPoint = (i % 3) == 0 ? temp[0] : -temp[0];
+			midPoint += (i % 2) == 0 ? -temp[1] : temp[1];
+			midPoint += (i < 2) ? -temp[2] : temp[2];
+
+			float projection = dot(boxA->pos + midPoint, worldNorm);
+			if (projection > maxProjectionA) {
+				maxProjectionA = projection;
+				closestEdgeMidpointA = midPoint;
+			}
+		}
+
+		edge edgeA = {
+			closestEdgeMidpointA - edgeNormA * extentsA[edgeNormIndexA],
+			closestEdgeMidpointA + edgeNormA * extentsA[edgeNormIndexA]
+		};
+
+		// Finding closest edge B
+		vec3 extentsB = static_cast<Box*>(boxB->shape)->extents;
+		temp[3] = {
+			axes[0] * extentsB.x,
+			axes[1] * extentsB.y,
+			axes[2] * extentsB.z
+		};
+		temp[edgeNormIndexB] = vec3(0);
+
+		vec3 closestEdgeMidpointB;
+		float maxProjectionB = -FLT_MAX;
+		for (int i = 0; i < 4; i++) {
+			vec3 midPoint = (i % 3) == 0 ? temp[0] : -temp[0];
+			midPoint += (i % 2) == 0 ? -temp[1] : temp[1];
+			midPoint += (i < 2) ? -temp[2] : temp[2];
+
+			float projection = dot(boxA->pos + midPoint, worldNorm);
+			if (projection > maxProjectionB) {
+				maxProjectionB = projection;
+				closestEdgeMidpointB = midPoint;
+			}
+		}
+
+		edge edgeB = {
+			closestEdgeMidpointB - edgeNormA * extentsA[edgeNormIndexA],
+			closestEdgeMidpointB + edgeNormA * extentsA[edgeNormIndexA]
+		};
+
+
+
+
+		//vec3 vertA;
+		//vec3 vertB;
+		//for (int i = 0; i < 8; i++) {
+		//	if (abs(projectedPointA - dot(vertsA[i], axes[minIndex])) < 0.001f) {
+		//		// Found matching projection
+		//		vertA = vertsA[i];
+		//		break;
+		//	}
+		//}
+		//for (int i = 0; i < 8; i++) {
+		//	if (abs(projectedPointB - dot(vertsB[i], axes[minIndex])) < 0.001f) {
+		//		// Found matching projection
+		//		vertB = vertsB[i];
+		//		break;
+		//	}
+		//}
+
+		// This is really incorrect
+
+		//collision.pointA = vertA + edgeA * (dot(edgeA, vertB) - dot(edgeA, vertA));
+		//collision.pointB = vertB + edgeB * (dot(edgeB, vertA) - dot(edgeB, vertB));
+		//collision.depth = minOverlap;
+		
+		physEngInterface->addCollision(collision);
+	}
+
 }
 
 
@@ -320,6 +385,34 @@ void Detector::checkCollision11(PhysicsObject* sphereA, PhysicsObject* sphereB) 
 	physEngInterface->addCollision(collision);
 }
 
+
+void Detector::getGlobalBoxVerts(vec3 verts[8], PhysicsObject* box) {
+	vec3 extents = static_cast<Box*>(box->shape)->extents;
+
+	for (int i = 0; i < 8; i++) {
+		vec3 permutation = vec3((i >> 2) & 1, (i >> 1) & 1, i & 1);
+		vec3 vertex = extents * (permutation * 2.f - vec3(1));
+
+		verts[i] = box->pos + box->rot * vertex;
+	}
+}
+
+void Detector::getMinMaxProjection(vec3 axis, vec3 points[8], float& min, float& max) {
+	float projection = dot(points[0], axis);
+	max = projection;
+	min = projection;
+
+	for (int i = 1; i < 8; i++) {
+		projection = dot(points[i], axis);
+
+		if (projection > max) {
+			max = projection;
+		}
+		if (projection < min) {
+			min = projection;
+		}
+	}
+}
 
 //bool Detector::IsWithinBody(PhysicsBody* body, Vector2 pos) {
 //    switch (body->GetID()) {

@@ -2,10 +2,13 @@
 
 // this is cursed figure something else out
 
+#define MAX_ENTRIES 64
+
 template<typename T>
 struct Registry {
-    static inline int count;
-    static inline T* entries[32];
+    static inline const int maxCount = MAX_ENTRIES;
+    static inline int count = 0;
+    static inline T* entries[MAX_ENTRIES];
 
     int index;
 

@@ -32,11 +32,19 @@ void PhysicsEngine::update(float deltaTime) {
 		}
 	}
 
-	// Calculates collision impulses
+	// Solves collision impulses
 	for (int i = 0; i < iterations; i++) {
+		for (int n = 0; n < collisionCount; n++) {
+			solver.solveFriction(collisions[n]);
+		}
+
 		for (int n = 0; n < collisionCount; n++) {
 			solver.solveImpulse(collisions[n]);
 		}
+	}
+
+	for (int i = 0; i < collisionCount; i++) {
+		solver.applyRestitution(collisions[i]);
 	}
 	clearCollisions();
 

@@ -14,26 +14,28 @@ public:
 
 	void solvePosition(struct Collision& collision);
 	void solveImpulse(Collision& collision);
-	void solveImpulseSingleBody(Collision& collision);
+	void solveFriction(Collision& collision);
+	void applyRestitution(Collision& collision);
 
 private:
-	static float calcEffectiveMass(class PhysicsObject* object, vec3 radNorm);
+	static float calcLambda(Collision& collision);
+	static float calcLambda(Collision& collision, vec3 direction);
+
+	static float calcRelativeVel(Collision& collision);
+	static float calcRelativeVel(Collision& collision, vec3 direction);
+	static float calcRelativeVel(class PhysicsObject* object, vec3 rad, vec3 norm);
+
 	static float calcEffectiveMass(Collision& collision);
+	static float calcEffectiveMass(Collision& collision, vec3 direction);
+	static float calcEffectiveMass(class PhysicsObject* object, vec3 radNorm);
 };
 
 
 //class Solver {
-//    //void SolveImpulsePair(Collision& collision1, Collision& collision2);
-//
-//    //void SolveFriction(Collision& collision);
-//    //void SolveFrictionPair(Collision& collision1, Collision& collision2);
-//
 //    //void SolveJointPosition(struct Joint& joint);
 //    //void SolveJointVelocity(Joint& joint);
 //
 //    //void SolveMouseJoint(struct MouseJoint& mouseJoint, float DeltaTime);
-//
-//    //void ApplyRestitution(Collision& collision);
 //};
 
 
