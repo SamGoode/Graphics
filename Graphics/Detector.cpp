@@ -52,7 +52,7 @@ void Detector::checkCollision(PhysicsObject* body, Plane plane) {
 }
 
 void Detector::checkCollision(PhysicsObject* A, PhysicsObject* B) {
-	if (A->getID() >= B->getID()) {
+	if (A->getID() > B->getID()) {
 		PhysicsObject* temp = A;
 		A = B;
 		B = temp;
@@ -201,8 +201,8 @@ void Detector::checkCollision00(PhysicsObject* boxA, PhysicsObject* boxB) {
 		vec3 edgeNormB = axes[edgeNormIndexB + 3];
 
 		struct edge {
-			vec3 v0;
-			vec3 v1;
+			vec3 base;
+			vec3 dir;
 		};
 		
 		// If one is zero then goes through all combinations where other two are non-zero
@@ -218,7 +218,7 @@ void Detector::checkCollision00(PhysicsObject* boxA, PhysicsObject* boxB) {
 			axes[1] * extentsA.y,
 			axes[2] * extentsA.z
 		};
-		temp[edgeNormIndexA] = vec3(0);
+		temp[edgeNormIndexA] = vec3(0.f);
 
 		vec3 closestEdgeMidpointA;
 		float maxProjectionA = -FLT_MAX;
@@ -230,45 +230,66 @@ void Detector::checkCollision00(PhysicsObject* boxA, PhysicsObject* boxB) {
 			float projection = dot(boxA->pos + midPoint, worldNorm);
 			if (projection > maxProjectionA) {
 				maxProjectionA = projection;
-				closestEdgeMidpointA = midPoint;
+				closestEdgeMidpointA = boxA->pos + midPoint;
 			}
 		}
 
 		edge edgeA = {
 			closestEdgeMidpointA - edgeNormA * extentsA[edgeNormIndexA],
-			closestEdgeMidpointA + edgeNormA * extentsA[edgeNormIndexA]
+			edgeNormA
 		};
 
 		// Finding closest edge B
 		vec3 extentsB = static_cast<Box*>(boxB->shape)->extents;
-		temp[3] = {
-			axes[0] * extentsB.x,
-			axes[1] * extentsB.y,
-			axes[2] * extentsB.z
+		vec3 tempB[3] = {
+			axes[3] * extentsB.x,
+			axes[4] * extentsB.y,
+			axes[5] * extentsB.z
 		};
-		temp[edgeNormIndexB] = vec3(0);
+		tempB[edgeNormIndexB] = vec3(0.f);
 
 		vec3 closestEdgeMidpointB;
 		float maxProjectionB = -FLT_MAX;
 		for (int i = 0; i < 4; i++) {
-			vec3 midPoint = (i % 3) == 0 ? temp[0] : -temp[0];
-			midPoint += (i % 2) == 0 ? -temp[1] : temp[1];
-			midPoint += (i < 2) ? -temp[2] : temp[2];
+			vec3 midPoint = (i % 3) == 0 ? tempB[0] : -tempB[0];
+			midPoint += (i % 2) == 0 ? -tempB[1] : tempB[1];
+			midPoint += (i < 2) ? -tempB[2] : tempB[2];
 
-			float projection = dot(boxA->pos + midPoint, worldNorm);
+
+			float projection = dot(boxB->pos + midPoint, -worldNorm);
 			if (projection > maxProjectionB) {
 				maxProjectionB = projection;
-				closestEdgeMidpointB = midPoint;
+				closestEdgeMidpointB = boxB->pos + midPoint;
 			}
 		}
 
 		edge edgeB = {
-			closestEdgeMidpointB - edgeNormA * extentsA[edgeNormIndexA],
-			closestEdgeMidpointB + edgeNormA * extentsA[edgeNormIndexA]
+			closestEdgeMidpointB - edgeNormB * extentsB[edgeNormIndexB],
+			edgeNormB
 		};
 
+		vec3 a = edgeB.base - edgeA.base;
+		float x = dot(edgeA.dir, edgeB.dir);
 
+		float t1 = dot(a, x * edgeB.dir + edgeA.dir) / (1 - (x * x));
+		float t2 = t1 * x - dot(a, edgeB.dir);
 
+		// Bishmallah let my math be right
+
+		// clamp to edge length
+		collision.pointA = edgeA.base + edgeA.dir * t1;//std::max(std::min(t1, extentsA[edgeNormIndexA] * 2.f), 0.f);
+		collision.pointB = edgeB.base + edgeB.dir * t2;//std::max(std::min(t2, extentsB[edgeNormIndexB] * 2.f), 0.f);
+		
+		collision.depth = minOverlap;
+		//collision.depth = length(collision.pointA - collision.pointB);
+
+		std::cout << "t1: " << t1 << std::endl << "t2: " << t2 << std::endl;
+
+		std::cout << minOverlap << std::endl;
+		std::cout << length(collision.pointA - collision.pointB) << std::endl;
+
+		std::cout << "length: " << glm::distance(edgeB.base, edgeB.base + edgeB.dir * extentsB[edgeNormIndexB]) << std::endl;
+		
 
 		//vec3 vertA;
 		//vec3 vertB;
