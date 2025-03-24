@@ -15,6 +15,10 @@ bool Mesh::init() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof(unsigned int), indexBuffer, GL_STATIC_DRAW);
 
+	glGenBuffers(1, &instanceVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+	glBufferData(GL_ARRAY_BUFFER, maxInstances * sizeof(instanceData), instanceBuffer, GL_DYNAMIC_DRAW);
+
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -23,6 +27,29 @@ bool Mesh::init() {
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(vert), 0); // position
 	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(vert), (void*)16); // normal
+
+	glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+	glEnableVertexAttribArray(2);
+	glEnableVertexAttribArray(3);
+	glEnableVertexAttribArray(4);
+	glEnableVertexAttribArray(5);
+	glEnableVertexAttribArray(6);
+	glEnableVertexAttribArray(7);
+	glEnableVertexAttribArray(8);
+	glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(instanceData), (void*)0); // transform
+	glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(instanceData), (void*)16); 
+	glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(instanceData), (void*)32);
+	glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(instanceData), (void*)48);
+	glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, sizeof(instanceData), (void*)64); // baseColor
+	glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, sizeof(instanceData), (void*)76); // diffuseColor
+	glVertexAttribPointer(8, 3, GL_FLOAT, GL_FALSE, sizeof(instanceData), (void*)88); // specColor
+	glVertexAttribDivisor(2, 1);
+	glVertexAttribDivisor(3, 1);
+	glVertexAttribDivisor(4, 1);
+	glVertexAttribDivisor(5, 1);
+	glVertexAttribDivisor(6, 1);
+	glVertexAttribDivisor(7, 1);
+	glVertexAttribDivisor(8, 1);
 
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -59,11 +86,9 @@ void Mesh::loadFromFile(const char* name) {
 	indexBuffer = new unsigned int[indices.size()];
 	std::memcpy(&indexBuffer[indexCount], indices.data(), indices.size() * sizeof(unsigned int));
 	indexCount += indices.size();
-
-	//delete[] vertices;
 }
 
-void Mesh::genCubeVerts() {
+void Mesh::generateCube() {
 	vertexBuffer = new vert[24];
 	indexBuffer = new unsigned int[36];
 
@@ -86,7 +111,7 @@ void Mesh::genCubeVerts() {
 	addQuad(vertices[2], vertices[1], vertices[5], vertices[6], vec3(0, -1, 0)); // Right
 }
 
-void Mesh::genSphereVerts() {
+void Mesh::generateSphere() {
 	vertexBuffer = new vert[84];
 	indexBuffer = new unsigned int[360];
 

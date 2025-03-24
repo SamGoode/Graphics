@@ -10,27 +10,8 @@ RenderObject::RenderObject(vec3 _pos, vec3 _eulerRot, Geometry* _geometry) {
     quat qz = quat(cos(euler.z / 2), sin(euler.z / 2) * vec3(0, 0, 1));
     rot = normalize(qx * qy * qz);
 
+    meshID = _geometry->getID();
     shape = _geometry;
-}
-
-void RenderObject::initMesh() {
-    if (!shape) {
-        mesh.loadFromFile("stanford/Bunny.obj"); // temporary
-        mesh.init();
-
-        return;
-    }
-
-    switch (shape->getID()) {
-    case 0:
-        mesh.genCubeVerts();
-        mesh.init();
-        break;
-    case 1:
-        mesh.genSphereVerts();
-        mesh.init();
-        break;
-    }
 }
 
 mat4 RenderObject::getTransform() {

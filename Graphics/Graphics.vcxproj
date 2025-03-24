@@ -165,6 +165,7 @@
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="Geometry.h" />
     <ClInclude Include="glmAddon.h" />
+    <ClInclude Include="MaterialProperties.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="IPhysicsEngine.h" />
     <ClInclude Include="Mesh.h" />

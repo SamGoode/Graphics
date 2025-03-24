@@ -2,26 +2,34 @@
 
 #include "GameObject.h"
 #include "Mesh.h"
+#include "MaterialProperties.h"
 
+//meshShader.bindUniform(vec3(0.2f, 0.1f, 0.5f), "Kd");
+//meshShader.bindUniform(vec3(0.9f), "Ks");
 
 class RenderObject : public GameObject, public Registry<RenderObject> {
 public:
     vec3 pos = vec3(0);
     quat rot = quat(1, 0, 0, 0);
 
-    vec4 color = vec4(0, 0, 0, 1);
+    int meshID = -1;
+    MaterialProperties material = {
+        .diffuseColor = vec3(0.2f, 0.1f, 0.5f),
+        .specColor = vec3(0.9f)
+    };
     Geometry* shape = nullptr;
-    Mesh mesh;
 
 public:
     RenderObject() {}
     RenderObject(vec3 _pos, vec3 _eulerRot, Geometry* _geometry);
     virtual ~RenderObject() { delete shape; }
 
-    void initMesh();
     mat4 getTransform();
-    //virtual void draw();
-
-    void setColor(vec4 _color) { color = _color; }
     int getID() { return shape->getID(); };
+
+    MaterialProperties getMaterial() { return material; };
+
+    void setColor(vec3 color) { material.baseColor = color; }
+    void setDiffuseColor(vec3 diffuseColor) { material.diffuseColor = diffuseColor; }
+    void setSpecColor(vec3 specColor) { material.specColor = specColor; }
 };

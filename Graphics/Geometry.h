@@ -1,15 +1,12 @@
 #pragma once
 
 #include <glm/glm.hpp>
-//#include "Gizmos.h"
 
 using glm::vec3;
 using glm::vec4;
 using glm::mat3;
 using glm::mat4;
 using glm::quat;
-
-//using aie::Gizmos;
 
 
 class Geometry {

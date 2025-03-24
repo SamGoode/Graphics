@@ -3,24 +3,27 @@
 #include "glmAddon.h"
 #include "Geometry.h"
 
+
 GameEngine::GameEngine() {
 	worldUp = vec3(0, 0, 1);
 	camera = Camera(vec3(10, 0, 10), vec3(0.f, 45.f, 180.f), 20.f);
 
 	PhysicsObject* sphere = new PhysicsObject(vec3(-5, 5, 10), vec3(0, 0, 0), new Sphere(0.5f), 10.f);
-	PhysicsObject* sphere2 = new PhysicsObject(vec3(-5, 5, 5), vec3(0, 0, 0), new Sphere(0.8f), 5.f);
+	PhysicsObject* sphere2 = new PhysicsObject(vec3(0, 0, 5), vec3(0, 0, 0), new Sphere(0.8f), 5.f);
 	PhysicsObject* box = new PhysicsObject(vec3(0, 0, 10), vec3(45.f, 45.f, 0), new Box(1.f, 2.f, 3.f), 100.f);
 	PhysicsObject* box2 = new PhysicsObject(vec3(0, 0, 15), vec3(80.f, -45.f, 180.f), new Box(1.f, 2.f, 3.f), 50.f);
 	//PhysicsObject* box = new PhysicsObject(vec3(0, 0, 5), vec3(0, 0, 0), new Box(1.f, 2.f, 1.f), 100.f);
 	//PhysicsObject* box2 = new PhysicsObject(vec3(0, 0, 10), vec3(0, 0, 0), new Box(3.f, 1.f, 1.f), 50.f);
 
 	RenderObject* bunny = new RenderObject();
-	bunny->setColor(vec4(0.1f, 0.5f, 0.5f, 1));
+	bunny->pos = vec3(10, 10, 0);
+	bunny->meshID = 2;
+	bunny->setColor(vec3(0.1f, 0.5f, 0.5f));
 
-	sphere->setColor(vec4(0.8f, 0.1f, 0.1f, 1));
-	sphere2->setColor(vec4(0.1f, 0.8f, 0.1f, 1));
-	box->setColor(vec4(0.1f, 0.1f, 0.8f, 1));
-	box2->setColor(vec4(0.5f, 0.1f, 0.5f, 1));
+	sphere->setColor(vec3(0.8f, 0.1f, 0.1f));
+	sphere2->setColor(vec3(0.1f, 0.8f, 0.1f));
+	box->setColor(vec3(0.1f, 0.1f, 0.8f));
+	box2->setColor(vec3(0.5f, 0.1f, 0.5f));
 
 	std::cout << Registry<GameObject>::count << " GameObjects created" << std::endl;
 }
@@ -30,9 +33,12 @@ bool GameEngine::startup(int windowWidth, int windowHeight) {
 
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-	int objectCount = Registry<RenderObject>::count;
-	for (int i = 0; i < objectCount; i++) {
-		Registry<RenderObject>::entries[i]->initMesh();
+	meshes[0].generateCube();
+	meshes[1].generateSphere();
+	meshes[2].loadFromFile("stanford/Bunny.obj");
+
+	for (int i = 0; i < 3; i++) {
+		meshes[i].init();
 	}
 
 	return true;
@@ -74,25 +80,30 @@ void GameEngine::draw() {
 
 	// Renders Meshes
 	meshShader.bind();
-	meshShader.bindUniform(directionalLight, "LightDirection");
-	meshShader.bindUniform(camera.pos, "cameraPos");
+	meshShader.bindUniform(projectionView, "ProjectionView");
 
-	meshShader.bindUniform(vec3(0.2f, 0.1f, 0.5f), "Kd");
-	meshShader.bindUniform(vec3(0.9f), "Ks");
+	meshShader.bindUniform(directionalLight, "LightDirection");
+	meshShader.bindUniform(camera.pos, "CameraPos");
+
+	//meshShader.bindUniform(vec3(0.2f, 0.1f, 0.5f), "Kd");
+	//meshShader.bindUniform(vec3(0.9f), "Ks");
 	meshShader.bindUniform(32.f, "specExp");
 
 	int objectCount = Registry<RenderObject>::count;
 	for (int i = 0; i < objectCount; i++) {
-		mat4 transform = Registry<RenderObject>::entries[i]->getTransform();
+		RenderObject* obj = Registry<RenderObject>::entries[i];
+		int meshID = obj->meshID;
+		
+		mat4 transform = obj->getTransform();
+		MaterialProperties material = obj->material;
 
-		mat4 pvm = projectionView * transform;
-		meshShader.bindUniform(pvm, "ProjectionViewModel");
-		meshShader.bindUniform(transform, "ModelTransform");
-		meshShader.bindUniform(vec3(Registry<RenderObject>::entries[i]->color), "Ka");
-
-		Registry<RenderObject>::entries[i]->mesh.draw();
+		meshes[meshID].addInstance(transform, material);
 	}
 
+	for (int i = 0; i < 3; i++) {
+		meshes[i].renderInstances();
+		meshes[i].clearInstances();
+	}
 
 	glfwSwapBuffers(window);
 	glfwPollEvents();

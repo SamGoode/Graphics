@@ -3,13 +3,17 @@
 in vec4 vPosition;
 in vec3 vNormal;
 
+in vec3 Ka;
+in vec3 Kd;
+in vec3 Ks;
+
 out vec4 FragColor;
 
-uniform vec3 cameraPos;
+uniform vec3 CameraPos;
 
-uniform vec3 Ka;
-uniform vec3 Kd;
-uniform vec3 Ks;
+//uniform vec3 Ka;
+//uniform vec3 Kd;
+//uniform vec3 Ks;
 uniform float specExp;
 
 uniform vec3 LightDirection;
@@ -20,7 +24,7 @@ void main() {
 
 	float lambert = max(0, min(1, dot(N, -L)));
 
-	vec3 V = normalize(cameraPos - vPosition.xyz);
+	vec3 V = normalize(CameraPos - vPosition.xyz);
 	vec3 R = reflect(L, N);
 
 	float specularTerm = pow(max(0, dot(R, V)), specExp);

@@ -1,16 +1,31 @@
 #version 410
 
+
+struct instanceData {
+	mat4 transform;
+	vec3 baseColor;
+    vec3 diffuseColor;
+    vec3 specColor;
+};
+
 in vec4 Position;
 in vec4 Normal;
+in instanceData instance;
 
 out vec4 vPosition;
 out vec3 vNormal;
 
-uniform mat4 ProjectionViewModel;
-uniform mat4 ModelTransform;
+out vec3 Ka;
+out vec3 Kd;
+out vec3 Ks;
+
+uniform mat4 ProjectionView;
 
 void main() {
-	vPosition = ModelTransform * Position;
-	vNormal = (ModelTransform * Normal).xyz;
-	gl_Position = ProjectionViewModel * Position;
+	vPosition = instance.transform * Position;
+	vNormal = (instance.transform * Normal).xyz;
+	Ka = instance.baseColor;
+	Kd = instance.diffuseColor;
+	Ks = instance.specColor;
+	gl_Position = ProjectionView * instance.transform * Position;
 }

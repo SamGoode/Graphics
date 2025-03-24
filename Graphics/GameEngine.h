@@ -7,9 +7,7 @@
 #include "PhysicsObject.h"
 #include "Registry.h"
 
-
-
-
+#include "Mesh.h"
 
 class GameEngine : public App3D {
 protected:
@@ -17,6 +15,8 @@ protected:
 	Camera camera;
 
 	PhysicsEngine physEng;
+
+	Mesh meshes[3];
 
 public:
 	GameEngine();
