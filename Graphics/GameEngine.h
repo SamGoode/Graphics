@@ -8,6 +8,7 @@
 #include "Registry.h"
 
 #include "Mesh.h"
+#include "Texture.h"
 
 class GameEngine : public App3D {
 protected:
@@ -17,6 +18,8 @@ protected:
 	PhysicsEngine physEng;
 
 	Mesh meshes[3];
+	Texture textures[3];
+
 
 public:
 	GameEngine();

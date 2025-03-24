@@ -31,7 +31,7 @@ public:
 		biasSlop = 0.01f;
 		biasFactor = 0.1f;
 
-		elasticity = 0.3f;
+		elasticity = 0.4f;
 		friction = 0.55f;
 	}
 

@@ -16,10 +16,14 @@ using glm::quat;
 
 
 class Mesh {
+public:
+	int textureID = 0;
+
 private:
 	struct vert {
 		vec4 position;
 		vec4 normal;
+		vec2 texCoord;
 	};
 
 	struct instanceData {

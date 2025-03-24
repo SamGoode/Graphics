@@ -15,6 +15,8 @@ GameEngine::GameEngine() {
 	//PhysicsObject* box = new PhysicsObject(vec3(0, 0, 5), vec3(0, 0, 0), new Box(1.f, 2.f, 1.f), 100.f);
 	//PhysicsObject* box2 = new PhysicsObject(vec3(0, 0, 10), vec3(0, 0, 0), new Box(3.f, 1.f, 1.f), 50.f);
 
+	PhysicsObject* cobblestone = new PhysicsObject(vec3(0, 0, 20), vec3(45.f, 45.f, 0), new Box(1.f, 1.f, 1.f), 100.f);
+
 	RenderObject* bunny = new RenderObject();
 	bunny->pos = vec3(10, 10, 0);
 	bunny->meshID = 2;
@@ -25,6 +27,9 @@ GameEngine::GameEngine() {
 	box->setColor(vec3(0.1f, 0.1f, 0.8f));
 	box2->setColor(vec3(0.5f, 0.1f, 0.5f));
 
+	cobblestone->setColor(vec3(0.2f));
+	cobblestone->setDiffuseColor(vec3(0.6f));
+	
 	std::cout << Registry<GameObject>::count << " GameObjects created" << std::endl;
 }
 
@@ -34,11 +39,20 @@ bool GameEngine::startup(int windowWidth, int windowHeight) {
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	meshes[0].generateCube();
+	meshes[0].textureID = 1;
 	meshes[1].generateSphere();
 	meshes[2].loadFromFile("stanford/Bunny.obj");
 
 	for (int i = 0; i < 3; i++) {
 		meshes[i].init();
+	}
+
+	textures[0].generate1x1(0xFFFFFFFF); // 1x1 white texture
+	textures[1].loadFromFile("textures/cobblestone.png");
+	textures[2].loadFromFile("textures/earth_diffuse.jpg");
+
+	for (int i = 0; i < 3; i++) {
+		textures[i].init();
 	}
 
 	return true;
@@ -85,10 +99,6 @@ void GameEngine::draw() {
 	meshShader.bindUniform(directionalLight, "LightDirection");
 	meshShader.bindUniform(camera.pos, "CameraPos");
 
-	//meshShader.bindUniform(vec3(0.2f, 0.1f, 0.5f), "Kd");
-	//meshShader.bindUniform(vec3(0.9f), "Ks");
-	meshShader.bindUniform(32.f, "specExp");
-
 	int objectCount = Registry<RenderObject>::count;
 	for (int i = 0; i < objectCount; i++) {
 		RenderObject* obj = Registry<RenderObject>::entries[i];
@@ -101,8 +111,13 @@ void GameEngine::draw() {
 	}
 
 	for (int i = 0; i < 3; i++) {
+		int textureID = meshes[i].textureID;
+		textures[textureID].bind();
+
 		meshes[i].renderInstances();
 		meshes[i].clearInstances();
+
+		textures[0].bind();
 	}
 
 	glfwSwapBuffers(window);

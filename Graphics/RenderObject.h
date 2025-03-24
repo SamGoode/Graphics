@@ -4,8 +4,6 @@
 #include "Mesh.h"
 #include "MaterialProperties.h"
 
-//meshShader.bindUniform(vec3(0.2f, 0.1f, 0.5f), "Kd");
-//meshShader.bindUniform(vec3(0.9f), "Ks");
 
 class RenderObject : public GameObject, public Registry<RenderObject> {
 public:
@@ -14,9 +12,12 @@ public:
 
     int meshID = -1;
     MaterialProperties material = {
+        .baseColor = vec3(1),
         .diffuseColor = vec3(0.2f, 0.1f, 0.5f),
-        .specColor = vec3(0.9f)
+        .specularColor = vec3(0.9f),
+        .specularExp = 32.f
     };
+
     Geometry* shape = nullptr;
 
 public:
@@ -31,5 +32,6 @@ public:
 
     void setColor(vec3 color) { material.baseColor = color; }
     void setDiffuseColor(vec3 diffuseColor) { material.diffuseColor = diffuseColor; }
-    void setSpecColor(vec3 specColor) { material.specColor = specColor; }
+    void setSpecularColor(vec3 specularColor) { material.specularColor = specularColor; }
+    void setSpecularExp(float specularExp) { material.specularExp = specularExp; }
 };

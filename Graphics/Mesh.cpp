@@ -5,6 +5,7 @@
 #include <vector>
 
 
+
 bool Mesh::init() {
 	if (vao != 0) return false;
 
@@ -25,31 +26,36 @@ bool Mesh::init() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(vert), 0); // position
 	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(vert), (void*)16); // normal
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(vert), (void*)32); // texCoord
 
 	glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-	glEnableVertexAttribArray(2);
 	glEnableVertexAttribArray(3);
 	glEnableVertexAttribArray(4);
 	glEnableVertexAttribArray(5);
 	glEnableVertexAttribArray(6);
+	glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(instanceData), (void*)0); // transform
+	glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(instanceData), (void*)16); 
+	glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(instanceData), (void*)32);
+	glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(instanceData), (void*)48);
 	glEnableVertexAttribArray(7);
 	glEnableVertexAttribArray(8);
-	glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(instanceData), (void*)0); // transform
-	glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(instanceData), (void*)16); 
-	glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(instanceData), (void*)32);
-	glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(instanceData), (void*)48);
-	glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, sizeof(instanceData), (void*)64); // baseColor
-	glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, sizeof(instanceData), (void*)76); // diffuseColor
-	glVertexAttribPointer(8, 3, GL_FLOAT, GL_FALSE, sizeof(instanceData), (void*)88); // specColor
-	glVertexAttribDivisor(2, 1);
+	glEnableVertexAttribArray(9);
+	glEnableVertexAttribArray(10);
+	glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, sizeof(instanceData), (void*)64); // baseColor
+	glVertexAttribPointer(8, 3, GL_FLOAT, GL_FALSE, sizeof(instanceData), (void*)76); // diffuseColor
+	glVertexAttribPointer(9, 3, GL_FLOAT, GL_FALSE, sizeof(instanceData), (void*)88); // specularColor
+	glVertexAttribPointer(10, 1, GL_FLOAT, GL_FALSE, sizeof(instanceData), (void*)100); // specularExp
 	glVertexAttribDivisor(3, 1);
 	glVertexAttribDivisor(4, 1);
 	glVertexAttribDivisor(5, 1);
 	glVertexAttribDivisor(6, 1);
 	glVertexAttribDivisor(7, 1);
 	glVertexAttribDivisor(8, 1);
+	glVertexAttribDivisor(9, 1);
+	glVertexAttribDivisor(10, 1);
 
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -160,10 +166,10 @@ void Mesh::generateSphere() {
 
 void Mesh::addQuad(vec4 v0, vec4 v1, vec4 v2, vec4 v3, vec3 faceNormal) {
 	vert verts[4] = {
-		vert{v0, vec4(faceNormal, 0)},
-		vert{v1, vec4(faceNormal, 0)},
-		vert{v2, vec4(faceNormal, 0)},
-		vert{v3, vec4(faceNormal, 0)},
+		vert{v0, vec4(faceNormal, 0), vec2(0, 1)},
+		vert{v1, vec4(faceNormal, 0), vec2(1, 1)},
+		vert{v2, vec4(faceNormal, 0), vec2(1, 0)},
+		vert{v3, vec4(faceNormal, 0), vec2(0, 0)},
 	};
 
 	unsigned int quadIndices[6] = {
