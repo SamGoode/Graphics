@@ -39,8 +39,32 @@ public:
 		stbi_image_free(data);
 	}
 
+	void initEmpty(int _width, int _height, int _nrChannels) {
+		assert(data == nullptr);
+
+		width = _width;
+		height = _height;
+		nrChannels = _nrChannels;
+
+		glGenTextures(1, &texture);
+		glBindTexture(GL_TEXTURE_2D, texture);
+
+		GLenum format = GL_RGBA;
+		if (nrChannels == 3) {
+			format = GL_RGB;
+		}
+
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, format, GL_UNSIGNED_BYTE, NULL);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+
 	void loadFromFile(const char* fileName) {
 		assert(data == nullptr);
+		//stbi_set_flip_vertically_on_load(true);
 		data = stbi_load(fileName, &width, &height, &nrChannels, 0);
 	}
 
@@ -60,5 +84,9 @@ public:
 
 	void bind() {
 		glBindTexture(GL_TEXTURE_2D, texture);
+	}
+
+	void bindToFramebuffer() {
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
 	}
 };

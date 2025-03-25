@@ -28,8 +28,8 @@ public:
 	PhysicsEngine() {
 		iterations = 2;
 
-		biasSlop = 0.01f;
-		biasFactor = 0.1f;
+		biasSlop = 0.005f;
+		biasFactor = 0.2f;
 
 		elasticity = 0.4f;
 		friction = 0.55f;

@@ -4,23 +4,27 @@
 #include "Geometry.h"
 
 
+
+
 GameEngine::GameEngine() {
 	worldUp = vec3(0, 0, 1);
 	camera = Camera(vec3(10, 0, 10), vec3(0.f, 45.f, 180.f), 20.f);
 
 	PhysicsObject* sphere = new PhysicsObject(vec3(-5, 5, 10), vec3(0, 0, 0), new Sphere(0.5f), 10.f);
-	PhysicsObject* sphere2 = new PhysicsObject(vec3(0, 0, 5), vec3(0, 0, 0), new Sphere(0.8f), 5.f);
+	PhysicsObject* sphere2 = new PhysicsObject(vec3(-5, 5, 5), vec3(0, 0, 0), new Sphere(0.8f), 5.f);
 	PhysicsObject* box = new PhysicsObject(vec3(0, 0, 10), vec3(45.f, 45.f, 0), new Box(1.f, 2.f, 3.f), 100.f);
 	PhysicsObject* box2 = new PhysicsObject(vec3(0, 0, 15), vec3(80.f, -45.f, 180.f), new Box(1.f, 2.f, 3.f), 50.f);
 	//PhysicsObject* box = new PhysicsObject(vec3(0, 0, 5), vec3(0, 0, 0), new Box(1.f, 2.f, 1.f), 100.f);
 	//PhysicsObject* box2 = new PhysicsObject(vec3(0, 0, 10), vec3(0, 0, 0), new Box(3.f, 1.f, 1.f), 50.f);
 
+	PhysicsObject* earth = new PhysicsObject(vec3(0, 0, 5), vec3(0, 0, 0), new Sphere(0.8f), 5.f);
 	PhysicsObject* cobblestone = new PhysicsObject(vec3(0, 0, 20), vec3(45.f, 45.f, 0), new Box(1.f, 1.f, 1.f), 100.f);
 
 	RenderObject* bunny = new RenderObject();
 	bunny->pos = vec3(10, 10, 0);
 	bunny->meshID = 2;
-	bunny->setColor(vec3(0.1f, 0.5f, 0.5f));
+	bunny->setColor(vec3(1, 1, 0.86f) * 0.6f);
+	bunny->setDiffuseColor(vec3(0.98f, 0.52f, 0.84f) * 0.8f);
 
 	sphere->setColor(vec3(0.8f, 0.1f, 0.1f));
 	sphere2->setColor(vec3(0.1f, 0.8f, 0.1f));
@@ -29,6 +33,9 @@ GameEngine::GameEngine() {
 
 	cobblestone->setColor(vec3(0.2f));
 	cobblestone->setDiffuseColor(vec3(0.6f));
+
+	earth->setColor(vec3(0.2f));
+	earth->setDiffuseColor(vec3(0.6f));
 	
 	std::cout << Registry<GameObject>::count << " GameObjects created" << std::endl;
 }
@@ -36,11 +43,14 @@ GameEngine::GameEngine() {
 bool GameEngine::startup(int windowWidth, int windowHeight) {
 	if (!App3D::startup(windowWidth, windowHeight)) return false;
 
+	screenShader.init("screen_vert.glsl", "screen_frag.glsl");
+
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	meshes[0].generateCube();
 	meshes[0].textureID = 1;
 	meshes[1].generateSphere();
+	meshes[1].textureID = 2;
 	meshes[2].loadFromFile("stanford/Bunny.obj");
 
 	for (int i = 0; i < 3; i++) {
@@ -54,6 +64,14 @@ bool GameEngine::startup(int windowWidth, int windowHeight) {
 	for (int i = 0; i < 3; i++) {
 		textures[i].init();
 	}
+
+
+	frameBuffer.init();
+
+	frameBuffer.bind();
+	screenTexture.initEmpty(1600, 900, 3);
+	screenTexture.bindToFramebuffer();
+	frameBuffer.unbind();
 
 	return true;
 }
@@ -79,7 +97,11 @@ bool GameEngine::update()  {
 
 
 void GameEngine::draw() {
+	//glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+	frameBuffer.bind();
+	//glClearColor(0.25f, 0.25f, 0.25f, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_DEPTH_TEST);
 
 	view = genViewMatrix(camera.pos, camera.orientation * vec3(1, 0, 0), worldUp);
 	mat4 projectionView = projection * view;
@@ -111,14 +133,22 @@ void GameEngine::draw() {
 	}
 
 	for (int i = 0; i < 3; i++) {
-		int textureID = meshes[i].textureID;
-		textures[textureID].bind();
+		textures[meshes[i].textureID].bind();
 
 		meshes[i].renderInstances();
 		meshes[i].clearInstances();
 
 		textures[0].bind();
 	}
+
+	frameBuffer.unbind();
+	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glDisable(GL_DEPTH_TEST);
+
+	screenShader.bind();
+	screenTexture.bind();
+	glDrawArrays(GL_TRIANGLES, 0, 3);
 
 	glfwSwapBuffers(window);
 	glfwPollEvents();

@@ -10,6 +10,9 @@
 #include "Mesh.h"
 #include "Texture.h"
 
+#include "Framebuffer.h"
+
+
 class GameEngine : public App3D {
 protected:
 	vec3 worldUp;
@@ -19,6 +22,10 @@ protected:
 
 	Mesh meshes[3];
 	Texture textures[3];
+
+	FrameBuffer frameBuffer;
+	Texture screenTexture;
+	Shader screenShader;
 
 
 public:

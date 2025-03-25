@@ -29,9 +29,6 @@ void main() {
 	float specularTerm = pow(max(0, dot(R, V)), S);
 
 	vec3 textureColor = texture(diffuseTex, vTexCoord).rgb;
-	if(textureColor == vec3(0)) {
-		textureColor = vec3(1);
-	}
 
 	vec3 ambient = Ka * textureColor;
 	vec3 diffuse = Kd * lambert * textureColor;

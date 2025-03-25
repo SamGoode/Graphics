@@ -45,7 +45,6 @@ void Detector::checkCollision(PhysicsObject* body, Plane plane) {
 			};
 
 			physEngInterface->addCollision(collision);
-			
 		}
 		break;
 	}
@@ -148,7 +147,7 @@ void Detector::checkCollision00(PhysicsObject* boxA, PhysicsObject* boxB) {
 				collision.pointA = collision.pointB + worldNorm * collision.depth;
 
 				physEngInterface->addCollision(collision);
-				break;
+				//break;
 			}
 		}
 	}
@@ -163,7 +162,7 @@ void Detector::checkCollision00(PhysicsObject* boxA, PhysicsObject* boxB) {
 				collision.pointB = collision.pointA - worldNorm * collision.depth;
 				
 				physEngInterface->addCollision(collision);
-				break;
+				//break;
 			}
 		}
 	}

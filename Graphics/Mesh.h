@@ -17,7 +17,7 @@ using glm::quat;
 
 class Mesh {
 public:
-	int textureID = 0;
+	int textureID;
 
 private:
 	struct vert {

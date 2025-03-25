@@ -86,6 +86,12 @@ void Mesh::loadFromFile(const char* name) {
 	for (int i = 0; i < vCount; i++) {
 		vertexBuffer[i].position = vec4(mesh->mVertices[i].x, mesh->mVertices[i].z, mesh->mVertices[i].y, 1);
 		vertexBuffer[i].normal = vec4(mesh->mNormals[i].x, mesh->mNormals[i].z, mesh->mNormals[i].y, 0);
+		if (mesh->HasTextureCoords(0)) {
+			vertexBuffer[i].texCoord = vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
+		}
+		else {
+			vertexBuffer[i].texCoord = vec2(0);
+		}
 	}
 	vertexCount += vCount;
 
@@ -118,11 +124,13 @@ void Mesh::generateCube() {
 }
 
 void Mesh::generateSphere() {
-	vertexBuffer = new vert[84];
+	vertexBuffer = new vert[91];
 	indexBuffer = new unsigned int[360];
 
-	vert verts[12 * 7];
-	for (int i = 0; i < 12; i++) {
+	float pi = glm::pi<float>();
+
+	vert verts[13 * 7];
+	for (int i = 0; i < 13; i++) {
 		float theta = i * (0.1667f * glm::pi<float>());
 		float x = cos(theta);
 		float y = sin(theta);
@@ -133,6 +141,7 @@ void Mesh::generateSphere() {
 			vec3 offsetFromCenter = vec3(x * sin(beta), y * sin(beta), cos(beta));
 			verts[i * 7 + n].position = vec4(offsetFromCenter, 1);
 			verts[i * 7 + n].normal = vec4(offsetFromCenter, 0);
+			verts[i * 7 + n].texCoord = vec2(i / 12.f, n / 6.f);
 		}
 	}
 
@@ -140,25 +149,25 @@ void Mesh::generateSphere() {
 	unsigned int sphereIndices[360];
 
 	for (int i = 0; i < 84; i++) {
-		int nextArc = (i + 7) % 84;
+		int nextArc = (i + 7);
 
 		if (i % 7 == 6) continue;
+
+		if (i % 7 != 5) {
+			sphereIndices[count++] = vertexCount + i;
+			sphereIndices[count++] = vertexCount + nextArc + 1;
+			sphereIndices[count++] = vertexCount + i + 1;
+		}
 
 		if (i % 7 != 0) {
 			sphereIndices[count++] = vertexCount + i;
 			sphereIndices[count++] = vertexCount + nextArc;
-			sphereIndices[count++] = vertexCount + i + 1;
-		}
-
-		if (i % 7 != 5) {
-			sphereIndices[count++] = vertexCount + nextArc;
 			sphereIndices[count++] = vertexCount + nextArc + 1;
-			sphereIndices[count++] = vertexCount + i + 1;
 		}
 	}
 
-	std::memcpy(&vertexBuffer[vertexCount], verts, 84 * sizeof(vert));
-	vertexCount += 84;
+	std::memcpy(&vertexBuffer[vertexCount], verts, 91 * sizeof(vert));
+	vertexCount += 91;
 
 	std::memcpy(&indexBuffer[indexCount], sphereIndices, 360 * sizeof(unsigned int));
 	indexCount += 360;

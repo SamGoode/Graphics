@@ -113,6 +113,9 @@
     <ClInclude Include="Texture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Framebuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="mesh_vert.glsl">
@@ -125,6 +128,12 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="line_vert.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="screen_frag.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="screen_vert.glsl">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

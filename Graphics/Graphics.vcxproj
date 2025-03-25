@@ -158,6 +158,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECS.h" />
+    <ClInclude Include="Framebuffer.h" />
     <ClInclude Include="GameEngine.h" />
     <ClInclude Include="BaseAppClasses.h" />
     <ClInclude Include="Camera.h" />
@@ -183,6 +184,8 @@
     <None Include="line_vert.glsl" />
     <None Include="mesh_frag.glsl" />
     <None Include="mesh_vert.glsl" />
+    <None Include="screen_frag.glsl" />
+    <None Include="screen_vert.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
