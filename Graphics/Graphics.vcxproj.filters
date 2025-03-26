@@ -130,10 +130,22 @@
     <None Include="line_vert.glsl">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="screen_frag.glsl">
+    <None Include="laplacian.glsl">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="screen_vert.glsl">
+    <None Include="fullscreen_quad.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="composite.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="gpass_vert.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="gpass_frag.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="directional_light.glsl">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

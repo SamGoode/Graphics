@@ -5,88 +5,109 @@
 
 #include "stb_image.h"
 
-class Texture {
-private:
-	unsigned int texture = 0;
 
-	int width;
-	int height;
-	int nrChannels;
-	unsigned char* data = nullptr;
+struct ITexture {
+protected:
+	unsigned int gl_id = 0;
 
 public:
-	Texture() {}
-	~Texture() {
-		glDeleteTextures(1, &texture);
-		stbi_image_free(data);
+	GLenum format;
+	int width;
+	int height;
+	unsigned char* data = nullptr;
+
+
+	virtual ~ITexture() {
+		glDeleteTextures(1, &gl_id);
+		if(data) stbi_image_free(data);
 	}
 
-	void init() {
-		assert(data != nullptr);
+	virtual void init() = 0;
 
-		glGenTextures(1, &texture);
-		glBindTexture(GL_TEXTURE_2D, texture);
+	void loadEmpty(GLenum _format, int _width, int _height) {
+		format = _format;
+		height = _height;
+		width = _width;
+	}
 
-		GLenum format = GL_RGBA;
-		if (nrChannels == 3) {
-			format = GL_RGB;
-		}
+	unsigned int glID() { return gl_id; }
 
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
+	void bind(GLenum textureUnit = GL_TEXTURE0) { 
+		glActiveTexture(textureUnit);
+		glBindTexture(GL_TEXTURE_2D, gl_id); 
+	}
+};
+
+
+class RenderTexture : public ITexture {
+public:
+	RenderTexture() {}
+
+	virtual void init() override {
+		assert(data == nullptr && gl_id == 0);
+
+		glGenTextures(1, &gl_id);
+		glBindTexture(GL_TEXTURE_2D, gl_id);
+
+		glTexStorage2D(GL_TEXTURE_2D, 1, format, width, height);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 		glBindTexture(GL_TEXTURE_2D, 0);
-		stbi_image_free(data);
 	}
+};
 
-	void initEmpty(int _width, int _height, int _nrChannels) {
-		assert(data == nullptr);
 
-		width = _width;
-		height = _height;
-		nrChannels = _nrChannels;
+class Texture : public ITexture {
+public:
+	Texture() {}
 
-		glGenTextures(1, &texture);
-		glBindTexture(GL_TEXTURE_2D, texture);
+	virtual void init() override {
+		assert(gl_id == 0);
 
-		GLenum format = GL_RGBA;
-		if (nrChannels == 3) {
-			format = GL_RGB;
-		}
+		glGenTextures(1, &gl_id);
+		glBindTexture(GL_TEXTURE_2D, gl_id);
 
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, format, GL_UNSIGNED_BYTE, NULL);
+		if(data)
+			glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+		else
+			glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, NULL);
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+		glGenerateMipmap(GL_TEXTURE_2D);
+
 		glBindTexture(GL_TEXTURE_2D, 0);
+
+		stbi_image_free(data);
+		data = nullptr;
 	}
 
-	void loadFromFile(const char* fileName) {
-		assert(data == nullptr);
-		//stbi_set_flip_vertically_on_load(true);
+	void loadFromFile(const char* fileName, bool shouldFlip = false) {
+		assert(gl_id == 0);
+
+		stbi_set_flip_vertically_on_load(shouldFlip);
+
+		int nrChannels;
 		data = stbi_load(fileName, &width, &height, &nrChannels, 0);
+
+		format = GL_RGBA;
+		if (nrChannels == 3) format = GL_RGB;
 	}
 
 	void generate1x1(int color) {
-		assert(data == nullptr);
+		assert(gl_id == 0);
 
 		width = 1;
 		height = 1;
-		nrChannels = 4;
+		format = GL_RGBA;
 
 		data = new unsigned char[4];
 		data[0] = (unsigned char)(color >> 24);
 		data[1] = (unsigned char)(color >> 16);
 		data[2] = (unsigned char)(color >> 8);
 		data[3] = (unsigned char)color;
-	}
-
-	void bind() {
-		glBindTexture(GL_TEXTURE_2D, texture);
-	}
-
-	void bindToFramebuffer() {
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
 	}
 };

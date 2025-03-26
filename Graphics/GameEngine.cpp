@@ -3,12 +3,17 @@
 #include "glmAddon.h"
 #include "Geometry.h"
 
+#include "stb_image.h"
 
 
 
 GameEngine::GameEngine() {
 	worldUp = vec3(0, 0, 1);
 	camera = Camera(vec3(10, 0, 10), vec3(0.f, 45.f, 180.f), 20.f);
+
+	ambientLighting = vec3(0.2f);
+	lightColor = vec3(0.8f, 0.1f, 0.2f);
+	lightDirection = normalize(vec3(-1, 1, -1));
 
 	PhysicsObject* sphere = new PhysicsObject(vec3(-5, 5, 10), vec3(0, 0, 0), new Sphere(0.5f), 10.f);
 	PhysicsObject* sphere2 = new PhysicsObject(vec3(-5, 5, 5), vec3(0, 0, 0), new Sphere(0.8f), 5.f);
@@ -31,11 +36,11 @@ GameEngine::GameEngine() {
 	box->setColor(vec3(0.1f, 0.1f, 0.8f));
 	box2->setColor(vec3(0.5f, 0.1f, 0.5f));
 
-	cobblestone->setColor(vec3(0.2f));
-	cobblestone->setDiffuseColor(vec3(0.6f));
-
 	earth->setColor(vec3(0.2f));
 	earth->setDiffuseColor(vec3(0.6f));
+
+	cobblestone->setColor(vec3(0.2f));
+	cobblestone->setDiffuseColor(vec3(0.6f));
 	
 	std::cout << Registry<GameObject>::count << " GameObjects created" << std::endl;
 }
@@ -43,7 +48,8 @@ GameEngine::GameEngine() {
 bool GameEngine::startup(int windowWidth, int windowHeight) {
 	if (!App3D::startup(windowWidth, windowHeight)) return false;
 
-	screenShader.init("screen_vert.glsl", "screen_frag.glsl");
+
+	//screenShader.init("fullsceen_quad.glsl", "laplacian.glsl");
 
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -65,13 +71,30 @@ bool GameEngine::startup(int windowWidth, int windowHeight) {
 		textures[i].init();
 	}
 
+	gpassShader.init("gpass_vert.glsl", "gpass_frag.glsl");
+	lightShader.init("fullscreen_quad.glsl", "directional_light.glsl");
+	compositeShader.init("fullscreen_quad.glsl", "composite.glsl");
 
-	frameBuffer.init();
+	gpassFBO.setSize(windowWidth, windowHeight);
+	gpassFBO.genRenderBuffer(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT);
+	gpassFBO.genRenderTexture(GL_RGB32F); // Albedo
+	gpassFBO.genRenderTexture(GL_RGB32F); // Diffuse
+	gpassFBO.genRenderTexture(GL_RGBA32F); // Specular
+	gpassFBO.genRenderTexture(GL_RGB32F); // Positions
+	gpassFBO.genRenderTexture(GL_RGB32F); // Normals
+	gpassFBO.init();
 
-	frameBuffer.bind();
-	screenTexture.initEmpty(1600, 900, 3);
-	screenTexture.bindToFramebuffer();
-	frameBuffer.unbind();
+	lightFBO.setSize(windowWidth, windowHeight);
+	lightFBO.genRenderTexture(GL_RGB8);
+	lightFBO.init();
+
+
+	//frameBuffer.setSize(windowWidth, windowHeight);
+	//frameBuffer.genRenderBuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
+	//frameBuffer.init();
+	//screenTexture.loadEmpty(GL_RGB, windowWidth, windowHeight);
+	//screenTexture.init();
+	//frameBuffer.bindTexture(GL_COLOR_ATTACHMENT0, &screenTexture);
 
 	return true;
 }
@@ -97,29 +120,36 @@ bool GameEngine::update()  {
 
 
 void GameEngine::draw() {
-	//glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
-	frameBuffer.bind();
-	//glClearColor(0.25f, 0.25f, 0.25f, 0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//frameBuffer.bind();
+	gpassFBO.bind();
 	glEnable(GL_DEPTH_TEST);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	view = genViewMatrix(camera.pos, camera.orientation * vec3(1, 0, 0), worldUp);
 	mat4 projectionView = projection * view;
 
-	// Draws grid
-	lineShader.bind();
-	lineShader.bindUniform(projectionView, "ProjectionView");
-	lineShader.bindUniform(vec3(0.8f), "BaseColor");
+	gpassShader.use();
+	gpassShader.bindUniform(view, "View");
+	gpassShader.bindUniform(projectionView, "ProjectionView");
 
-	glBindVertexArray(lineVAO);
-	glDrawArrays(GL_LINES, 0, 42 * 2);
+	//// Draws grid
+	//lineShader.bind();
+	//lineShader.bindUniform(projectionView, "ProjectionView");
+	//lineShader.bindUniform(vec3(0.8f), "BaseColor");
 
-	// Renders Meshes
-	meshShader.bind();
-	meshShader.bindUniform(projectionView, "ProjectionView");
+	//glBindVertexArray(lineVAO);
+	//glDrawArrays(GL_LINES, 0, 42 * 2);
 
-	meshShader.bindUniform(directionalLight, "LightDirection");
-	meshShader.bindUniform(camera.pos, "CameraPos");
+	//// Renders Meshes
+	//meshShader.use();
+	//meshShader.bindUniform(projectionView, "ProjectionView");
+
+	//meshShader.bindUniform(camera.pos, "CameraPos");
+
+	//meshShader.bindUniform(ambientLighting, "AmbientLighting");
+	//meshShader.bindUniform(lightColor, "LightColor");
+	//meshShader.bindUniform(lightDirection, "LightDirection");
+
 
 	int objectCount = Registry<RenderObject>::count;
 	for (int i = 0; i < objectCount; i++) {
@@ -141,14 +171,52 @@ void GameEngine::draw() {
 		textures[0].bind();
 	}
 
-	frameBuffer.unbind();
-	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glClear(GL_COLOR_BUFFER_BIT);
+	
+	lightFBO.bind();
 	glDisable(GL_DEPTH_TEST);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ONE);
 
-	screenShader.bind();
-	screenTexture.bind();
+	vec4 viewLight = view * vec4(lightDirection, 0);
+
+	lightShader.use();
+	lightShader.bindUniform(camera.pos, "CameraPos");
+	lightShader.bindUniform(lightColor, "LightColor");
+	lightShader.bindUniform(viewLight, "LightDirection");
+
+	lightShader.bindUniform(0, "diffuseTexture");
+	gpassFBO.getRenderTexture(1).bind(GL_TEXTURE0);
+	lightShader.bindUniform(1, "specularTexture");
+	gpassFBO.getRenderTexture(2).bind(GL_TEXTURE1);
+	lightShader.bindUniform(2, "positionTexture");
+	gpassFBO.getRenderTexture(3).bind(GL_TEXTURE2);
+	lightShader.bindUniform(3, "normalTexture");
+	gpassFBO.getRenderTexture(4).bind(GL_TEXTURE3);
+
 	glDrawArrays(GL_TRIANGLES, 0, 3);
+	glDisable(GL_BLEND);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	compositeShader.use();
+	compositeShader.bindUniform(ambientLighting, "AmbientLighting");
+
+	compositeShader.bindUniform(0, "albedoTexture");
+	gpassFBO.getRenderTexture(0).bind(GL_TEXTURE0);
+	compositeShader.bindUniform(1, "lightTexture");
+	lightFBO.getRenderTexture(0).bind(GL_TEXTURE1);
+
+	glDrawArrays(GL_TRIANGLES, 0, 3);
+
+	//frameBuffer.unbind();
+	//glClear(GL_COLOR_BUFFER_BIT);
+	//glDisable(GL_DEPTH_TEST);
+
+	//screenShader.bind();
+	//screenTexture.bind();
+	//glDrawArrays(GL_TRIANGLES, 0, 3);
 
 	glfwSwapBuffers(window);
 	glfwPollEvents();

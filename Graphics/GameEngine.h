@@ -18,14 +18,25 @@ protected:
 	vec3 worldUp;
 	Camera camera;
 
+	vec3 ambientLighting;
+	vec3 lightColor;
+	vec3 lightDirection;
+
 	PhysicsEngine physEng;
 
 	Mesh meshes[3];
 	Texture textures[3];
 
-	FrameBuffer frameBuffer;
-	Texture screenTexture;
-	Shader screenShader;
+	FrameBuffer gpassFBO;
+	FrameBuffer lightFBO;
+
+	Shader gpassShader;
+	Shader lightShader;
+	Shader compositeShader;
+
+	//FrameBuffer frameBuffer;
+	//Texture screenTexture;
+	//Shader screenShader;
 
 
 public:

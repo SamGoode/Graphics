@@ -13,6 +13,8 @@ out vec4 FragColor;
 
 uniform vec3 CameraPos;
 
+uniform vec3 AmbientLighting;
+uniform vec3 LightColor;
 uniform vec3 LightDirection;
 
 uniform sampler2D diffuseTex;
@@ -30,9 +32,9 @@ void main() {
 
 	vec3 textureColor = texture(diffuseTex, vTexCoord).rgb;
 
-	vec3 ambient = Ka * textureColor;
-	vec3 diffuse = Kd * lambert * textureColor;
-	vec3 specular = Ks * specularTerm;
+	vec3 ambient = Ka * textureColor * AmbientLighting;
+	vec3 diffuse = Kd * textureColor * lambert * LightColor;
+	vec3 specular = Ks * specularTerm * LightColor;
 
 	FragColor = vec4(ambient + diffuse + specular, 1);
 }

@@ -21,28 +21,19 @@ void main() {
 		vec2(offset, -offset)
 	);
 
-	float kernel[9] = float[](
-		1, 1, 1,
-		1, -8, 1,
-		1, 1, 1
-	);
-
-	//vec3 sampleTex[9];
-	float laplacian = 0.f;
+	float laplacianSum = 0.f;
 	for(int i = 0; i < 9; i++) {
 		vec4 color = texture(screenTexture, vTexCoord.st + offsets[i]);
 		float average = (color.r, color.g, color.b) / 3.f;
-		//sampleTex[i] = vec3(a);
-		laplacian += average * kernel[i];
+		laplacianSum += average;
 	}
 
-	if(laplacian > 0.1f) {
+	vec4 originalColor = texture(screenTexture, vTexCoord);
+	laplacianSum -= (originalColor.r, originalColor.g, originalColor.b) * 3.f;
+
+
+	FragColor = originalColor;
+	if(laplacianSum > 0.2f) {
 		FragColor = vec4(0, 0, 0, 1);
-		return;
 	}
-
-	FragColor = vec4(texture(screenTexture, vTexCoord));
-
-	// Inverted
-	//FragColor = vec4(1.f - texture(screenTexture, vTexCoord).rgb, 1);
 }

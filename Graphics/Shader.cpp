@@ -64,8 +64,12 @@ unsigned int Shader::loadShaderFromFile(GLenum type, const char* fileName) {
 
 void Shader::bindUniform(const float& f, const char* name) {
 	unsigned int uniform = glGetUniformLocation(shader_id, name);
-	//glUniform3fv(uniform, 1, glm::value_ptr(f));
 	glUniform1f(uniform, f);
+}
+
+void Shader::bindUniform(const int& i, const char* name) {
+	unsigned int uniform = glGetUniformLocation(shader_id, name);
+	glUniform1i(uniform, i);
 }
 
 void Shader::bindUniform(const vec3& v3, const char* name) {

@@ -29,7 +29,7 @@ bool App3D::startup(int windowWidth, int windowHeight) {
 	glEnable(GL_DEPTH_TEST);
 
 	projection = glm::perspective(glm::pi<float>() * 0.25f, 16 / 9.f, 0.1f, 1000.f);
-	directionalLight = normalize(vec3(-1, 1, -1));
+	
 
 	// Grid
 	line lines[42];

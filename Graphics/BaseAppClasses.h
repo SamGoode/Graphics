@@ -57,8 +57,6 @@ protected:
 	mat4 view;
 	mat4 projection;
 
-	vec3 directionalLight;
-
 	bool showGrid = true;
 	bool showOrigin = true;
 

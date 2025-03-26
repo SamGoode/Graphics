@@ -12,9 +12,9 @@ public:
 
     int meshID = -1;
     MaterialProperties material = {
-        .baseColor = vec3(1),
-        .diffuseColor = vec3(0.2f, 0.1f, 0.5f),
-        .specularColor = vec3(0.9f),
+        .baseColor = vec3(0.2f),
+        .diffuseColor = vec3(0.6f),
+        .specularColor = vec3(0.8f),
         .specularExp = 32.f
     };
 

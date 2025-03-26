@@ -180,12 +180,16 @@
     <ClInclude Include="Texture.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="composite.glsl" />
+    <None Include="directional_light.glsl" />
+    <None Include="gpass_frag.glsl" />
+    <None Include="gpass_vert.glsl" />
     <None Include="line_frag.glsl" />
     <None Include="line_vert.glsl" />
     <None Include="mesh_frag.glsl" />
     <None Include="mesh_vert.glsl" />
-    <None Include="screen_frag.glsl" />
-    <None Include="screen_vert.glsl" />
+    <None Include="laplacian.glsl" />
+    <None Include="fullscreen_quad.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
