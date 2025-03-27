@@ -15,8 +15,8 @@ GameEngine::GameEngine() {
 	lightColor = vec3(0.8f);
 	lightDirection = normalize(vec3(-1, 1, -1));
 
-	PhysicsObject* sphere = new PhysicsObject(vec3(-5, 5, 10), vec3(0, 0, 0), new Sphere(0.5f), 10.f);
-	PhysicsObject* sphere2 = new PhysicsObject(vec3(-5, 5, 5), vec3(0, 0, 0), new Sphere(0.8f), 5.f);
+	PhysicsObject* sphere = new PhysicsObject(vec3(-5, 5, 10), vec3(0, 0, 0), new Sphere(0.5f), 5.f);
+	PhysicsObject* sphere2 = new PhysicsObject(vec3(-5, 5, 5), vec3(0, 0, 0), new Sphere(0.8f), 10.f);
 	PhysicsObject* box = new PhysicsObject(vec3(0, 0, 10), vec3(45.f, 45.f, 0), new Box(1.f, 2.f, 3.f), 100.f);
 	PhysicsObject* box2 = new PhysicsObject(vec3(0, 0, 15), vec3(80.f, -45.f, 180.f), new Box(1.f, 2.f, 3.f), 50.f);
 	//PhysicsObject* box = new PhysicsObject(vec3(0, 0, 5), vec3(0, 0, 0), new Box(1.f, 2.f, 1.f), 100.f);
@@ -48,9 +48,6 @@ GameEngine::GameEngine() {
 bool GameEngine::startup(int windowWidth, int windowHeight) {
 	if (!App3D::startup(windowWidth, windowHeight)) return false;
 
-
-	//screenShader.init("fullsceen_quad.glsl", "laplacian.glsl");
-
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	meshes[0].generateCube();
@@ -79,25 +76,17 @@ bool GameEngine::startup(int windowWidth, int windowHeight) {
 	gpassFBO.genRenderBuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
 	gpassFBO.genRenderTexture(GL_RGBA8); // Albedo
 	gpassFBO.genRenderTexture(GL_RGB8); // Diffuse
-	gpassFBO.genRenderTexture(GL_RGBA8); // Specular
-	gpassFBO.genRenderTexture(GL_RGB32F); // Positions
-	gpassFBO.genRenderTexture(GL_RGB32F); // Normals
+	gpassFBO.genRenderTexture(GL_RGBA16F); // Specular
+	gpassFBO.genRenderTexture(GL_RGB16F); // Positions
+	gpassFBO.genRenderTexture(GL_RGB16F); // Normals
 	gpassFBO.init();
 
 	lightFBO.setSize(windowWidth, windowHeight);
-	//lightFBO.genRenderBuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
 	lightFBO.shareRenderBuffer(gpassFBO);
 	lightFBO.genRenderTexture(GL_RGB8); // Diffuse Light
 	lightFBO.genRenderTexture(GL_RGB8); // Specular Light
 	lightFBO.init();
 
-
-	//frameBuffer.setSize(windowWidth, windowHeight);
-	//frameBuffer.genRenderBuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
-	//frameBuffer.init();
-	//screenTexture.loadEmpty(GL_RGB, windowWidth, windowHeight);
-	//screenTexture.init();
-	//frameBuffer.bindTexture(GL_COLOR_ATTACHMENT0, &screenTexture);
 
 	return true;
 }
@@ -123,18 +112,16 @@ bool GameEngine::update()  {
 
 
 void GameEngine::draw() {
-	//frameBuffer.bind();
+	// G-Pass
+	gpassFBO.bind();
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_STENCIL_TEST);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 	glStencilFunc(GL_ALWAYS, 1, 0xFF);
 	glStencilMask(0xFF);
 
-	gpassFBO.bind();
-
 	glClearStencil(0);
-	glClearColor(0.f, 0.f, 0.9f, 0);
-	//glClearColor(0.25f, 0.25f, 0.25f, 0);
+	glClearColor(0.f, 0.f, 0.0f, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 	view = genViewMatrix(camera.pos, camera.orientation * vec3(1, 0, 0), worldUp);
@@ -143,24 +130,6 @@ void GameEngine::draw() {
 	gpassShader.use();
 	gpassShader.bindUniform(view, "View");
 	gpassShader.bindUniform(projectionView, "ProjectionView");
-
-	//// Draws grid
-	//lineShader.bind();
-	//lineShader.bindUniform(projectionView, "ProjectionView");
-	//lineShader.bindUniform(vec3(0.8f), "BaseColor");
-
-	//glBindVertexArray(lineVAO);
-	//glDrawArrays(GL_LINES, 0, 42 * 2);
-
-	//// Renders Meshes
-	//meshShader.use();
-	//meshShader.bindUniform(projectionView, "ProjectionView");
-
-	//meshShader.bindUniform(camera.pos, "CameraPos");
-
-	//meshShader.bindUniform(ambientLighting, "AmbientLighting");
-	//meshShader.bindUniform(lightColor, "LightColor");
-	//meshShader.bindUniform(lightDirection, "LightDirection");
 
 
 	int objectCount = Registry<RenderObject>::count;
@@ -183,18 +152,16 @@ void GameEngine::draw() {
 		textures[0].bind();
 	}
 
-	
-
 	glDisable(GL_DEPTH_TEST);
 
+
+	// Light Pass
+	lightFBO.bind();
 	glStencilFunc(GL_EQUAL, 1, 0xFF);
 	glStencilMask(0x00);
 
-	lightFBO.bind();
 	glClearColor(0.f, 0.f, 0.f, 0);
 	glClear(GL_COLOR_BUFFER_BIT);
-	//glEnable(GL_BLEND);
-	//glBlendFunc(GL_ONE, GL_ONE);
 
 	vec3 viewLight = vec3(view * vec4(lightDirection, 0));
 
@@ -214,13 +181,13 @@ void GameEngine::draw() {
 
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 	
+	glDisable(GL_STENCIL_TEST);
+
 
 	// Composite Pass
-	glDisable(GL_STENCIL_TEST);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	
 	glClearColor(0.25f, 0.25f, 0.25f, 0);
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -238,15 +205,6 @@ void GameEngine::draw() {
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
 	glDisable(GL_BLEND);
-	//glStencilMask(0xFF);
-
-	//frameBuffer.unbind();
-	//glClear(GL_COLOR_BUFFER_BIT);
-	//glDisable(GL_DEPTH_TEST);
-
-	//screenShader.bind();
-	//screenTexture.bind();
-	//glDrawArrays(GL_TRIANGLES, 0, 3);
 
 	glfwSwapBuffers(window);
 	glfwPollEvents();

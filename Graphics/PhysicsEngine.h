@@ -26,12 +26,12 @@ private:
 
 public:
 	PhysicsEngine() {
-		iterations = 2;
+		iterations = 3;
 
 		biasSlop = 0.005f;
 		biasFactor = 0.2f;
 
-		elasticity = 0.3f;
+		elasticity = 0.4f;
 		friction = 0.55f;
 	}
 

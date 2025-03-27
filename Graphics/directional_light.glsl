@@ -28,18 +28,11 @@ void main() {
 
 	float lambertTerm = max(0, dot(N, -L));
 
-	//float dist = length(CameraPos - position);
 	vec3 V = normalize(CameraPos - position);
 	vec3 R = reflect(L, N);
 
-	float specTerm = pow(max(0, dot(R, V)), 32);
+	float specTerm = pow(max(0, dot(R, V)), S);
 
 	diffuseLight = Kd * lambertTerm * LightColor;
-	specularLight = vec3(Ks * specTerm * LightColor);
-
-	//outColor = vec3(diffuse + specular);
+	specularLight = Ks * specTerm * LightColor;
 }
-
-//Ka * AmbientLighting + Kd * lambert * LightColor + ks * specularTerm * LightColor
-
-// AmbientLighting + albedo * lambert * LightColor + ks * specularTerm * LightColor

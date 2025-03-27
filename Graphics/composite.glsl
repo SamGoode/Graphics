@@ -17,6 +17,5 @@ void main() {
 	vec3 diffuse = texture(diffuseTexture, vTexCoord).rgb;
 	vec3 specular = texture(specularTexture, vTexCoord).rgb;
 
-	//FragColor = vec4(vec3(1), 0);
 	FragColor = vec4(ambient + diffuse + specular, albedo.a);
 }

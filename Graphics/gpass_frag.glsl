@@ -23,7 +23,7 @@ void main() {
 	vec3 textureColor = texture(baseTexture, vTexCoord).rgb;
 	gpassAlbedo = vec4(Ka * textureColor, 1);
 	gpassDiffuse = Kd * textureColor;
-	gpassSpecular = vec4(Ks.rgb, 1);
+	gpassSpecular = vec4(Ks.rgb, S);
 
 	gpassPosition = vPosition.xyz;
 	gpassNormal = normalize(vNormal);

@@ -34,10 +34,6 @@ protected:
 	Shader lightShader;
 	Shader compositeShader;
 
-	//FrameBuffer frameBuffer;
-	//Texture screenTexture;
-	//Shader screenShader;
-
 
 public:
 	GameEngine();
