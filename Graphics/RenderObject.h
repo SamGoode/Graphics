@@ -14,7 +14,7 @@ public:
     MaterialProperties material = {
         .baseColor = vec3(0.2f),
         .diffuseColor = vec3(0.6f),
-        .specularColor = vec3(0.8f),
+        .specularColor = vec3(0.9f),
         .specularExp = 32.f
     };
 

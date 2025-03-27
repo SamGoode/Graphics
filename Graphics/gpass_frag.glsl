@@ -10,7 +10,7 @@ in vec3 Kd;
 in vec3 Ks;
 in float S;
 
-out vec3 gpassAlbedo;
+out vec4 gpassAlbedo;
 out vec3 gpassDiffuse;
 out vec4 gpassSpecular;
 
@@ -21,9 +21,9 @@ uniform sampler2D baseTexture;
 
 void main() {
 	vec3 textureColor = texture(baseTexture, vTexCoord).rgb;
-	gpassAlbedo = Ka * textureColor;
+	gpassAlbedo = vec4(Ka * textureColor, 1);
 	gpassDiffuse = Kd * textureColor;
-	gpassSpecular = vec4(Ks.rgb, S);
+	gpassSpecular = vec4(Ks.rgb, 1);
 
 	gpassPosition = vPosition.xyz;
 	gpassNormal = normalize(vNormal);

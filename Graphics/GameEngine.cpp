@@ -11,8 +11,8 @@ GameEngine::GameEngine() {
 	worldUp = vec3(0, 0, 1);
 	camera = Camera(vec3(10, 0, 10), vec3(0.f, 45.f, 180.f), 20.f);
 
-	ambientLighting = vec3(0.2f);
-	lightColor = vec3(0.8f, 0.1f, 0.2f);
+	ambientLighting = vec3(0.6f);
+	lightColor = vec3(0.8f);
 	lightDirection = normalize(vec3(-1, 1, -1));
 
 	PhysicsObject* sphere = new PhysicsObject(vec3(-5, 5, 10), vec3(0, 0, 0), new Sphere(0.5f), 10.f);
@@ -28,8 +28,8 @@ GameEngine::GameEngine() {
 	RenderObject* bunny = new RenderObject();
 	bunny->pos = vec3(10, 10, 0);
 	bunny->meshID = 2;
-	bunny->setColor(vec3(1, 1, 0.86f) * 0.6f);
-	bunny->setDiffuseColor(vec3(0.98f, 0.52f, 0.84f) * 0.8f);
+	bunny->setColor(vec3(1, 1, 0.86f) * 0.2f);
+	bunny->setDiffuseColor(vec3(0.98f, 0.52f, 0.84f) * 0.6f);
 
 	sphere->setColor(vec3(0.8f, 0.1f, 0.1f));
 	sphere2->setColor(vec3(0.1f, 0.8f, 0.1f));
@@ -76,16 +76,19 @@ bool GameEngine::startup(int windowWidth, int windowHeight) {
 	compositeShader.init("fullscreen_quad.glsl", "composite.glsl");
 
 	gpassFBO.setSize(windowWidth, windowHeight);
-	gpassFBO.genRenderBuffer(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT);
-	gpassFBO.genRenderTexture(GL_RGB32F); // Albedo
-	gpassFBO.genRenderTexture(GL_RGB32F); // Diffuse
-	gpassFBO.genRenderTexture(GL_RGBA32F); // Specular
+	gpassFBO.genRenderBuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
+	gpassFBO.genRenderTexture(GL_RGBA8); // Albedo
+	gpassFBO.genRenderTexture(GL_RGB8); // Diffuse
+	gpassFBO.genRenderTexture(GL_RGBA8); // Specular
 	gpassFBO.genRenderTexture(GL_RGB32F); // Positions
 	gpassFBO.genRenderTexture(GL_RGB32F); // Normals
 	gpassFBO.init();
 
 	lightFBO.setSize(windowWidth, windowHeight);
-	lightFBO.genRenderTexture(GL_RGB8);
+	//lightFBO.genRenderBuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
+	lightFBO.shareRenderBuffer(gpassFBO);
+	lightFBO.genRenderTexture(GL_RGB8); // Diffuse Light
+	lightFBO.genRenderTexture(GL_RGB8); // Specular Light
 	lightFBO.init();
 
 
@@ -121,9 +124,18 @@ bool GameEngine::update()  {
 
 void GameEngine::draw() {
 	//frameBuffer.bind();
-	gpassFBO.bind();
 	glEnable(GL_DEPTH_TEST);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_STENCIL_TEST);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+	glStencilFunc(GL_ALWAYS, 1, 0xFF);
+	glStencilMask(0xFF);
+
+	gpassFBO.bind();
+
+	glClearStencil(0);
+	glClearColor(0.f, 0.f, 0.9f, 0);
+	//glClearColor(0.25f, 0.25f, 0.25f, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 	view = genViewMatrix(camera.pos, camera.orientation * vec3(1, 0, 0), worldUp);
 	mat4 projectionView = projection * view;
@@ -172,13 +184,19 @@ void GameEngine::draw() {
 	}
 
 	
-	lightFBO.bind();
-	glDisable(GL_DEPTH_TEST);
-	glClear(GL_COLOR_BUFFER_BIT);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_ONE, GL_ONE);
 
-	vec4 viewLight = view * vec4(lightDirection, 0);
+	glDisable(GL_DEPTH_TEST);
+
+	glStencilFunc(GL_EQUAL, 1, 0xFF);
+	glStencilMask(0x00);
+
+	lightFBO.bind();
+	glClearColor(0.f, 0.f, 0.f, 0);
+	glClear(GL_COLOR_BUFFER_BIT);
+	//glEnable(GL_BLEND);
+	//glBlendFunc(GL_ONE, GL_ONE);
+
+	vec3 viewLight = vec3(view * vec4(lightDirection, 0));
 
 	lightShader.use();
 	lightShader.bindUniform(camera.pos, "CameraPos");
@@ -195,9 +213,16 @@ void GameEngine::draw() {
 	gpassFBO.getRenderTexture(4).bind(GL_TEXTURE3);
 
 	glDrawArrays(GL_TRIANGLES, 0, 3);
-	glDisable(GL_BLEND);
+	
+
+	// Composite Pass
+	glDisable(GL_STENCIL_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	
+	glClearColor(0.25f, 0.25f, 0.25f, 0);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	compositeShader.use();
@@ -205,10 +230,15 @@ void GameEngine::draw() {
 
 	compositeShader.bindUniform(0, "albedoTexture");
 	gpassFBO.getRenderTexture(0).bind(GL_TEXTURE0);
-	compositeShader.bindUniform(1, "lightTexture");
+	compositeShader.bindUniform(1, "diffuseTexture");
 	lightFBO.getRenderTexture(0).bind(GL_TEXTURE1);
+	compositeShader.bindUniform(2, "specularTexture");
+	lightFBO.getRenderTexture(1).bind(GL_TEXTURE2);
 
 	glDrawArrays(GL_TRIANGLES, 0, 3);
+
+	glDisable(GL_BLEND);
+	//glStencilMask(0xFF);
 
 	//frameBuffer.unbind();
 	//glClear(GL_COLOR_BUFFER_BIT);

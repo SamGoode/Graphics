@@ -51,6 +51,12 @@ public:
 		delete[] targets;
 	}
 
+	// Uses render buffer of specified FrameBuffer instance
+	void shareRenderBuffer(FrameBuffer& other) {
+		renderBuffer = other.renderBuffer;
+		rboAttachment = other.rboAttachment;
+	}
+
 	void genRenderBuffer(GLenum attachment, GLenum internalFormat) {
 		assert(renderBuffer == 0);
 		
