@@ -116,6 +116,9 @@
     <ClInclude Include="Framebuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PointLight.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="mesh_vert.glsl">
@@ -146,6 +149,12 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="directional_light.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="pointLight_frag.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="pointLight_vert.glsl">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

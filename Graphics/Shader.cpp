@@ -15,8 +15,8 @@ bool Shader::init(const char* vertFileName, const char* fragFileName) {
 	shader_id = glCreateProgram();
 	glAttachShader(shader_id, vs);
 	glAttachShader(shader_id, fs);
-	glBindAttribLocation(shader_id, 0, "Position");
-	glBindAttribLocation(shader_id, 1, "Normal");
+	//glBindAttribLocation(shader_id, 0, "Position");
+	//glBindAttribLocation(shader_id, 1, "Normal");
 	glLinkProgram(shader_id);
 
 	int success = GL_FALSE;

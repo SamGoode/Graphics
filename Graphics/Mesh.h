@@ -15,6 +15,8 @@ using glm::mat4;
 using glm::quat;
 
 
+
+
 class Mesh {
 public:
 	int textureID;
@@ -36,15 +38,15 @@ private:
 	unsigned int ibo = 0;
 	unsigned int instanceVBO = 0;
 
-	vert* vertexBuffer;
 	int vertexCount = 0;
+	vert* vertexBuffer;
 
-	unsigned int* indexBuffer;
 	int indexCount = 0;
+	unsigned int* indexBuffer;
 
-	instanceData instanceBuffer[100];
 	int instanceCount = 0;
 	const int maxInstances = 100;
+	instanceData instanceBuffer[100];
 
 public:
 	Mesh() {}
@@ -71,8 +73,10 @@ public:
 	void clearInstances() {
 		instanceCount = 0;
 	}
+
 	void addInstance(mat4 instanceTransform, MaterialProperties material) {
 		assert(instanceCount < maxInstances);
+
 		instanceBuffer[instanceCount++] = { instanceTransform, material };
 	}
 
@@ -81,6 +85,7 @@ public:
 	// primitive shape meshes
 	void generateCube();
 	void generateSphere();
+	void generatePlane();
 
 private:
 	void addQuad(vec4 v0, vec4 v1, vec4 v2, vec4 v3, vec3 faceNormal);

@@ -9,13 +9,12 @@ class RenderObject : public GameObject, public Registry<RenderObject> {
 public:
     vec3 pos = vec3(0);
     quat rot = quat(1, 0, 0, 0);
+    vec3 scale = vec3(1);
 
     int meshID = -1;
     MaterialProperties material = {
-        .baseColor = vec3(0.2f),
-        .diffuseColor = vec3(0.6f),
-        .specularColor = vec3(0.9f),
-        .specularExp = 32.f
+        .baseColor = vec3(0.6f),
+        .gloss = 32.f
     };
 
     Geometry* shape = nullptr;
@@ -31,7 +30,5 @@ public:
     MaterialProperties getMaterial() { return material; };
 
     void setColor(vec3 color) { material.baseColor = color; }
-    void setDiffuseColor(vec3 diffuseColor) { material.diffuseColor = diffuseColor; }
-    void setSpecularColor(vec3 specularColor) { material.specularColor = specularColor; }
-    void setSpecularExp(float specularExp) { material.specularExp = specularExp; }
+    void setGloss(float gloss) { material.gloss = gloss; }
 };

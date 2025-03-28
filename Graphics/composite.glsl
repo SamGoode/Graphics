@@ -6,16 +6,18 @@ out vec4 FragColor;
 
 uniform vec3 AmbientLighting;
 
-uniform sampler2D albedoTexture;
-uniform sampler2D diffuseTexture;
-uniform sampler2D specularTexture;
+uniform sampler2D albedoSpecPass;
+uniform sampler2D diffuseLightPass;
+uniform sampler2D specularLightPass;
 
 void main() {
-	vec4 albedo = texture(albedoTexture, vTexCoord).rgba;
+	vec4 albedoSpec = texture(albedoSpecPass, vTexCoord);
+	vec3 diffuseLight = texture(diffuseLightPass, vTexCoord).rgb;
+	vec3 specularLight = texture(specularLightPass, vTexCoord).rgb;
 
-	vec3 ambient = albedo.rgb * AmbientLighting;
-	vec3 diffuse = texture(diffuseTexture, vTexCoord).rgb;
-	vec3 specular = texture(specularTexture, vTexCoord).rgb;
+	vec3 ambient = albedoSpec.rgb * AmbientLighting;
+	vec3 diffuse = albedoSpec.rgb * diffuseLight;
+	vec3 specular = specularLight * 0.5f;
 
-	FragColor = vec4(ambient + diffuse + specular, albedo.a);
+	FragColor = vec4(ambient + diffuse + specular, 1);
 }

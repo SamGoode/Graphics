@@ -15,27 +15,23 @@ RenderObject::RenderObject(vec3 _pos, vec3 _eulerRot, Geometry* _geometry) {
 }
 
 mat4 RenderObject::getTransform() {
-    mat4 scale = glm::identity<mat4>();
-    
-    if (shape) {
+    mat4 scaleMat = glm::identity<mat4>();
+    scaleMat *= vec4(scale, 1);
 
+    if (shape) {
         switch (shape->getID()) {
         case 0:
             vec3 dimensions = static_cast<Box*>(shape)->extents * 2.f;
-            scale[0][0] = dimensions.x;
-            scale[1][1] = dimensions.y;
-            scale[2][2] = dimensions.z;
+            scaleMat *= vec4(dimensions, 1);
             break;
         case 1:
-            scale *= vec4(vec3(static_cast<Sphere*>(shape)->radius), 1);
+            scaleMat *= vec4(vec3(static_cast<Sphere*>(shape)->radius), 1);
             break;
         }
     }
 
-
     mat4 rotMat = glm::mat4_cast(rot);
-    mat4 out = rotMat * scale;
-    
+    mat4 out = rotMat * scaleMat;
     out[3] += vec4(pos, 0);
 
     return out;

@@ -5,34 +5,28 @@ in vec2 vTexCoord;
 out vec3 diffuseLight;
 out vec3 specularLight;
 
-uniform vec3 CameraPos;
-
 uniform vec3 LightDirection;
 uniform vec3 LightColor;
 
-uniform sampler2D diffuseTexture;
-uniform sampler2D specularTexture;
-
-uniform sampler2D positionTexture;
-uniform sampler2D normalTexture;
+uniform sampler2D albedoSpecPass;
+uniform sampler2D positionPass;
+uniform sampler2D normalPass;
 
 void main() {
-	vec3 Kd = texture(diffuseTexture, vTexCoord).xyz;
-	vec4 spec = texture(specularTexture, vTexCoord);
-	vec3 Ks = spec.rgb;
-	float S = spec.a;
+	float S = texture(albedoSpecPass, vTexCoord).a;
 
-	vec3 N = normalize( texture(normalTexture, vTexCoord).xyz );
+	vec3 N = normalize( texture(normalPass, vTexCoord).xyz );
 	vec3 L = normalize(LightDirection);
-	vec3 position = texture(positionTexture, vTexCoord).xyz;
 
 	float lambertTerm = max(0, dot(N, -L));
 
-	vec3 V = normalize(CameraPos - position);
-	vec3 R = reflect(L, N);
+	vec3 position = texture(positionPass, vTexCoord).xyz;
+	vec3 V = normalize(-position);
+	
+	vec3 H = normalize(V - L);
 
-	float specTerm = pow(max(0, dot(R, V)), S);
+	float specTerm = pow(max(0, dot(H, N)), S);
 
-	diffuseLight = Kd * lambertTerm * LightColor;
-	specularLight = Ks * specTerm * LightColor;
+	diffuseLight = lambertTerm * LightColor;
+	specularLight = specTerm * LightColor;
 }

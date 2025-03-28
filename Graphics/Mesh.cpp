@@ -42,20 +42,20 @@ bool Mesh::init() {
 	glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(instanceData), (void*)48);
 	glEnableVertexAttribArray(7);
 	glEnableVertexAttribArray(8);
-	glEnableVertexAttribArray(9);
-	glEnableVertexAttribArray(10);
+	//glEnableVertexAttribArray(9);
+	//glEnableVertexAttribArray(10);
 	glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, sizeof(instanceData), (void*)64); // baseColor
-	glVertexAttribPointer(8, 3, GL_FLOAT, GL_FALSE, sizeof(instanceData), (void*)76); // diffuseColor
-	glVertexAttribPointer(9, 3, GL_FLOAT, GL_FALSE, sizeof(instanceData), (void*)88); // specularColor
-	glVertexAttribPointer(10, 1, GL_FLOAT, GL_FALSE, sizeof(instanceData), (void*)100); // specularExp
+	//glVertexAttribPointer(8, 3, GL_FLOAT, GL_FALSE, sizeof(instanceData), (void*)76); // diffuseColor
+	//glVertexAttribPointer(9, 3, GL_FLOAT, GL_FALSE, sizeof(instanceData), (void*)88); // specularColor
+	glVertexAttribPointer(8, 1, GL_FLOAT, GL_FALSE, sizeof(instanceData), (void*)76); // gloss
 	glVertexAttribDivisor(3, 1);
 	glVertexAttribDivisor(4, 1);
 	glVertexAttribDivisor(5, 1);
 	glVertexAttribDivisor(6, 1);
 	glVertexAttribDivisor(7, 1);
 	glVertexAttribDivisor(8, 1);
-	glVertexAttribDivisor(9, 1);
-	glVertexAttribDivisor(10, 1);
+	//glVertexAttribDivisor(9, 1);
+	//glVertexAttribDivisor(10, 1);
 
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -100,6 +100,13 @@ void Mesh::loadFromFile(const char* name) {
 	indexCount += indices.size();
 }
 
+void Mesh::generatePlane() {
+	vertexBuffer = new vert[4];
+	indexBuffer = new unsigned int[6];
+
+	addQuad(vec4(1, 1, 0, 1), vec4(1, -1, 0, 1), vec4(-1, -1, 0, 1), vec4(-1, 1, 0, 1), vec3(0, 0, 1));
+}
+
 void Mesh::generateCube() {
 	vertexBuffer = new vert[24];
 	indexBuffer = new unsigned int[36];
@@ -116,11 +123,11 @@ void Mesh::generateCube() {
 	};
 
 	addQuad(vertices[4], vertices[5], vertices[6], vertices[7], vec3(0, 0, 1)); // Top
-	addQuad(vertices[0], vertices[1], vertices[2], vertices[3], vec3(0, 0, -1)); // Bottom
-	addQuad(vertices[1], vertices[0], vertices[4], vertices[5], vec3(1, 0, 0)); // Front
-	addQuad(vertices[3], vertices[2], vertices[6], vertices[7], vec3(-1, 0, 0)); // Back
+	addQuad(vertices[3], vertices[2], vertices[1], vertices[0], vec3(0, 0, -1)); // Bottom
+	addQuad(vertices[5], vertices[4], vertices[0], vertices[1], vec3(1, 0, 0)); // Front
+	addQuad(vertices[7], vertices[6], vertices[2], vertices[3], vec3(-1, 0, 0)); // Back
 	addQuad(vertices[3], vertices[0], vertices[4], vertices[7], vec3(0, 1, 0)); // Left
-	addQuad(vertices[2], vertices[1], vertices[5], vertices[6], vec3(0, -1, 0)); // Right
+	addQuad(vertices[6], vertices[5], vertices[1], vertices[2], vec3(0, -1, 0)); // Right
 }
 
 void Mesh::generateSphere() {
@@ -155,14 +162,14 @@ void Mesh::generateSphere() {
 
 		if (i % 7 != 5) {
 			sphereIndices[count++] = vertexCount + i;
-			sphereIndices[count++] = vertexCount + nextArc + 1;
 			sphereIndices[count++] = vertexCount + i + 1;
+			sphereIndices[count++] = vertexCount + nextArc + 1;
 		}
 
 		if (i % 7 != 0) {
 			sphereIndices[count++] = vertexCount + i;
-			sphereIndices[count++] = vertexCount + nextArc;
 			sphereIndices[count++] = vertexCount + nextArc + 1;
+			sphereIndices[count++] = vertexCount + nextArc;
 		}
 	}
 
@@ -183,11 +190,11 @@ void Mesh::addQuad(vec4 v0, vec4 v1, vec4 v2, vec4 v3, vec3 faceNormal) {
 
 	unsigned int quadIndices[6] = {
 		vertexCount + 0,
+		vertexCount + 2,
 		vertexCount + 1,
-		vertexCount + 2,
 		vertexCount + 0,
-		vertexCount + 2,
-		vertexCount + 3
+		vertexCount + 3,
+		vertexCount + 2
 	};
 
 	std::memcpy(&vertexBuffer[vertexCount], verts, 4 * sizeof(vert));

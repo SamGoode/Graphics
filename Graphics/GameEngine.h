@@ -7,8 +7,10 @@
 #include "PhysicsObject.h"
 #include "Registry.h"
 
+
 #include "Mesh.h"
 #include "Texture.h"
+#include "PointLight.h"
 
 #include "Framebuffer.h"
 
@@ -24,14 +26,16 @@ protected:
 
 	PhysicsEngine physEng;
 
-	Mesh meshes[3];
+	Mesh meshes[4];
 	Texture textures[3];
+	PointLight pointLights;
 
 	FrameBuffer gpassFBO;
 	FrameBuffer lightFBO;
 
 	Shader gpassShader;
 	Shader lightShader;
+	Shader pointLightShader;
 	Shader compositeShader;
 
 
