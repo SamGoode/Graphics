@@ -1,18 +1,16 @@
 #version 410
 
-struct instanceData {
-	vec3 lightPosition;
-	float lightRadius;
-	vec3 lightColor;
-};
 
 // might do the inbuilt vertex array trick later
 in vec4 Position;
 
 // per-instance data
-in instanceData instance;
+layout(location = 1) in struct instanceData {
+	vec3 lightPosition;
+	float lightRadius;
+	vec3 lightColor;
+} instance;
 
-uniform mat4 View;
 uniform mat4 ProjectionView;
 
 out vec3 vLightPosition;
@@ -21,7 +19,7 @@ out vec3 vLightColor;
 
 
 void main() {
-	vLightPosition = (View * vec4(instance.lightPosition, 1)).xyz;
+	vLightPosition = (vec4(instance.lightPosition, 1)).xyz;
 	vLightRadius = instance.lightRadius;
 	vLightColor = instance.lightColor;
 	

@@ -138,13 +138,15 @@ void GameEngine::draw() {
 	shadowFBO.bind();
 	glViewport(0, 0, 1024, 1024);
 	glDisable(GL_STENCIL_TEST);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_FRONT);
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 
 	glClear(GL_DEPTH_BUFFER_BIT);
 
-	mat4 lightProjection = glm::ortho(-30.f, 30.f, -30.f, 30.f, 1.f, 100.f);
-	mat4 lightView = genViewMatrix(lightDirection * -50.f, lightDirection, worldUp);
+	mat4 lightProjection = glm::ortho(-30.f, 30.f, -30.f, 30.f, 1.f, 60.f);
+	mat4 lightView = genViewMatrix(lightDirection * -30.f, lightDirection, worldUp);
 	
 	shadowShader.use();
 	shadowShader.bindUniform(lightProjection * lightView, "LightProjectionView");
@@ -158,6 +160,7 @@ void GameEngine::draw() {
 	// G-Pass
 	gpassFBO.bind();
 	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 	glEnable(GL_STENCIL_TEST);
@@ -170,9 +173,7 @@ void GameEngine::draw() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 	gpassShader.use();
-	gpassShader.bindUniform(view, "View");
 	gpassShader.bindUniform(projectionView, "ProjectionView");
-
 
 	for (int i = 0; i < 4; i++) {
 		textures[meshes[i].textureID].bind();
@@ -196,14 +197,10 @@ void GameEngine::draw() {
 	glClearColor(0.f, 0.f, 0.f, 0);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	vec3 viewLight = vec3(view * vec4(lightDirection, 0));
-
 	lightShader.use();
 	lightShader.bindUniform(lightColor, "LightColor");
 	lightShader.bindUniform(lightDirection, "LightDirection");
 	lightShader.bindUniform(lightProjection * lightView, "LightProjectionView");
-	lightShader.bindUniform(glm::inverse(view), "ViewInverse");
-	lightShader.bindUniform(view, "View");
 	lightShader.bindUniform(camera.pos, "CameraPos");
 
 	lightShader.bindUniform(0, "albedoSpecPass");
@@ -224,8 +221,8 @@ void GameEngine::draw() {
 	glCullFace(GL_FRONT);
 	
 	pointLightShader.use();
-	gpassShader.bindUniform(view, "View");
 	pointLightShader.bindUniform(projectionView, "ProjectionView");
+	pointLightShader.bindUniform(camera.pos, "CameraPos");
 
 	pointLightShader.bindUniform(0, "albedoSpecPass");
 	gpassFBO.getRenderTexture(0)->bind(GL_TEXTURE0);
@@ -234,9 +231,9 @@ void GameEngine::draw() {
 	pointLightShader.bindUniform(2, "normalPass");
 	gpassFBO.getRenderTexture(2)->bind(GL_TEXTURE2);
 	
-	//pointLights.addInstance(vec3(-2, 5, 2), 5.5f, vec3(0.1, 0.8f, 0.4f));
-	//pointLights.addInstance(vec3(2, 7, 2), 5.5f, vec3(0.8f, 0.2f, 0.2f));
-	//pointLights.addInstance(vec3(10, 8, 2), 5.5f, vec3(0.1f, 0.1f, 0.9f));
+	pointLights.addInstance(vec3(-2, 5, 2), 5.5f, vec3(0.1, 0.8f, 0.4f));
+	pointLights.addInstance(vec3(2, 7, 2), 5.5f, vec3(0.8f, 0.2f, 0.2f));
+	pointLights.addInstance(vec3(10, 8, 2), 5.5f, vec3(0.1f, 0.1f, 0.9f));
 	pointLights.renderInstances();
 	pointLights.clearInstances();
 

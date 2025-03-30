@@ -11,10 +11,6 @@ layout(location = 3) in struct instanceData {
 	float gloss;
 } instance;
 
-//layout(location = 3) in mat4 transform;
-//layout(location = 7) in vec3 baseColor;
-//layout(location = 8) in float gloss;
-
 uniform mat4 LightProjectionView;
 
 void main() {

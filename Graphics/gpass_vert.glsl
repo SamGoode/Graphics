@@ -1,22 +1,18 @@
 #version 410
 
-struct instanceData {
-	mat4 transform;
-	vec3 baseColor;
-//    vec3 diffuseColor;
-//    vec3 specularColor;
-	float gloss;
-};
-
-
-in vec4 Position;
-in vec4 Normal;
-in vec2 TexCoord;
+// per-vertex data
+layout(location = 0) in vec4 Position;
+layout(location = 1) in vec4 Normal;
+layout(location = 2) in vec2 TexCoord;
 
 // per-instance data
-in instanceData instance;
+layout(location = 3) in struct instanceData {
+	mat4 transform;
+	vec3 baseColor;
+	float gloss;
+} instance;
 
-uniform mat4 View;
+
 uniform mat4 ProjectionView;
 
 out vec4 vPosition;
@@ -24,8 +20,6 @@ out vec3 vNormal;
 out vec2 vTexCoord;
 
 out vec3 Ka;
-//out vec3 Kd;
-//out vec3 Ks;
 out float S;
 
 
@@ -35,9 +29,7 @@ void main() {
 	vTexCoord = TexCoord;
 
 	Ka = instance.baseColor;
-//	Kd = instance.diffuseColor;
-//	Ks = instance.specularColor;
 	S = instance.gloss;
 
-	gl_Position = ProjectionView * instance.transform * Position;
+	gl_Position = ProjectionView * vPosition;
 }
