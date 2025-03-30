@@ -157,5 +157,11 @@
     <None Include="pointLight_vert.glsl">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="empty.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shadow.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -24,8 +24,6 @@ bool App3D::startup(int windowWidth, int windowHeight) {
 
 	lineShader.init("line_vert.glsl", "line_frag.glsl");
 	meshShader.init("mesh_vert.glsl", "mesh_frag.glsl");
-
-	projection = glm::perspective(glm::pi<float>() * 0.25f, 16 / 9.f, 0.1f, 1000.f);
 	
 
 	// Grid

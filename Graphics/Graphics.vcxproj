@@ -183,6 +183,7 @@
   <ItemGroup>
     <None Include="composite.glsl" />
     <None Include="directional_light.glsl" />
+    <None Include="empty.glsl" />
     <None Include="gpass_frag.glsl" />
     <None Include="gpass_vert.glsl" />
     <None Include="line_frag.glsl" />
@@ -193,6 +194,7 @@
     <None Include="fullscreen_quad.glsl" />
     <None Include="pointLight_frag.glsl" />
     <None Include="pointLight_vert.glsl" />
+    <None Include="shadow.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

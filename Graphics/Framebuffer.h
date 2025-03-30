@@ -3,6 +3,8 @@
 #include "glmAddon.h"
 
 
+#define MAX_RENDER_TEXTURES 8
+
 class FrameBuffer {
 private:
 	unsigned int frameBuffer;
@@ -10,16 +12,19 @@ private:
 	GLenum rboAttachment;
 
 	int textureCount = 0;
-	const int textureMax = 12;
-	RenderTexture textures[12];
+	const int maxTextures = MAX_RENDER_TEXTURES;
+	ITexture* textures[MAX_RENDER_TEXTURES];
 
 	int width;
 	int height;
 
-
 public:
 	FrameBuffer() {}
 	~FrameBuffer() {
+		for (int i = 0; i < textureCount; i++) {
+			delete textures[i];
+		}
+
 		glDeleteFramebuffers(1, &frameBuffer);
 		glDeleteRenderbuffers(1, &renderBuffer);
 	}
@@ -35,27 +40,57 @@ public:
 		glGenFramebuffers(1, &frameBuffer);
 		glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
 
-		GLenum* targets = new GLenum[textureCount];
+		int colorAttachments = 0;
+		GLenum targets[MAX_RENDER_TEXTURES];
 		for (int i = 0; i < textureCount; i++) {
-			targets[i] = GL_COLOR_ATTACHMENT0 + i;
-			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, textures[i].glID(), 0);
+			GLenum attachment;
+
+			switch (textures[i]->format) {
+			case GL_DEPTH_COMPONENT:
+			case GL_DEPTH_COMPONENT16:
+			case GL_DEPTH_COMPONENT24:
+			case GL_DEPTH_COMPONENT32:
+				attachment = GL_DEPTH_ATTACHMENT;
+				break;
+
+			case GL_STENCIL_COMPONENTS:
+				attachment = GL_STENCIL_ATTACHMENT;
+				break;
+
+			default:
+				attachment = GL_COLOR_ATTACHMENT0 + colorAttachments;
+				targets[colorAttachments] = attachment;
+				colorAttachments++;
+			}
+
+			glFramebufferTexture(GL_FRAMEBUFFER, attachment, textures[i]->glID(), 0);
 		}
-		glDrawBuffers(textureCount, targets);
+		if (colorAttachments > 0) {
+			glDrawBuffers(colorAttachments, targets);
+		}
+		else {
+			glDrawBuffer(GL_NONE);
+			glReadBuffer(GL_NONE);
+		}
 
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, rboAttachment, GL_RENDERBUFFER, renderBuffer);
 
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 			std::cout << "Incomplete Framebuffer" << std::endl;
 
-
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		delete[] targets;
 	}
 
 	// Uses render buffer of specified FrameBuffer instance
 	void shareRenderBuffer(FrameBuffer& other) {
 		renderBuffer = other.renderBuffer;
 		rboAttachment = other.rboAttachment;
+	}
+
+	void sendStencilBuffer(unsigned int fboID) {
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, frameBuffer);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboID);
+		glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_STENCIL_BUFFER_BIT, GL_NEAREST );
 	}
 
 	void genRenderBuffer(GLenum attachment, GLenum internalFormat) {
@@ -69,15 +104,27 @@ public:
 		glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	}
 
-	void genRenderTexture(GLenum format) {
-		assert(textureCount < textureMax);
+	void genTextureStorage(GLenum format) {
+		assert(textureCount < maxTextures);
 
-		textures[textureCount].loadEmpty(format, width, height);
-		textures[textureCount].init();
+		textures[textureCount] = new TextureStorage();
+
+		textures[textureCount]->loadEmpty(format, width, height);
+		textures[textureCount]->init();
 		textureCount++;
 	}
 
-	RenderTexture& getRenderTexture(int index) {
+	void genTextureImage(GLenum format) {
+		assert(textureCount < maxTextures);
+
+		textures[textureCount] = new Texture();
+
+		textures[textureCount]->loadEmpty(format, width, height);
+		textures[textureCount]->init();
+		textureCount++;
+	}
+
+	ITexture* getRenderTexture(int index) {
 		assert(index < textureCount);
 
 		return textures[index];

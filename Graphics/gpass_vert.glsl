@@ -16,6 +16,9 @@ in vec2 TexCoord;
 // per-instance data
 in instanceData instance;
 
+uniform mat4 View;
+uniform mat4 ProjectionView;
+
 out vec4 vPosition;
 out vec3 vNormal;
 out vec2 vTexCoord;
@@ -25,12 +28,10 @@ out vec3 Ka;
 //out vec3 Ks;
 out float S;
 
-uniform mat4 View;
-uniform mat4 ProjectionView;
 
 void main() {
-	vPosition = View * instance.transform * Position;
-	vNormal = (View * instance.transform * Normal).xyz;
+	vPosition = instance.transform * Position;
+	vNormal = (instance.transform * Normal).xyz;
 	vTexCoord = TexCoord;
 
 	Ka = instance.baseColor;

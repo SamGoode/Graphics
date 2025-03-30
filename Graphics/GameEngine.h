@@ -30,9 +30,11 @@ protected:
 	Texture textures[3];
 	PointLight pointLights;
 
+	FrameBuffer shadowFBO;
 	FrameBuffer gpassFBO;
 	FrameBuffer lightFBO;
 
+	Shader shadowShader;
 	Shader gpassShader;
 	Shader lightShader;
 	Shader pointLightShader;

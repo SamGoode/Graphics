@@ -33,10 +33,10 @@ private:
 		MaterialProperties material;
 	};
 
-	unsigned int vao = 0;
-	unsigned int vbo = 0;
-	unsigned int ibo = 0;
-	unsigned int instanceVBO = 0;
+	unsigned int vao;
+	unsigned int vbo;
+	unsigned int ibo;
+	unsigned int instanceVBO;
 
 	int vertexCount = 0;
 	vert* vertexBuffer;
@@ -51,10 +51,10 @@ private:
 public:
 	Mesh() {}
 	~Mesh() {
-		glDeleteBuffers(1, &instanceVBO);
-		delete[] indexBuffer;
-		glDeleteBuffers(1, &ibo);
 		delete[] vertexBuffer;
+		delete[] indexBuffer;
+		glDeleteBuffers(1, &instanceVBO);
+		glDeleteBuffers(1, &ibo);
 		glDeleteBuffers(1, &vbo);
 		glDeleteVertexArrays(1, &vao);
 	}

@@ -61,13 +61,6 @@ public:
 			2, 1, 5, 2, 5, 6
 		};
 
-		//addQuad(vertices[4], vertices[5], vertices[6], vertices[7], vec3(0, 0, 1)); // Top
-		//addQuad(vertices[3], vertices[2], vertices[1], vertices[0], vec3(0, 0, -1)); // Bottom
-		//addQuad(vertices[5], vertices[4], vertices[0], vertices[1], vec3(1, 0, 0)); // Front
-		//addQuad(vertices[7], vertices[6], vertices[2], vertices[3], vec3(-1, 0, 0)); // Back
-		//addQuad(vertices[3], vertices[0], vertices[4], vertices[7], vec3(0, 1, 0)); // Left
-		//addQuad(vertices[6], vertices[5], vertices[1], vertices[2], vec3(0, -1, 0)); // Right
-
 		glGenBuffers(1, &vbo);
 		glBindBuffer(GL_ARRAY_BUFFER, vbo);
 		glBufferData(GL_ARRAY_BUFFER, 8 * sizeof(vec4), vertices, GL_STATIC_DRAW);

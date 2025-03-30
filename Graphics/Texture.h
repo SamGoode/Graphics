@@ -16,7 +16,6 @@ public:
 	int height;
 	unsigned char* data = nullptr;
 
-
 	virtual ~ITexture() {
 		glDeleteTextures(1, &gl_id);
 		if(data) stbi_image_free(data);
@@ -39,9 +38,9 @@ public:
 };
 
 
-class RenderTexture : public ITexture {
+class TextureStorage : public ITexture {
 public:
-	RenderTexture() {}
+	TextureStorage() {}
 
 	virtual void init() override {
 		assert(data == nullptr && gl_id == 0);
@@ -74,8 +73,16 @@ public:
 		else
 			glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, NULL);
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+		float color[4] = {1.f, 0.f, 0.f, 0.f};
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, color);
 
 		glGenerateMipmap(GL_TEXTURE_2D);
 
