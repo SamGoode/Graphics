@@ -29,7 +29,7 @@ void main() {
 	
 	vec3 H = normalize(V - L);
 
-	float specTerm = pow(max(0, dot(H, N)), S);
+	float specTerm = pow(max(0, dot(H, N)), S * 32.f) * S;
 
 	vec4 lightSpacePosition = LightProjectionView * vec4(position, 1.f);
 	vec3 projCoords = lightSpacePosition.xyz / lightSpacePosition.w;

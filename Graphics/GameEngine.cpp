@@ -12,7 +12,7 @@ GameEngine::GameEngine() {
 	camera = Camera(vec3(10, 0, 10), vec3(0.f, 45.f, 180.f), 20.f);
 
 	ambientLighting = vec3(0.2f);
-	lightColor = vec3(0.9f);
+	lightColor = vec3(0.8f);
 	lightDirection = normalize(vec3(-1, 1, -1));
 
 	projection = glm::perspective(glm::pi<float>() * 0.25f, 16 / 9.f, 0.1f, 1000.f);
@@ -37,6 +37,7 @@ GameEngine::GameEngine() {
 	bunny->meshID = 3;
 	bunny->scale = vec3(0.5f);
 	bunny->setColor(vec3(1, 1, 0.86f) * 0.6f);
+	bunny->setGloss(0.5f);
 
 	sphere->setColor(vec3(0.8f, 0.1f, 0.1f));
 	sphere2->setColor(vec3(0.1f, 0.8f, 0.1f));
@@ -84,7 +85,7 @@ bool GameEngine::startup(int windowWidth, int windowHeight) {
 
 	gpassFBO.setSize(windowWidth, windowHeight);
 	gpassFBO.genRenderBuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
-	gpassFBO.genTextureStorage(GL_RGBA16F); // AlbedoSpec
+	gpassFBO.genTextureStorage(GL_RGBA8); // AlbedoSpec
 	gpassFBO.genTextureStorage(GL_RGB16F); // Positions
 	gpassFBO.genTextureStorage(GL_RGB16F); // Normals
 	gpassFBO.init();
@@ -123,6 +124,11 @@ void GameEngine::draw() {
 	view = genViewMatrix(camera.pos, camera.orientation * vec3(1, 0, 0), worldUp);
 	mat4 projectionView = projection * view;
 
+	mat4 lightProjection = glm::ortho(-30.f, 30.f, -30.f, 30.f, 1.f, 60.f);
+	mat4 lightView = genViewMatrix(lightDirection * -30.f, lightDirection, worldUp);
+	mat4 lightProjectionView = lightProjection * lightView;
+
+
 	int objectCount = Registry<RenderObject>::count;
 	for (int i = 0; i < objectCount; i++) {
 		RenderObject* obj = Registry<RenderObject>::entries[i];
@@ -145,11 +151,8 @@ void GameEngine::draw() {
 
 	glClear(GL_DEPTH_BUFFER_BIT);
 
-	mat4 lightProjection = glm::ortho(-30.f, 30.f, -30.f, 30.f, 1.f, 60.f);
-	mat4 lightView = genViewMatrix(lightDirection * -30.f, lightDirection, worldUp);
-	
 	shadowShader.use();
-	shadowShader.bindUniform(lightProjection * lightView, "LightProjectionView");
+	shadowShader.bindUniform(lightProjectionView, "LightProjectionView");
 
 	for (int i = 0; i < 4; i++) {
 		meshes[i].renderInstances();
@@ -200,7 +203,7 @@ void GameEngine::draw() {
 	lightShader.use();
 	lightShader.bindUniform(lightColor, "LightColor");
 	lightShader.bindUniform(lightDirection, "LightDirection");
-	lightShader.bindUniform(lightProjection * lightView, "LightProjectionView");
+	lightShader.bindUniform(lightProjectionView, "LightProjectionView");
 	lightShader.bindUniform(camera.pos, "CameraPos");
 
 	lightShader.bindUniform(0, "albedoSpecPass");

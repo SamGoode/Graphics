@@ -13,7 +13,7 @@
 
 class PhysicsEngine : public IPhysicsEngine {
 public:
-	vec3 gravity = vec3(0, 0, -1.5f);
+	vec3 gravity = vec3(0, 0, -9.8f);
 	Plane ground = Plane(vec3(0, 0, 1), 0.f);
 
 private:

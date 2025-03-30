@@ -19,7 +19,7 @@ out vec3 vLightColor;
 
 
 void main() {
-	vLightPosition = (vec4(instance.lightPosition, 1)).xyz;
+	vLightPosition = instance.lightPosition;
 	vLightRadius = instance.lightRadius;
 	vLightColor = instance.lightColor;
 	

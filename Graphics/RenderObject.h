@@ -14,7 +14,7 @@ public:
     int meshID = -1;
     MaterialProperties material = {
         .baseColor = vec3(0.6f),
-        .gloss = 32.f
+        .gloss = 0.5f
     };
 
     Geometry* shape = nullptr;
