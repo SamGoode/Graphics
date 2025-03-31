@@ -229,12 +229,12 @@ bool GameEngine::update()  {
 
 void GameEngine::draw() {
 	view = genViewMatrix(camera.pos, camera.orientation * vec3(1, 0, 0), worldUp);
+	
 	mat4 projectionView = projection * view;
 
 	mat4 lightProjection = glm::ortho(-30.f, 30.f, -30.f, 30.f, 1.f, 60.f);
 	mat4 lightView = genViewMatrix(lightDirection * -30.f, lightDirection, worldUp);
 	mat4 lightProjectionView = lightProjection * lightView;
-
 
 	//int objectCount = Registry<RenderObject>::count;
 	//for (int i = 0; i < objectCount; i++) {

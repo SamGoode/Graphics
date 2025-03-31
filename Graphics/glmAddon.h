@@ -61,3 +61,4 @@ static mat4 getTransformMatrix(vec3 position, quat rotation, vec3 scale) {
 
 	return out;
 }
+

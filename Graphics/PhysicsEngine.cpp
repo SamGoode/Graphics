@@ -6,6 +6,10 @@
 #include "PhysicsSystem.h"
 
 
+
+
+
+
 void PhysicsEngine::update(float deltaTime) {
 	int bodyCount = Registry<PhysicsObject>::count;
 	PhysicsObject** bodies = Registry<PhysicsObject>::entries;

@@ -23,3 +23,15 @@ struct PhysicsComponent {
 	vec3 angAcc;
 	mat3 invInertia;
 };
+
+namespace enumGeometry {
+	enum type : unsigned int {
+		BOX,
+		SPHERE,
+		PLANE
+	};
+}
+
+struct CollisionComponent {
+	enumGeometry::type geometry;
+};

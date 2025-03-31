@@ -125,6 +125,9 @@
     <ClInclude Include="ECSComponents.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="CollisionSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="mesh_vert.glsl">

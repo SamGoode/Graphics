@@ -26,6 +26,7 @@ private:
 	int collisionCount = 0;
 	const int maxCollisions = MAX_COLLISIONS;
 	Collision collisions[MAX_COLLISIONS];
+	CollisionECS collisionsECS[MAX_COLLISIONS];
 
 public:
 	PhysicsEngine() {
@@ -45,5 +46,9 @@ public:
 	void update(float deltaTime);
 
 	virtual void addCollision(Collision collision) override { if (collisionCount >= maxCollisions) return; collisions[collisionCount++] = collision; }
+	virtual void addCollisionECS(CollisionECS collision) override {
+		if (collisionCount >= maxCollisions) return;
+		collisionsECS[collisionCount++] = collision;
+	}
 	virtual void clearCollisions() override { collisionCount = 0; }
 };
