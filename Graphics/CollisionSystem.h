@@ -12,27 +12,29 @@ class CollisionSystem : public ECS::System {
 public:
 	void detectCollisions(ECS::ECSManager* manager, IPhysicsEngine* physicsEngine) {
 		for (int i = 0; i < entityCount; i++) {
-			CollisionComponent& collisionCompA = manager->getComponent<CollisionComponent>(entities[i]);
-			TransformComponent& transformCompA = manager->getComponent<TransformComponent>(entities[i]);
+			ECS::uint entityA = entities[i];
+			CollisionComponent& collisionCompA = manager->getComponent<CollisionComponent>(entityA);
+			TransformComponent& transformCompA = manager->getComponent<TransformComponent>(entityA);
 
 			for (int n = i + 1; n < entityCount; n++) {
-				CollisionComponent& collisionCompB = manager->getComponent<CollisionComponent>(entities[n]);
-				TransformComponent& transformCompB = manager->getComponent<TransformComponent>(entities[n]);
+				ECS::uint entityB = entities[n];
+				CollisionComponent& collisionCompB = manager->getComponent<CollisionComponent>(entityB);
+				TransformComponent& transformCompB = manager->getComponent<TransformComponent>(entityB);
 
-				if (A->getID() > B->getID()) {
-					PhysicsObject* temp = A;
-					A = B;
-					B = temp;
+				unsigned int collisionType = collisionCompA.geometry + collisionCompB.geometry; // fix this so it works with more than three types
+				if (collisionCompA.geometry > collisionCompB.geometry) {
+					// switcheroo
+					(*this.*f[collisionType])(physicsEngine, entityB, transformCompB, entityA, transformCompA);
 				}
-
-				int type = A->getID() + B->getID();
-				(*this.*f[type])(A, B);
+				else {
+					(*this.*f[collisionType])(physicsEngine, entityA, transformCompA, entityB, transformCompB);
+				}
 			}
 		}
 	}
 
 private:
-	typedef void (CollisionSystem::* func)(IPhysicsEngine* physicsEngine, ECS::uint entityA, TransformComponent boxA, ECS::uint entityB, TransformComponent boxB);
+	typedef void (CollisionSystem::* func)(IPhysicsEngine* physicsEngine, ECS::uint entityA, TransformComponent transformA, ECS::uint entityB, TransformComponent transformB);
 	func f[3] = {
 		&CollisionSystem::checkCollisionBoxBox,
 		&CollisionSystem::checkCollisionBoxSphere,
@@ -40,8 +42,8 @@ private:
 	};
 
 	void checkCollisionBoxBox(IPhysicsEngine* physicsEngine, ECS::uint entityA, TransformComponent boxA, ECS::uint entityB, TransformComponent boxB);
-	void checkCollisionBoxSphere(IPhysicsEngine* physicsEngine, ECS::uint entityA, TransformComponent boxA, ECS::uint entityB, TransformComponent boxB);
-	void checkCollisionSphereSphere(IPhysicsEngine* physicsEngine, ECS::uint entityA, TransformComponent boxA, ECS::uint entityB, TransformComponent boxB);
+	void checkCollisionBoxSphere(IPhysicsEngine* physicsEngine, ECS::uint entityA, TransformComponent box, ECS::uint entityB, TransformComponent sphere);
+	void checkCollisionSphereSphere(IPhysicsEngine* physicsEngine, ECS::uint entityA, TransformComponent sphereA, ECS::uint entityB, TransformComponent sphereB);
 
 	static void getGlobalBoxVerts(vec3 verts[8], TransformComponent box);
 	static void getMinMaxProjection(vec3 axis, vec3 points[8], float& min, float& max);
@@ -235,6 +237,96 @@ void CollisionSystem::checkCollisionBoxBox(IPhysicsEngine* physicsEngine, ECS::u
 		//std::cout << length(collision.pointA - collision.pointB) << std::endl;
 		//std::cout << "length: " << glm::distance(edgeBaseB, edgeBaseB + edgeNormB * extentsB[edgeNormIndexB]) << std::endl;
 	}
+}
+
+void CollisionSystem::checkCollisionBoxSphere(IPhysicsEngine* physicsEngine, ECS::uint entityA, TransformComponent box, ECS::uint entityB, TransformComponent sphere) {
+	vec3 toSphere = sphere.position - box.position;
+	vec3 localToSphere = toSphere * box.rotation;
+	vec3 extents = box.scale * 0.5f;
+	float radius = (sphere.scale.x + sphere.scale.y + sphere.scale.z)/3.f; // should be the same anyway
+	//float radius = static_cast<Sphere*>(sphere->shape)->radius;
+	//vec3 extents = static_cast<Box*>(box->shape)->extents;
+	vec3 absOffset = abs(localToSphere);
+	vec3 vertexOffset = absOffset - extents;
+
+
+	if (length(max(vertexOffset, vec3(0))) > radius) {
+		// entire sphere outside box
+		return;
+	}
+
+	vec3 norm = vec3(0);
+	float depth = 0;
+
+	int maxIndex = 0;
+	float maxAxisOffset = vertexOffset[0];
+	for (int i = 1; i < 3; i++) {
+		if (vertexOffset[i] > maxAxisOffset) {
+			maxAxisOffset = vertexOffset[i];
+			maxIndex = i;
+		}
+	}
+
+	if (maxAxisOffset < 0) {
+		// sphere centre inside box
+		norm[maxIndex] = 1;
+		depth = -maxAxisOffset + radius;
+	}
+	else {
+		// sphere centre outside box
+		norm = glm::normalize(max(vertexOffset, vec3(0)));
+		depth = -length(max(vertexOffset, vec3(0))) + radius;
+	}
+
+	vec3 undoAbs; //= localToSphere / absOffset;
+	undoAbs.x = localToSphere.x < 0 ? -1 : 1;
+	undoAbs.y = localToSphere.y < 0 ? -1 : 1;
+	undoAbs.z = localToSphere.z < 0 ? -1 : 1;
+
+	vec3 worldNorm = box.rotation * (norm * undoAbs);
+
+	vec3 pointA = box.position + box.rotation * (extents * undoAbs);
+	vec3 pointB = sphere.position - worldNorm * radius;
+
+	CollisionECS collision = {
+		.entityA = entityA,
+		.entityB = entityB,
+		.worldNormal = worldNorm,
+		.pointA = pointA,
+		.pointB = pointB,
+		.depth = depth
+	};
+
+	physicsEngine->addCollisionECS(collision);
+}
+
+void CollisionSystem::checkCollisionSphereSphere(IPhysicsEngine* physicsEngine, ECS::uint entityA, TransformComponent sphereA, ECS::uint entityB, TransformComponent sphereB) {
+	float radiusA = (sphereA.scale.x + sphereA.scale.y + sphereA.scale.z) / 3.f;
+	float radiusB = (sphereB.scale.x + sphereB.scale.y + sphereB.scale.z) / 3.f;
+	//float radiusA = static_cast<Sphere*>(sphereA->shape)->radius;
+	//float radiusB = static_cast<Sphere*>(sphereB->shape)->radius;
+	float radii = radiusA + radiusB;
+
+	vec3 AtoB = sphereB.position - sphereA.position;
+	float sqrDist = dot(AtoB, AtoB);
+
+	if (sqrDist > radii * radii) {
+		return;
+	}
+
+	float dist = sqrt(sqrDist);
+	vec3 norm = AtoB * (1 / dist);
+
+	CollisionECS collision = {
+		.entityA = entityA,
+		.entityB = entityB,
+		.worldNormal = norm,
+		.pointA = sphereA.position + norm * radiusA,
+		.pointB = sphereB.position - norm * radiusB,
+		.depth = radii - dist
+	};
+
+	physicsEngine->addCollisionECS(collision);
 }
 
 
