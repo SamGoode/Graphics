@@ -5,6 +5,43 @@
 
 #include "stb_image.h"
 
+#include "ECSComponents.h"
+#include "PhysicsSystem.h"
+
+
+
+mat4 getTransformMatrix(TransformComponent transformComponent) {
+	mat4 scaleMat = glm::identity<mat4>();
+	scaleMat *= vec4(transformComponent.scale, 1);
+
+	mat4 rotMat = glm::mat4_cast(transformComponent.rotation);
+	mat4 out = rotMat * scaleMat;
+	out[3] += vec4(transformComponent.position, 0);
+
+	return out;
+}
+
+
+
+
+
+class RenderSystem : public ECS::System {
+public:
+	void addMeshInstances(ECS::ECSManager& manager, Mesh* meshArray) {
+		for (int i = 0; i < entityCount; i++) {
+			MeshComponent meshComp = manager.getComponent<MeshComponent>(entities[i]);
+			TransformComponent transformComp = manager.getComponent<TransformComponent>(entities[i]);
+			MaterialComponent materialComp = manager.getComponent<MaterialComponent>(entities[i]);
+
+			mat4 transform = getTransformMatrix(transformComp);
+			MaterialProperties material = materialComp.material;
+
+			meshArray[meshComp.meshID].addInstance(transform, material);
+		}
+	}
+};
+
+
 
 
 GameEngine::GameEngine() {
@@ -17,35 +54,102 @@ GameEngine::GameEngine() {
 
 	projection = glm::perspective(glm::pi<float>() * 0.25f, 16 / 9.f, 0.1f, 1000.f);
 
-	PhysicsObject* sphere = new PhysicsObject(vec3(-5, 5, 10), vec3(0, 0, 0), new Sphere(0.5f), 5.f);
-	PhysicsObject* sphere2 = new PhysicsObject(vec3(-5, 5, 5), vec3(0, 0, 0), new Sphere(0.8f), 10.f);
-	PhysicsObject* box = new PhysicsObject(vec3(0, 0, 10), vec3(45.f, 45.f, 0), new Box(1.f, 2.f, 3.f), 100.f);
-	PhysicsObject* box2 = new PhysicsObject(vec3(0, 0, 15), vec3(80.f, -45.f, 180.f), new Box(1.f, 2.f, 3.f), 50.f);
+	// Initialize EntityComponentSystem
+	ecs.init();
+
+	// Register Components
+	ecs.registerComponent<MeshComponent>();
+	ecs.registerComponent<TransformComponent>();
+	ecs.registerComponent<MaterialComponent>();
+	ecs.registerComponent<PhysicsComponent>();
+
+	// Register Systems and their signatures
+	ecs.registerSystem<RenderSystem>();
+	ECS::bitset renderSignature;
+	renderSignature.set(ecs.getComponentID<MeshComponent>(), true);
+	renderSignature.set(ecs.getComponentID<TransformComponent>(), true);
+	renderSignature.set(ecs.getComponentID<MaterialComponent>(), true);
+	ecs.setSystemSignature<RenderSystem>(renderSignature);
+
+	ecs.registerSystem<PhysicsSystem>();
+	ECS::bitset physicsSignature;
+	physicsSignature.set(ecs.getComponentID<TransformComponent>(), true);
+	physicsSignature.set(ecs.getComponentID<PhysicsComponent>(), true);
+	ecs.setSystemSignature<PhysicsSystem>(physicsSignature);
+
+
+	// Create Entities
+	ECS::uint floor = ecs.createEntity();
+	ecs.addComponent<MeshComponent>(floor, { 2 }); // floor mesh
+	ecs.addComponent<TransformComponent>(floor, { vec3(0, 0, 0), eulerToQuat(vec3(0, 0, 0)), vec3(20, 20, 1)});
+	ecs.addComponent<MaterialComponent>(floor, { MaterialProperties{vec3(0.6f), 0.5f}});
+	ECS::uint bunny = ecs.createEntity();
+	ecs.addComponent<MeshComponent>(bunny, { 3 }); // bunny mesh
+	ecs.addComponent<TransformComponent>(bunny, { vec3(10, 10, 0), eulerToQuat(vec3(0, 0, 0)), vec3(0.5f) });
+	ecs.addComponent<MaterialComponent>(bunny, { MaterialProperties{vec3(1, 1, 0.86f), 0.5f} });
+
+	ECS::uint sphere = ecs.createEntity();
+	ecs.addComponent<MeshComponent>(sphere, { 1 }); // sphere mesh
+	ecs.addComponent<TransformComponent>(sphere, { vec3(-5, 5, 10), eulerToQuat(vec3(0)), vec3(0.5f) });
+	ecs.addComponent<MaterialComponent>(sphere, { MaterialProperties{vec3(0.8f, 0.1f, 0.1f), 1.f} });
+	ECS::uint sphere2 = ecs.createEntity();
+	ecs.addComponent<MeshComponent>(sphere2, { 1 }); // sphere mesh
+	ecs.addComponent<TransformComponent>(sphere2, { vec3(-5, 5, 5), eulerToQuat(vec3(0)), vec3(0.8f) });
+	ecs.addComponent<MaterialComponent>(sphere2, { MaterialProperties{vec3(0.1f, 0.8f, 0.1f), 1.f} });
+
+	ECS::uint box = ecs.createEntity();
+	ecs.addComponent<MeshComponent>(box, { 0 }); // cube mesh
+	ecs.addComponent<TransformComponent>(box, { vec3(0, 0, 10), eulerToQuat(vec3(45.f, 45.f, 0)), vec3(1, 2, 3) });
+	ecs.addComponent<MaterialComponent>(box, { MaterialProperties{vec3(0.2f, 0.2f, 0.8f), 1.f} });
+	ecs.addComponent<PhysicsComponent>(box, { vec3(0), vec3(0), 1/100.f, vec3(0), vec3(0), glm::identity<mat4>() });
+	ECS::uint box2 = ecs.createEntity();
+	ecs.addComponent<MeshComponent>(box2, { 0 }); // cube mesh
+	ecs.addComponent<TransformComponent>(box2, { vec3(0, 0, 15), eulerToQuat(vec3(80.f, -45.f, 180.f)), vec3(1, 2, 3) });
+	ecs.addComponent<MaterialComponent>(box2, { MaterialProperties{vec3(0.7f, 0.2f, 0.7f), 1.f} });
+
+	ECS::uint earth = ecs.createEntity();
+	ecs.addComponent<MeshComponent>(earth, { 1 }); // sphere mesh
+	ecs.addComponent<TransformComponent>(earth, { vec3(0, 0, 5), eulerToQuat(vec3(0)), vec3(0.8f) });
+	ecs.addComponent<MaterialComponent>(earth, { MaterialProperties{vec3(0.6f), 0.5f} });
+	ECS::uint cobblestone = ecs.createEntity();
+	ecs.addComponent<MeshComponent>(cobblestone, { 0 }); // cube mesh
+	ecs.addComponent<TransformComponent>(cobblestone, { vec3(0, 0, 20), eulerToQuat(vec3(45.f, 45.f, 0)), vec3(1.f) });
+	ecs.addComponent<MaterialComponent>(cobblestone, { MaterialProperties{vec3(0.6f), 0.5f} });
+
+	//PhysicsObject* sphere = new PhysicsObject(vec3(-5, 5, 10), vec3(0, 0, 0), new Sphere(0.5f), 5.f);
+	//PhysicsObject* sphere2 = new PhysicsObject(vec3(-5, 5, 5), vec3(0, 0, 0), new Sphere(0.8f), 10.f);
+	//PhysicsObject* box = new PhysicsObject(vec3(0, 0, 10), vec3(45.f, 45.f, 0), new Box(1.f, 2.f, 3.f), 100.f);
+	//PhysicsObject* box2 = new PhysicsObject(vec3(0, 0, 15), vec3(80.f, -45.f, 180.f), new Box(1.f, 2.f, 3.f), 50.f);
 	//PhysicsObject* box = new PhysicsObject(vec3(0, 0, 5), vec3(0, 0, 0), new Box(3.f, 3.f, 3.f), 100.f);
 	//PhysicsObject* box2 = new PhysicsObject(vec3(0, 0, 10), vec3(0, 0, 0), new Box(3.f, 1.f, 1.f), 50.f);
 
-	PhysicsObject* earth = new PhysicsObject(vec3(0, 0, 5), vec3(0, 0, 0), new Sphere(0.8f), 5.f);
-	PhysicsObject* cobblestone = new PhysicsObject(vec3(0, 0, 20), vec3(45.f, 45.f, 0), new Box(1.f, 1.f, 1.f), 100.f);
+	//PhysicsObject* earth = new PhysicsObject(vec3(0, 0, 5), vec3(0, 0, 0), new Sphere(0.8f), 5.f);
+	//PhysicsObject* cobblestone = new PhysicsObject(vec3(0, 0, 20), vec3(45.f, 45.f, 0), new Box(1.f, 1.f, 1.f), 100.f);
 
-	RenderObject* floor = new RenderObject();
-	floor->meshID = 2;
-	floor->scale = vec3(20.f);
-	floor->setColor(vec3(0.6f));
+	//RenderObject* floor = new RenderObject();
+	//floor->meshID = 2;
+	//floor->scale = vec3(20.f);
+	//floor->setColor(vec3(0.6f));
 
-	RenderObject* bunny = new RenderObject();
-	bunny->pos = vec3(10, 10, 0);
-	bunny->meshID = 3;
-	bunny->scale = vec3(0.5f);
-	bunny->setColor(vec3(1, 1, 0.86f) * 0.6f);
-	bunny->setGloss(0.5f);
+	//RenderObject* bunny = new RenderObject();
+	//bunny->pos = vec3(10, 10, 0);
+	//bunny->meshID = 3;
+	//bunny->scale = vec3(0.5f);
+	//bunny->setColor(vec3(1, 1, 0.86f) * 0.6f);
+	//bunny->setGloss(0.5f);
 
-	sphere->setColor(vec3(0.8f, 0.1f, 0.1f));
-	sphere2->setColor(vec3(0.1f, 0.8f, 0.1f));
-	box->setColor(vec3(0.2f, 0.2f, 0.8f));
-	box2->setColor(vec3(0.7f, 0.2f, 0.7f));
+	//sphere->setColor(vec3(0.8f, 0.1f, 0.1f));
+	//sphere2->setColor(vec3(0.1f, 0.8f, 0.1f));
+	//box->setColor(vec3(0.2f, 0.2f, 0.8f));
+	//box2->setColor(vec3(0.7f, 0.2f, 0.7f));
+
+	// Give physics engine access to EntityComponentSystem
+	physicsEngine.setEntityComponentSystemPtr(&ecs);
 	
 	std::cout << Registry<GameObject>::count << " GameObjects created" << std::endl;
 }
+
+
 
 bool GameEngine::startup(int windowWidth, int windowHeight) {
 	if (!App3D::startup(windowWidth, windowHeight)) return false;
@@ -114,10 +218,13 @@ bool GameEngine::update()  {
 	//if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) { bodies[1]->applyAngularImpulse(vec3(0, 0, 1)); }
 	//if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) { bodies[1]->applyAngularImpulse(vec3(0, 0, -1)); }
 
-	physEng.update(deltaTime);
+	physicsEngine.update(deltaTime);
+	
 
 	return true;
 }
+
+
 
 
 void GameEngine::draw() {
@@ -129,16 +236,20 @@ void GameEngine::draw() {
 	mat4 lightProjectionView = lightProjection * lightView;
 
 
-	int objectCount = Registry<RenderObject>::count;
-	for (int i = 0; i < objectCount; i++) {
-		RenderObject* obj = Registry<RenderObject>::entries[i];
-		int meshID = obj->meshID;
+	//int objectCount = Registry<RenderObject>::count;
+	//for (int i = 0; i < objectCount; i++) {
+	//	RenderObject* obj = Registry<RenderObject>::entries[i];
+	//	int meshID = obj->meshID;
 
-		mat4 transform = obj->getTransform();
-		MaterialProperties material = obj->material;
+	//	mat4 transform = obj->getTransform();
+	//	MaterialProperties material = obj->material;
 
-		meshes[meshID].addInstance(transform, material);
-	}
+	//	meshes[meshID].addInstance(transform, material);
+	//}
+
+	RenderSystem* renderSystem = ecs.getSystem<RenderSystem>();
+	renderSystem->addMeshInstances(ecs, meshes);
+
 
 	// Shadow Pass
 	shadowFBO.bind();
@@ -186,6 +297,8 @@ void GameEngine::draw() {
 		
 		textures[0].bind();
 	}
+
+	
 
 	glDisable(GL_DEPTH_TEST);
 
@@ -248,7 +361,7 @@ void GameEngine::draw() {
 
 	// Composite Pass
 	gpassFBO.sendStencilBuffer(0);
-	//glDisable(GL_STENCIL_TEST);
+	glDisable(GL_STENCIL_TEST);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	
 	glClearColor(0.25f, 0.25f, 0.25f, 0);
@@ -282,8 +395,11 @@ void GameEngine::shutdown() {
 
 void GameEngine::onMouseMoved(MouseInfo mouse) {
 	vec2 input = mouse.pos - mouse.prevPos;
-
 	input *= -0.0006f;
+
+	float alignment = dot(camera.orientation * vec3(1, 0, 0), worldUp);
+	input.y = alignment > 0.99f && input.y > 0 ? 0 : input.y;
+	input.y = alignment < -0.99f && input.y < 0 ? 0 : input.y;
 
 	quat pitch = quat(cos(-input.y), vec3(0, sin(-input.y), 0));
 	quat yaw = quat(cos(input.x), vec3(0, 0, sin(input.x)));

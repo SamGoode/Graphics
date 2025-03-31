@@ -158,6 +158,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECS.h" />
+    <ClInclude Include="ECSComponents.h" />
     <ClInclude Include="Framebuffer.h" />
     <ClInclude Include="GameEngine.h" />
     <ClInclude Include="BaseAppClasses.h" />
@@ -168,6 +169,7 @@
     <ClInclude Include="Geometry.h" />
     <ClInclude Include="glmAddon.h" />
     <ClInclude Include="MaterialProperties.h" />
+    <ClInclude Include="PhysicsSystem.h" />
     <ClInclude Include="PointLight.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="IPhysicsEngine.h" />

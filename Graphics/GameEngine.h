@@ -14,17 +14,21 @@
 
 #include "Framebuffer.h"
 
+#include "ECS.h"
+
 
 class GameEngine : public App3D {
 protected:
 	vec3 worldUp;
 	Camera camera;
 
+	ECS::ECSManager ecs;
+
 	vec3 ambientLighting;
 	vec3 lightColor;
 	vec3 lightDirection;
 
-	PhysicsEngine physEng;
+	PhysicsEngine physicsEngine;
 
 	Mesh meshes[4];
 	Texture textures[3];

@@ -3,18 +3,26 @@
 #include "GameEngine.h"
 #include "glmAddon.h"
 
+#include "PhysicsSystem.h"
+
 
 void PhysicsEngine::update(float deltaTime) {
 	int bodyCount = Registry<PhysicsObject>::count;
 	PhysicsObject** bodies = Registry<PhysicsObject>::entries;
 
-	// Kinematic updates and gravity
-	for (int i = 0; i < bodyCount; i++) {
-		bodies[i]->update(deltaTime);
+	PhysicsSystem* physicsSystem = ecs->getSystem<PhysicsSystem>();
+	
+	
 
-		vec3 gravity = vec3(0, 0, -1.5f);
-		bodies[i]->acc += gravity;
-	}
+	// Kinematic updates and gravity
+	physicsSystem->kinematicInitialUpdate(ecs, deltaTime);
+	physicsSystem->applyGravity(ecs, gravity);
+	//for (int i = 0; i < bodyCount; i++) {
+	//	bodies[i]->update(deltaTime);
+
+	//	vec3 gravity = vec3(0, 0, -1.5f);
+	//	bodies[i]->acc += gravity;
+	//}
 
 	// Ground collisions
 	for (int i = 0; i < bodyCount; i++) {
@@ -49,9 +57,10 @@ void PhysicsEngine::update(float deltaTime) {
 	clearCollisions();
 
 	// Velocity-verlet related
-	for (int i = 0; i < bodyCount; i++) {
-		bodies[i]->finaliseUpdate(deltaTime);
-	}
+	physicsSystem->kinematicFinalUpdate(ecs, deltaTime);
+	//for (int i = 0; i < bodyCount; i++) {
+	//	bodies[i]->finaliseUpdate(deltaTime);
+	//}
 }
 
 

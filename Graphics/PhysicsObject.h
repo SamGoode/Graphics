@@ -9,6 +9,8 @@
 //    virtual int getID() { return shape->getID(); };
 //};
 
+
+
 class PhysicsObject : public RenderObject, public Registry<PhysicsObject> {
 public:
     bool isStatic;

@@ -6,6 +6,7 @@
 
 #include "Collision.h"
 #include "PhysicsObject.h"
+#include "ECS.h"
 
 
 #define MAX_COLLISIONS 64
@@ -13,10 +14,12 @@
 
 class PhysicsEngine : public IPhysicsEngine {
 public:
-	vec3 gravity = vec3(0, 0, -9.8f);
+	vec3 gravity = vec3(0, 0, -1.5f);
 	Plane ground = Plane(vec3(0, 0, 1), 0.f);
 
 private:
+	ECS::ECSManager* ecs;
+
 	Detector detector = Detector(this);
 	PhysicsSolver solver = PhysicsSolver(this);
 
@@ -33,6 +36,10 @@ public:
 
 		elasticity = 0.4f;
 		friction = 0.55f;
+	}
+
+	void setEntityComponentSystemPtr(ECS::ECSManager* _ecs) {
+		ecs = _ecs;
 	}
 
 	void update(float deltaTime);
