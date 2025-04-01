@@ -7,42 +7,155 @@
 #include <algorithm>
 #include "glmAddon.h"
 
+#include "ECSComponents.h"
 
+
+void applyImpulse(vec3 impulse, vec3 hitpos, PhysicsComponent& physicsComp, const TransformComponent& transform) {
+    physicsComp.vel += impulse * physicsComp.invMass;
+
+    vec3 rad = hitpos - transform.position;
+
+    vec3 angularImpulse = cross(rad, impulse);
+    vec3 localAngularImpulse = angularImpulse * transform.rotation;
+
+    vec3 localAngVel = physicsComp.invInertia * localAngularImpulse;
+    physicsComp.angVel += transform.rotation * localAngVel;
+}
+
+void applyAngularImpulse(vec3 angularImpulse, PhysicsComponent& physicsComp, const TransformComponent& transform) {
+    vec3 localAngularImpulse = angularImpulse * transform.rotation;
+
+    vec3 localAngVel = physicsComp.invInertia * localAngularImpulse;
+    physicsComp.angVel += transform.rotation * localAngVel;
+}
+
+void applyPositionImpulse(vec3 impulse, vec3 hitPos, const PhysicsComponent& physicsComp, TransformComponent& transform) {
+    transform.position += impulse * physicsComp.invMass;
+
+    vec3 rad = hitPos - transform.position;
+
+    vec3 rotImpulse = cross(rad, impulse);
+    vec3 localRotImpulse = rotImpulse * transform.rotation;
+
+    vec3 deltaRot = physicsComp.invInertia * localRotImpulse;
+
+    vec3 w = deltaRot * 0.5f;
+    float theta = length(w);
+    if (theta > 0.f) {
+        w = w / theta;
+    }
+
+    transform.rotation = transform.rotation * quat(cos(theta), sin(theta) * w);
+}
 
 // Depenetration through Pseudo Impulse
-void PhysicsSolver::solvePosition(Collision& collision) {
-    float biasSlop = physEngInterface->biasSlop;
-    float biasFactor = physEngInterface->biasFactor;
+void PhysicsSolver::solvePosition(CollisionECS& collision) {
+    ECS::ECSManager* ecs = physicsEngine->ecs;
 
-    float effMass = calcEffectiveMass(collision);
-    float lambda = std::max(collision.depth - biasSlop, 0.f) * biasFactor / effMass;
+    bool hasPhysicsA = ecs->hasComponent<PhysicsComponent>(collision.entityA);
+    bool hasPhysicsB = ecs->hasComponent<PhysicsComponent>(collision.entityB);
+
+    if (!hasPhysicsA && !hasPhysicsB) return;
+
+    float biasSlop = physicsEngine->biasSlop;
+    float biasFactor = physicsEngine->biasFactor;
 
     vec3 norm = collision.worldNormal;
+
+    float effMass = 0.f;
+    if (hasPhysicsA) {
+        auto& physics = ecs->getComponent<PhysicsComponent>(collision.entityA);
+        auto& transform = ecs->getComponent<TransformComponent>(collision.entityA);
+
+        vec3 rA = collision.pointA - transform.position;
+        effMass += calcEffectiveMass(physics, transform, cross(-rA, norm));
+    }
+    if (hasPhysicsB) {
+        auto& physics = ecs->getComponent<PhysicsComponent>(collision.entityB);
+        auto& transform = ecs->getComponent<TransformComponent>(collision.entityB);
+
+        vec3 rB = collision.pointB - transform.position;
+        effMass += calcEffectiveMass(physics, transform, cross(rB, norm));
+    }
+
+    float lambda = std::max(collision.depth - biasSlop, 0.f) * biasFactor / effMass;
     vec3 impulse = norm * lambda;
 
-    collision.bodyA->applyPositionImpulse(-impulse, collision.pointA);
-    if (collision.bodyB)
-        collision.bodyB->applyPositionImpulse(impulse, collision.pointB);
+    if (hasPhysicsA) {
+        auto& physics = ecs->getComponent<PhysicsComponent>(collision.entityA);
+        auto& transform = ecs->getComponent<TransformComponent>(collision.entityA);
+
+        applyPositionImpulse(-impulse, collision.pointA, physics, transform);
+    }
+    if (hasPhysicsB) {
+        auto& physics = ecs->getComponent<PhysicsComponent>(collision.entityB);
+        auto& transform = ecs->getComponent<TransformComponent>(collision.entityB);
+
+        applyPositionImpulse(impulse, collision.pointB, physics, transform);
+    }
 }
 
 // Normal Impulse
-void PhysicsSolver::solveImpulse(Collision& collision) {
-    float lambda = calcLambda(collision);
+void PhysicsSolver::solveImpulse(CollisionECS& collision) {
+    ECS::ECSManager* ecs = physicsEngine->ecs;
+
+    bool hasPhysicsA = ecs->hasComponent<PhysicsComponent>(collision.entityA);
+    bool hasPhysicsB = ecs->hasComponent<PhysicsComponent>(collision.entityB);
+
+    if (!hasPhysicsA && !hasPhysicsB) return;
+
+    vec3 norm = collision.worldNormal;
+
+    float JV = 0.f;
+    float effMass = 0.f;
+    if (hasPhysicsA) {
+        auto& physics = ecs->getComponent<PhysicsComponent>(collision.entityA);
+        auto& transform = ecs->getComponent<TransformComponent>(collision.entityA);
+
+        vec3 rA = collision.pointA - transform.position;
+        JV += calcRelativeVel(physics, rA, -norm);
+        effMass += calcEffectiveMass(physics, transform, cross(-rA, norm));
+    }
+    if (hasPhysicsB) {
+        auto& physics = ecs->getComponent<PhysicsComponent>(collision.entityB);
+        auto& transform = ecs->getComponent<TransformComponent>(collision.entityB);
+
+        vec3 rB = collision.pointB - transform.position;
+        JV += calcRelativeVel(physics, rB, norm);
+        effMass += calcEffectiveMass(physics, transform, cross(rB, norm));
+    }
+
+    float lambda = -JV / effMass;
     float newSum = std::max(collision.lambdaSum + lambda, 0.f);
     lambda = newSum - collision.lambdaSum;
     collision.lambdaSum += lambda;
 
-    vec3 norm = collision.worldNormal;
     vec3 impulse = norm * lambda;
 
-    collision.bodyA->applyImpulse(-impulse, collision.pointA);
-    if (collision.bodyB)
-        collision.bodyB->applyImpulse(impulse, collision.pointB);
+    if (hasPhysicsA) {
+        auto& physics = ecs->getComponent<PhysicsComponent>(collision.entityA);
+        auto& transform = ecs->getComponent<TransformComponent>(collision.entityA);
+
+        applyImpulse(-impulse, collision.pointA, physics, transform);
+    }
+    if (hasPhysicsB) {
+        auto& physics = ecs->getComponent<PhysicsComponent>(collision.entityB);
+        auto& transform = ecs->getComponent<TransformComponent>(collision.entityB);
+
+        applyImpulse(impulse, collision.pointB, physics, transform);
+    }
 }
 
 
 // Friction
-void PhysicsSolver::solveFriction(Collision& collision) {
+void PhysicsSolver::solveFriction(CollisionECS& collision) {
+    ECS::ECSManager* ecs = physicsEngine->ecs;
+
+    bool hasPhysicsA = ecs->hasComponent<PhysicsComponent>(collision.entityA);
+    bool hasPhysicsB = ecs->hasComponent<PhysicsComponent>(collision.entityB);
+
+    if (!hasPhysicsA && !hasPhysicsB) return;
+
     vec3 norm = collision.worldNormal;
     vec3 tangent1 = { -norm.y, norm.x, 0.f };
     if (length(tangent1) == 0.f) {
@@ -51,103 +164,157 @@ void PhysicsSolver::solveFriction(Collision& collision) {
     tangent1 = normalize(tangent1);
     vec3 tangent2 = cross(norm, tangent1);
 
-    float maxFriction = collision.lambdaSum * physEngInterface->friction;
+    float maxFriction = collision.lambdaSum * physicsEngine->friction;
 
-    float tangentLambda1 = calcLambda(collision, tangent1);
+    float JV1 = 0.f;
+    float effMass1 = 0.f;
+    float JV2 = 0.f;
+    float effMass2 = 0.f;
+    if (hasPhysicsA) {
+        auto& physics = ecs->getComponent<PhysicsComponent>(collision.entityA);
+        auto& transform = ecs->getComponent<TransformComponent>(collision.entityA);
+
+        vec3 rA = collision.pointA - transform.position;
+        JV1 += calcRelativeVel(physics, rA, -tangent1);
+        effMass1 += calcEffectiveMass(physics, transform, cross(-rA, tangent1));
+        JV2 += calcRelativeVel(physics, rA, -tangent2);
+        effMass2 += calcEffectiveMass(physics, transform, cross(-rA, tangent2));
+    }
+    if (hasPhysicsB) {
+        auto& physics = ecs->getComponent<PhysicsComponent>(collision.entityB);
+        auto& transform = ecs->getComponent<TransformComponent>(collision.entityB);
+
+        vec3 rB = collision.pointB - transform.position;
+        JV1 += calcRelativeVel(physics, rB, tangent1);
+        effMass1 += calcEffectiveMass(physics, transform, cross(rB, tangent1));
+        JV2 += calcRelativeVel(physics, rB, tangent2);
+        effMass2 += calcEffectiveMass(physics, transform, cross(rB, tangent2));
+    }
+
+    float tangentLambda1 = -JV1 / effMass1;
     float newSum1 = std::clamp(collision.tangentLambdaSum1 + tangentLambda1, -maxFriction, maxFriction);
     tangentLambda1 = newSum1 - collision.tangentLambdaSum1;
     collision.tangentLambdaSum1 += tangentLambda1;
 
-    float tangentLambda2 = calcLambda(collision, tangent2);
+    float tangentLambda2 = -JV2 / effMass2;
     float newSum2 = std::clamp(collision.tangentLambdaSum2 + tangentLambda2, -maxFriction, maxFriction);
     tangentLambda2 = newSum2 - collision.tangentLambdaSum2;
     collision.tangentLambdaSum2 += tangentLambda2;
 
     vec3 frictionImpulse = tangent1 * tangentLambda1 + tangent2 * tangentLambda2;
 
-    collision.bodyA->applyImpulse(-frictionImpulse, collision.pointA);
-    if (collision.bodyB)
-        collision.bodyB->applyImpulse(frictionImpulse, collision.pointB);
+    if (hasPhysicsA) {
+        auto& physics = ecs->getComponent<PhysicsComponent>(collision.entityA);
+        auto& transform = ecs->getComponent<TransformComponent>(collision.entityA);
+
+        applyImpulse(-frictionImpulse, collision.pointA, physics, transform);
+    }
+    if (hasPhysicsB) {
+        auto& physics = ecs->getComponent<PhysicsComponent>(collision.entityB);
+        auto& transform = ecs->getComponent<TransformComponent>(collision.entityB);
+
+        applyImpulse(frictionImpulse, collision.pointB, physics, transform);
+    }
 }
 
-void PhysicsSolver::applyRestitution(Collision& collision) {
+void PhysicsSolver::applyRestitution(CollisionECS& collision) {
+    ECS::ECSManager* ecs = physicsEngine->ecs;
+
+    bool hasPhysicsA = ecs->hasComponent<PhysicsComponent>(collision.entityA);
+    bool hasPhysicsB = ecs->hasComponent<PhysicsComponent>(collision.entityB);
+
+    if (!hasPhysicsA && !hasPhysicsB) return;
+
     vec3 norm = collision.worldNormal;
     float lambda = collision.lambdaSum;
 
-    vec3 impulse = norm * lambda * physEngInterface->elasticity;
+    vec3 impulse = norm * lambda * physicsEngine->elasticity;
 
-    collision.bodyA->applyImpulse(-impulse, collision.pointA);
-    if (collision.bodyB)
-        collision.bodyB->applyImpulse(impulse, collision.pointB);
+    if (hasPhysicsA) {
+        auto& physics = ecs->getComponent<PhysicsComponent>(collision.entityA);
+        auto& transform = ecs->getComponent<TransformComponent>(collision.entityA);
+
+        applyImpulse(-impulse, collision.pointA, physics, transform);
+    }
+    if (hasPhysicsB) {
+        auto& physics = ecs->getComponent<PhysicsComponent>(collision.entityB);
+        auto& transform = ecs->getComponent<TransformComponent>(collision.entityB);
+
+        applyImpulse(impulse, collision.pointB, physics, transform);
+    }
 }
 
 
 // Shorthand
-float PhysicsSolver::calcLambda(Collision& collision) {
-    float JV = calcRelativeVel(collision);
-    float effMass = calcEffectiveMass(collision);
-    return -JV / effMass;
-}
-
-float PhysicsSolver::calcLambda(Collision& collision, vec3 direction) {
-    float JV = calcRelativeVel(collision, direction);
-    float effMass = calcEffectiveMass(collision, direction);
-    return -JV / effMass;
-}
+//float PhysicsSolver::calcLambda(CollisionECS& collision) {
+//    float JV = calcRelativeVel(collision);
+//    float effMass = calcEffectiveMass(collision);
+//    return -JV / effMass;
+//}
+//
+//float PhysicsSolver::calcLambda(CollisionECS& collision, vec3 direction) {
+//    float JV = calcRelativeVel(collision, direction);
+//    float effMass = calcEffectiveMass(collision, direction);
+//    return -JV / effMass;
+//}
 
 
 // Calculates Jacobian * Velocity
-float PhysicsSolver::calcRelativeVel(Collision& collision) {
-    vec3 norm = collision.worldNormal;
-    return calcRelativeVel(collision, norm);
-}
+//float PhysicsSolver::calcRelativeVel(CollisionECS& collision) {
+//    vec3 norm = collision.worldNormal;
+//    return calcRelativeVel(collision, norm);
+//}
+//
+//float PhysicsSolver::calcRelativeVel(const PhysicsComponent& physicsCompA, vec3 radA, const PhysicsComponent& physicsCompB, vec3 radB, vec3 direction) {
+//    //PhysicsObject* A = collision.bodyA;
+//    //PhysicsObject* B = collision.bodyB;
+//
+//
+//    vec3 rA = radA;
+//    float JVA = calcRelativeVel(A, rA, -direction);
+//
+//    vec3 rB = B ? collision.pointB - B->pos : vec3(0);
+//    float JVB = B ? calcRelativeVel(B, rB, direction) : 0.f;
+//
+//    return JVA + JVB;
+//}
 
-float PhysicsSolver::calcRelativeVel(Collision& collision, vec3 direction) {
-    PhysicsObject* A = collision.bodyA;
-    PhysicsObject* B = collision.bodyB;
+float PhysicsSolver::calcRelativeVel(const PhysicsComponent& physicsComp, vec3 rad, vec3 direction) {
+    vec3 Va = physicsComp.vel;
+    vec3 Wa = physicsComp.angVel;
 
-    vec3 rA = collision.pointA - A->pos;
-    float JVA = calcRelativeVel(A, rA, -direction);
-
-    vec3 rB = B ? collision.pointB - B->pos : vec3(0);
-    float JVB = B ? calcRelativeVel(B, rB, direction) : 0.f;
-
-    return JVA + JVB;
-}
-
-float PhysicsSolver::calcRelativeVel(PhysicsObject* object, vec3 rad, vec3 norm) {
-    vec3 Va = object->vel;
-    vec3 Wa = object->angVel;
-
-    float JV = dot(norm, Va) + dot(cross(rad, norm), Wa);
+    float JV = dot(direction, Va) + dot(cross(rad, direction), Wa);
     return JV;
 }
 
 
 // Calculates effective mass of contact constraint
-float PhysicsSolver::calcEffectiveMass(Collision& collision) {
-    vec3 norm = collision.worldNormal;
-    return calcEffectiveMass(collision, norm);
-}
+//float PhysicsSolver::calcEffectiveMass(CollisionECS& collision) {
+//    vec3 norm = collision.worldNormal;
+//    return calcEffectiveMass(collision, norm);
+//}
 
-float PhysicsSolver::calcEffectiveMass(Collision& collision, vec3 direction) {
-    PhysicsObject* A = collision.bodyA;
-    PhysicsObject* B = collision.bodyB;
+//float PhysicsSolver::calcEffectiveMass(const PhysicsComponent& physicsA, const TransformComponent& transformA, const PhysicsComponent& physicsB, const TransformComponent& transformB, vec3 direction) {
+//    //PhysicsObject* A = collision.bodyA;
+//    //PhysicsObject* B = collision.bodyB;
+//
+//    vec3 rA = collision.pointA - transformA.position;
+//    float effMassA = calcEffectiveMass(physicsA, transformA, cross(-rA, direction));
+//
+//
+//
+//    vec3 rB = B ? collision.pointB - B->pos : vec3(0);
+//    float effMassB = B ? calcEffectiveMass(B, cross(rB, direction)) : 0.f;
+//
+//    return effMassA + effMassB;
+//}
 
-    vec3 rA = collision.pointA - A->pos;
-    float effMassA = calcEffectiveMass(A, cross(-rA, direction));
+float PhysicsSolver::calcEffectiveMass(const PhysicsComponent& physics, const TransformComponent& transform, vec3 radNorm) {
+    float iMa = physics.invMass;
+    mat3 iIa = physics.invInertia;
 
-    vec3 rB = B ? collision.pointB - B->pos : vec3(0);
-    float effMassB = B ? calcEffectiveMass(B, cross(rB, direction)) : 0.f;
 
-    return effMassA + effMassB;
-}
-
-float PhysicsSolver::calcEffectiveMass(PhysicsObject* object, vec3 radNorm) {
-    float iMa = object->invMass;
-    mat3 iIa = object->invInertia;
-
-    float effMass = iMa + dot(radNorm, object->rot * (iIa * radNorm * object->rot));
+    float effMass = iMa + dot(radNorm, transform.rotation * (iIa * radNorm * transform.rotation));
     return effMass;
 }
 

@@ -7,27 +7,27 @@ using glm::vec3;
 
 struct PhysicsSolver {
 private:
-	struct IPhysicsEngine* physEngInterface;
+	struct IPhysicsEngine* physicsEngine;
 
 public:
-	PhysicsSolver(IPhysicsEngine* interface) : physEngInterface(interface) {}
+	PhysicsSolver(IPhysicsEngine* interface) : physicsEngine(interface) {}
 
-	void solvePosition(struct Collision& collision);
-	void solveImpulse(Collision& collision);
-	void solveFriction(Collision& collision);
-	void applyRestitution(Collision& collision);
+	void solvePosition(struct CollisionECS& collision);
+	void solveImpulse(CollisionECS& collision);
+	void solveFriction(CollisionECS& collision);
+	void applyRestitution(CollisionECS& collision);
 
 private:
-	static float calcLambda(Collision& collision);
-	static float calcLambda(Collision& collision, vec3 direction);
+	//static float calcLambda(CollisionECS& collision);
+	//static float calcLambda(CollisionECS& collision, vec3 direction);
 
-	static float calcRelativeVel(Collision& collision);
-	static float calcRelativeVel(Collision& collision, vec3 direction);
-	static float calcRelativeVel(class PhysicsObject* object, vec3 rad, vec3 norm);
+	//static float calcRelativeVel(CollisionECS& collision);
+	//static float calcRelativeVel(const struct PhysicsComponent& physicsCompA, vec3 radA, const PhysicsComponent& physicsCompB, vec3 radB, vec3 direction);
+	static float calcRelativeVel(const struct PhysicsComponent& physicsComponent, vec3 rad, vec3 direction);
 
-	static float calcEffectiveMass(Collision& collision);
-	static float calcEffectiveMass(Collision& collision, vec3 direction);
-	static float calcEffectiveMass(class PhysicsObject* object, vec3 radNorm);
+	//static float calcEffectiveMass(CollisionECS& collision);
+	//static float calcEffectiveMass(const PhysicsComponent& physicsA, const TransformComponent& transformA, const PhysicsComponent& physicsB, const TransformComponent& transformB, vec3 direction);
+	static float calcEffectiveMass(const PhysicsComponent& physics, const struct TransformComponent& transform, vec3 radNorm);
 };
 
 

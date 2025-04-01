@@ -1,67 +1,7 @@
-#include "Detector.h"
-
-#include "IPhysicsEngine.h"
-#include "PhysicsObject.h"
-#include "Collision.h"
-
-#include <algorithm>
-#include "glmAddon.h"
+#include "CollisionSystem.h"
 
 
-void Detector::checkCollision(PhysicsObject* body, Plane plane) {
-	switch (body->getID()) {
-	case 0:
-		vec3 extents = dynamic_cast<Box*>(body->shape)->extents;
-
-		for (int n = 0; n < 8; n++) {
-			vec3 vertOffset = vec3((n >> 2) & 1, (n >> 1) & 1, n & 1);
-			vertOffset = extents * (vertOffset * 2.f - vec3(1));
-
-			vec3 vertex = body->pos + (body->rot * vertOffset);
-			float separation = dot(vertex, plane.normal) + plane.distanceFromOrigin;
-			if (separation > 0.f) { continue; }
-
-			Collision collision = {
-				.bodyA = body,
-				.worldNormal = -plane.normal,
-				.pointA = vertex,
-				.depth = -separation
-			};
-
-			//physEngInterface->addCollision(collision);
-		}
-		break;
-
-	case 1:
-		float radius = dynamic_cast<Sphere*>(body->shape)->radius;
-
-		float separation = dot(body->pos, plane.normal) - radius + plane.distanceFromOrigin;
-		if (separation < 0.f) {
-			Collision collision = {
-				.bodyA = body,
-				.worldNormal = -plane.normal,
-				.pointA = body->pos - (plane.normal * radius),
-				.depth = -separation
-			};
-
-			//physEngInterface->addCollision(collision);
-		}
-		break;
-	}
-}
-
-void Detector::checkCollision(PhysicsObject* A, PhysicsObject* B) {
-	if (A->getID() > B->getID()) {
-		PhysicsObject* temp = A;
-		A = B;
-		B = temp;
-	}
-
-	int type = A->getID() + B->getID();
-	(*this.*f[type])(A, B);
-}
-
-void Detector::checkCollision00(PhysicsObject* boxA, PhysicsObject* boxB) {
+void CollisionSystem::checkCollisionBoxBox(IPhysicsEngine* physicsEngine, ECS::uint entityA, TransformComponent boxA, ECS::uint entityB, TransformComponent boxB) {
 	vec3 vertsA[8];
 	vec3 vertsB[8];
 	getGlobalBoxVerts(vertsA, boxA);
@@ -77,8 +17,8 @@ void Detector::checkCollision00(PhysicsObject* boxA, PhysicsObject* boxB) {
 		vec3 axis = vec3(0);
 		axis[i] = 1;
 
-		axes[i] = boxA->rot * axis; // A face normals
-		axes[i + 3] = boxB->rot * axis; // B face normals
+		axes[i] = boxA.rotation * axis; // A face normals
+		axes[i + 3] = boxB.rotation * axis; // B face normals
 	}
 
 	// co-planar edge plane normals
@@ -127,18 +67,18 @@ void Detector::checkCollision00(PhysicsObject* boxA, PhysicsObject* boxB) {
 		}
 	}
 
-	Collision collision = {
-		.bodyA = boxA,
-		.bodyB = boxB,
+	CollisionECS collision = {
+		.entityA = entityA,
+		.entityB = entityB,
 		.worldNormal = worldNorm
 	};
 
-	vec3 extentsA = static_cast<Box*>(boxA->shape)->extents;
-	vec3 extentsB = static_cast<Box*>(boxB->shape)->extents;
+	vec3 extentsA = boxA.scale * 0.5f;
+	vec3 extentsB = boxB.scale * 0.5f;
 
 	// Vert B on Face A
 	if (minIndex < 3) {
-		vec3 faceA = boxA->pos + worldNorm * extentsA[minIndex]; // x,y,z index should line up.
+		vec3 faceA = boxA.position + worldNorm * extentsA[minIndex]; // x,y,z index should line up.
 
 		for (int i = 0; i < 8; i++) {
 			if (dot(vertsB[i] - faceA, worldNorm) < 0.f) {
@@ -146,22 +86,22 @@ void Detector::checkCollision00(PhysicsObject* boxA, PhysicsObject* boxB) {
 				collision.depth = dot(faceA, worldNorm) - dot(collision.pointB, worldNorm);
 				collision.pointA = collision.pointB + worldNorm * collision.depth;
 
-				//physEngInterface->addCollision(collision);
+				physicsEngine->addCollisionECS(collision);
 				//break;
 			}
 		}
 	}
 	// Vert A on Face B
 	else if (minIndex < 6) {
-		vec3 faceB = boxB->pos - worldNorm * extentsB[minIndex - 3]; // x,y,z index should line up.
+		vec3 faceB = boxB.position - worldNorm * extentsB[minIndex - 3]; // x,y,z index should line up.
 
 		for (int i = 0; i < 8; i++) {
 			if (dot(vertsA[i] - faceB, -worldNorm) < 0.f) {
 				collision.pointA = vertsA[i];
 				collision.depth = dot(faceB, -worldNorm) - dot(collision.pointA, -worldNorm);
 				collision.pointB = collision.pointA - worldNorm * collision.depth;
-				
-				//physEngInterface->addCollision(collision);
+
+				physicsEngine->addCollisionECS(collision);
 				//break;
 			}
 		}
@@ -173,7 +113,7 @@ void Detector::checkCollision00(PhysicsObject* boxA, PhysicsObject* boxB) {
 
 		vec3 edgeNormA = axes[edgeNormIndexA];
 		vec3 edgeNormB = axes[edgeNormIndexB + 3];
-		
+
 		// If one value is zero then goes through all combinations where other two are non-zero
 		//vec3 midPoint = temp[0] - temp[1] - temp[2];
 		//vec3 midPoint = -temp[0] + temp[1] - temp[2];
@@ -195,10 +135,10 @@ void Detector::checkCollision00(PhysicsObject* boxA, PhysicsObject* boxB) {
 			midPoint += (i % 2) == 0 ? -temp[1] : temp[1];
 			midPoint += (i < 2) ? -temp[2] : temp[2];
 
-			float projection = dot(boxA->pos + midPoint, worldNorm);
+			float projection = dot(boxA.position + midPoint, worldNorm);
 			if (projection > maxProjectionA) {
 				maxProjectionA = projection;
-				closestEdgeMidpointA = boxA->pos + midPoint;
+				closestEdgeMidpointA = boxA.position + midPoint;
 			}
 		}
 		vec3 edgeBaseA = closestEdgeMidpointA - edgeNormA * extentsA[edgeNormIndexA];
@@ -219,10 +159,10 @@ void Detector::checkCollision00(PhysicsObject* boxA, PhysicsObject* boxB) {
 			midPoint += (i < 2) ? -tempB[2] : tempB[2];
 
 
-			float projection = dot(boxB->pos + midPoint, -worldNorm);
+			float projection = dot(boxB.position + midPoint, -worldNorm);
 			if (projection > maxProjectionB) {
 				maxProjectionB = projection;
-				closestEdgeMidpointB = boxB->pos + midPoint;
+				closestEdgeMidpointB = boxB.position + midPoint;
 			}
 		}
 		vec3 edgeBaseB = closestEdgeMidpointB - edgeNormB * extentsB[edgeNormIndexB];
@@ -240,7 +180,7 @@ void Detector::checkCollision00(PhysicsObject* boxA, PhysicsObject* boxB) {
 		collision.pointB = edgeBaseB + edgeNormB * std::max(std::min(t2, extentsB[edgeNormIndexB] * 2.f), 0.f);
 		collision.depth = minOverlap;
 
-		//physEngInterface->addCollision(collision);
+		physicsEngine->addCollisionECS(collision);
 
 		//std::cout << "t1: " << t1 << std::endl << "t2: " << t2 << std::endl;
 		//std::cout << minOverlap << std::endl;
@@ -249,12 +189,13 @@ void Detector::checkCollision00(PhysicsObject* boxA, PhysicsObject* boxB) {
 	}
 }
 
-
-void Detector::checkCollision01(PhysicsObject* box, PhysicsObject* sphere) {
-	vec3 toSphere = sphere->pos - box->pos;
-	vec3 localToSphere = toSphere * box->rot;
-	float radius = static_cast<Sphere*>(sphere->shape)->radius;
-	vec3 extents = static_cast<Box*>(box->shape)->extents;
+void CollisionSystem::checkCollisionBoxSphere(IPhysicsEngine* physicsEngine, ECS::uint entityA, TransformComponent box, ECS::uint entityB, TransformComponent sphere) {
+	vec3 toSphere = sphere.position - box.position;
+	vec3 localToSphere = toSphere * box.rotation;
+	vec3 extents = box.scale * 0.5f;
+	float radius = (sphere.scale.x + sphere.scale.y + sphere.scale.z) / 3.f; // should be the same anyway
+	//float radius = static_cast<Sphere*>(sphere->shape)->radius;
+	//vec3 extents = static_cast<Box*>(box->shape)->extents;
 	vec3 absOffset = abs(localToSphere);
 	vec3 vertexOffset = absOffset - extents;
 
@@ -292,29 +233,31 @@ void Detector::checkCollision01(PhysicsObject* box, PhysicsObject* sphere) {
 	undoAbs.y = localToSphere.y < 0 ? -1 : 1;
 	undoAbs.z = localToSphere.z < 0 ? -1 : 1;
 
-	vec3 worldNorm = box->rot * (norm * undoAbs);
+	vec3 worldNorm = box.rotation * (norm * undoAbs);
 
-	vec3 pointA = box->pos + box->rot * (extents * undoAbs);
-	vec3 pointB = sphere->pos - worldNorm * radius;
+	vec3 pointA = box.position + box.rotation * (extents * undoAbs);
+	vec3 pointB = sphere.position - worldNorm * radius;
 
-	Collision collision = {
-		.bodyA = box,
-		.bodyB = sphere,
+	CollisionECS collision = {
+		.entityA = entityA,
+		.entityB = entityB,
 		.worldNormal = worldNorm,
 		.pointA = pointA,
 		.pointB = pointB,
 		.depth = depth
 	};
 
-	//physEngInterface->addCollision(collision);
+	physicsEngine->addCollisionECS(collision);
 }
 
-void Detector::checkCollision11(PhysicsObject* sphereA, PhysicsObject* sphereB) {
-	float radiusA = static_cast<Sphere*>(sphereA->shape)->radius;
-	float radiusB = static_cast<Sphere*>(sphereB->shape)->radius;
+void CollisionSystem::checkCollisionSphereSphere(IPhysicsEngine* physicsEngine, ECS::uint entityA, TransformComponent sphereA, ECS::uint entityB, TransformComponent sphereB) {
+	float radiusA = (sphereA.scale.x + sphereA.scale.y + sphereA.scale.z) / 3.f;
+	float radiusB = (sphereB.scale.x + sphereB.scale.y + sphereB.scale.z) / 3.f;
+	//float radiusA = static_cast<Sphere*>(sphereA->shape)->radius;
+	//float radiusB = static_cast<Sphere*>(sphereB->shape)->radius;
 	float radii = radiusA + radiusB;
 
-	vec3 AtoB = sphereB->pos - sphereA->pos;
+	vec3 AtoB = sphereB.position - sphereA.position;
 	float sqrDist = dot(AtoB, AtoB);
 
 	if (sqrDist > radii * radii) {
@@ -324,31 +267,86 @@ void Detector::checkCollision11(PhysicsObject* sphereA, PhysicsObject* sphereB) 
 	float dist = sqrt(sqrDist);
 	vec3 norm = AtoB * (1 / dist);
 
-	Collision collision = {
-		.bodyA = sphereA,
-		.bodyB = sphereB,
+	CollisionECS collision = {
+		.entityA = entityA,
+		.entityB = entityB,
 		.worldNormal = norm,
-		.pointA = sphereA->pos + norm * radiusA,
-		.pointB = sphereB->pos - norm * radiusB,
+		.pointA = sphereA.position + norm * radiusA,
+		.pointB = sphereB.position - norm * radiusB,
 		.depth = radii - dist
 	};
 
-	//physEngInterface->addCollision(collision);
+	physicsEngine->addCollisionECS(collision);
+}
+
+void CollisionSystem::checkCollisionBoxPlane(IPhysicsEngine* physicsEngine, ECS::uint entityA, TransformComponent box, ECS::uint entityB, TransformComponent plane) {
+	vec3 extents = box.scale * 0.5f;
+
+	// assume planes face up by default
+	vec3 planeNormal = plane.rotation * vec3(0, 0, 1);
+
+	// for now planes will be infinite regardless of their scale
+
+	for (int n = 0; n < 8; n++) {
+		vec3 vertOffset = vec3((n >> 2) & 1, (n >> 1) & 1, n & 1);
+		vertOffset = extents * (vertOffset * 2.f - vec3(1));
+
+		vec3 vertex = box.position + (box.rotation * vertOffset);
+
+		float separation = dot(vertex - plane.position, planeNormal);
+		if (separation > 0.f) { continue; }
+
+		CollisionECS collision = {
+			.entityA = entityA,
+			.entityB = entityB,
+			.worldNormal = -planeNormal,
+			.pointA = vertex,
+			.depth = -separation
+		};
+
+		physicsEngine->addCollisionECS(collision);
+	}
+}
+
+void CollisionSystem::checkCollisionSpherePlane(IPhysicsEngine* physicsEngine, ECS::uint entityA, TransformComponent sphere, ECS::uint entityB, TransformComponent plane) {
+	float radius = (sphere.scale.x + sphere.scale.y + sphere.scale.z) / 3.f; // should be the same anyway
+
+	// assume planes face up by default
+	vec3 planeNormal = plane.rotation * vec3(0, 0, 1);
+
+	float separation = dot(sphere.position - plane.position, planeNormal) - radius;
+	if (separation < 0.f) {
+		CollisionECS collision = {
+			.entityA = entityA,
+			.entityB = entityB,
+			.worldNormal = -planeNormal,
+			.pointA = sphere.position - (planeNormal * radius),
+			.depth = -separation
+		};
+
+		physicsEngine->addCollisionECS(collision);
+	}
+}
+
+void CollisionSystem::checkCollisionPlanePlane(IPhysicsEngine* physicsEngine, ECS::uint entityA, TransformComponent planeA, ECS::uint entityB, TransformComponent planeB) {
+	// Do nothing
+
 }
 
 
-void Detector::getGlobalBoxVerts(vec3 verts[8], PhysicsObject* box) {
-	vec3 extents = static_cast<Box*>(box->shape)->extents;
+
+void CollisionSystem::getGlobalBoxVerts(vec3 verts[8], TransformComponent box) {
+	vec3 extents = box.scale * 0.5f;
 
 	for (int i = 0; i < 8; i++) {
 		vec3 permutation = vec3((i >> 2) & 1, (i >> 1) & 1, i & 1);
 		vec3 vertex = extents * (permutation * 2.f - vec3(1));
 
-		verts[i] = box->pos + box->rot * vertex;
+		verts[i] = box.position + box.rotation * vertex;
 	}
 }
 
-void Detector::getMinMaxProjection(vec3 axis, vec3 points[8], float& min, float& max) {
+void CollisionSystem::getMinMaxProjection(vec3 axis, vec3 points[8], float& min, float& max) {
 	float projection = dot(points[0], axis);
 	max = projection;
 	min = projection;
@@ -364,26 +362,3 @@ void Detector::getMinMaxProjection(vec3 axis, vec3 points[8], float& min, float&
 		}
 	}
 }
-
-//bool Detector::IsWithinBody(PhysicsBody* body, Vector2 pos) {
-//    switch (body->GetID()) {
-//    case 0:
-//    {
-//        RigidRect* rect = dynamic_cast<RigidRect*>(body);
-//
-//        Vector2 toPos = Vector2Rotate(pos - rect->pos, -rect->rot);
-//        Vector2 absToPos = { abs(toPos.x), abs(toPos.y) };
-//
-//        return (absToPos.x < rect->width / 2 && absToPos.y < rect->height / 2);
-//    }
-//        break;
-//
-//    case 1:
-//        RigidCircle* circle = dynamic_cast<RigidCircle*>(body);
-//
-//        return Vector2DistanceSqr(circle->pos, pos) < circle->radius * circle->radius;
-//        break;
-//    }
-//
-//    return false;
-//}

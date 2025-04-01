@@ -14,18 +14,16 @@
 
 class PhysicsEngine : public IPhysicsEngine {
 public:
-	vec3 gravity = vec3(0, 0, -1.5f);
+	vec3 gravity = vec3(0, 0, -3.5f);
 	Plane ground = Plane(vec3(0, 0, 1), 0.f);
 
 private:
-	ECS::ECSManager* ecs;
-
 	Detector detector = Detector(this);
 	PhysicsSolver solver = PhysicsSolver(this);
 
 	int collisionCount = 0;
 	const int maxCollisions = MAX_COLLISIONS;
-	Collision collisions[MAX_COLLISIONS];
+	//Collision collisions[MAX_COLLISIONS];
 	CollisionECS collisionsECS[MAX_COLLISIONS];
 
 public:
@@ -45,7 +43,7 @@ public:
 
 	void update(float deltaTime);
 
-	virtual void addCollision(Collision collision) override { if (collisionCount >= maxCollisions) return; collisions[collisionCount++] = collision; }
+	//virtual void addCollision(Collision collision) override { if (collisionCount >= maxCollisions) return; collisions[collisionCount++] = collision; }
 	virtual void addCollisionECS(CollisionECS collision) override {
 		if (collisionCount >= maxCollisions) return;
 		collisionsECS[collisionCount++] = collision;

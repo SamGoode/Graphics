@@ -8,8 +8,12 @@ namespace ECS {
 	#define MAX_ENTITIES 100
 	#define MAX_COMPONENT_TYPES 10
 
+	
+	// leave UINT32_MAX empty so can be used as a 'nullptr'
+
 	using uint = unsigned int; // can replace later with lower memory type
 	using bitset = std::bitset<MAX_COMPONENT_TYPES>; // maybe same name is bad idea?
+
 
 	class EntityManager {
 	private:
@@ -86,8 +90,15 @@ namespace ECS {
 			}
 		}
 
+		bool hasData(uint entityID) {
+			assert(entityID < MAX_ENTITIES);
+
+			uint componentIndex = entityToIndex[entityID];
+			return componentIndex < activeComponents && indexToEntity[componentIndex] == entityID;
+		}
+
 		void insertData(uint entityID, T component) {
-			assert(entityID < MAX_ENTITIES && entityToIndex[entityID] >= activeComponents && "Entity already has this component");
+			assert(entityID < MAX_ENTITIES && !hasData(entityID) && "Entity already has this component");
 			components[activeComponents] = component;
 
 			// this part may be unnecessary
@@ -104,7 +115,7 @@ namespace ECS {
 		}
 
 		void removeData(uint entityID) {
-			assert(entityID < MAX_ENTITIES && entityToIndex[entityID] < activeComponents);
+			assert(entityID < MAX_ENTITIES && hasData(entityID) && "Entity doesn't have this component");
 
 			activeComponents--;
 
@@ -123,13 +134,13 @@ namespace ECS {
 		}
 
 		T& getData(uint entityID) {
-			assert(entityID < MAX_ENTITIES && entityToIndex[entityID] < activeComponents);
+			assert(entityID < MAX_ENTITIES && hasData(entityID) && "Entity doesn't have this component");
 
 			return components[entityToIndex[entityID]];
 		}
 
 		virtual void onEntityDestroyed(uint entityID) override {
-			if (indexToEntity[entityToIndex[entityID]] == entityID && entityToIndex[entityID] < activeComponents) {
+			if (hasData(entityID)) {
 				removeData(entityID);
 			}
 		}
@@ -164,6 +175,11 @@ namespace ECS {
 			IComponentType<T>::isRegistered = true;
 
 			componentTypes++;
+		}
+
+		template<typename T>
+		bool hasComponent(uint entityID) {
+			return getComponentPool<T>()->hasData(entityID);
 		}
 
 		template<typename T>
@@ -203,7 +219,7 @@ namespace ECS {
 	};
 
 
-
+	// SUB OPTIMAL IMPROVE LATER
 	class System {
 	public:
 		uint entityCount = 0;
@@ -221,8 +237,18 @@ namespace ECS {
 			for (uint i = 0; i < entityCount; i++) {
 				if (entities[i] == entityID) {
 					entities[i] = entities[--entityCount];
+					break;
 				}
 			}
+		}
+
+		bool hasEntity(uint entityID) {
+			for (uint i = 0; i < entityCount; i++) {
+				if (entities[i] == entityID) {
+					return true;
+				}
+			}
+			return false;
 		}
 	};
 
@@ -270,6 +296,7 @@ namespace ECS {
 			for (int i = 0; i < systemsCount; i++) {
 				bitset signature = systems[i]->signature;
 				if ((signature & entitySignature) == signature) {
+					if(systems[i]->hasEntity(entityID)) continue;
 					systems[i]->addEntity(entityID);
 				}
 				else {
@@ -319,6 +346,11 @@ namespace ECS {
 		}
 
 		template<typename T>
+		bool hasComponent(uint entityID) {
+			return componentManager->hasComponent<T>(entityID);
+		}
+
+		template<typename T>
 		void addComponent(uint entityID, T component) {
 			componentManager->addComponent<T>(entityID, component);
 
@@ -359,6 +391,12 @@ namespace ECS {
 		template<typename T>
 		void setSystemSignature(bitset signature) {
 			systemManager->setSignature<T>(signature);
+		}
+
+		template<typename T, typename ComponentType>
+		void addSystemComponentType() {
+			T* system = getSystem<T>();
+			system->signature.set(getComponentID<ComponentType>(), true);
 		}
 
 		template<typename T>

@@ -1,5 +1,9 @@
 #pragma once
 
+#include "MaterialProperties.h"
+
+#include "glmAddon.h"
+
 struct MeshComponent {
 	int meshID;
 };

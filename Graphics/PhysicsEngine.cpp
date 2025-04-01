@@ -4,8 +4,7 @@
 #include "glmAddon.h"
 
 #include "PhysicsSystem.h"
-
-
+#include "CollisionSystem.h"
 
 
 
@@ -15,7 +14,7 @@ void PhysicsEngine::update(float deltaTime) {
 	PhysicsObject** bodies = Registry<PhysicsObject>::entries;
 
 	PhysicsSystem* physicsSystem = ecs->getSystem<PhysicsSystem>();
-	
+	CollisionSystem* collisionSystem = ecs->getSystem<CollisionSystem>();
 	
 
 	// Kinematic updates and gravity
@@ -29,34 +28,35 @@ void PhysicsEngine::update(float deltaTime) {
 	//}
 
 	// Ground collisions
-	for (int i = 0; i < bodyCount; i++) {
-		detector.checkCollision(bodies[i], ground);
+	collisionSystem->detectCollisions(ecs, this);
+	//for (int i = 0; i < bodyCount; i++) {
+	//	detector.checkCollision(bodies[i], ground);
 
-		for (int n = i + 1; n < bodyCount; n++) {
-			detector.checkCollision(bodies[i], bodies[n]);
-		}
-	}
+	//	for (int n = i + 1; n < bodyCount; n++) {
+	//		detector.checkCollision(bodies[i], bodies[n]);
+	//	}
+	//}
 
 	// Depenetration with pseudo impulses
 	for (int i = 0; i < iterations; i++) {
 		for (int n = 0; n < collisionCount; n++) {
-			solver.solvePosition(collisions[n]);
+			solver.solvePosition(collisionsECS[n]);
 		}
 	}
 
 	// Solves collision impulses
 	for (int i = 0; i < iterations; i++) {
 		for (int n = 0; n < collisionCount; n++) {
-			solver.solveFriction(collisions[n]);
+			solver.solveFriction(collisionsECS[n]);
 		}
 
 		for (int n = 0; n < collisionCount; n++) {
-			solver.solveImpulse(collisions[n]);
+			solver.solveImpulse(collisionsECS[n]);
 		}
 	}
 
 	for (int i = 0; i < collisionCount; i++) {
-		solver.applyRestitution(collisions[i]);
+		solver.applyRestitution(collisionsECS[i]);
 	}
 	clearCollisions();
 

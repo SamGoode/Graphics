@@ -21,8 +21,8 @@ struct Collision {
 };
 
 struct CollisionECS {
-    ECS::uint entityA;
-    ECS::uint entityB;
+    ECS::uint entityA = UINT32_MAX;
+    ECS::uint entityB = UINT32_MAX;
 
     vec3 worldNormal;
     vec3 pointA;

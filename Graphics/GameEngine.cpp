@@ -7,6 +7,7 @@
 
 #include "ECSComponents.h"
 #include "PhysicsSystem.h"
+#include "CollisionSystem.h"
 
 
 
@@ -20,9 +21,6 @@ mat4 getTransformMatrix(TransformComponent transformComponent) {
 
 	return out;
 }
-
-
-
 
 
 class RenderSystem : public ECS::System {
@@ -40,9 +38,6 @@ public:
 		}
 	}
 };
-
-
-
 
 GameEngine::GameEngine() {
 	worldUp = vec3(0, 0, 1);
@@ -62,20 +57,21 @@ GameEngine::GameEngine() {
 	ecs.registerComponent<TransformComponent>();
 	ecs.registerComponent<MaterialComponent>();
 	ecs.registerComponent<PhysicsComponent>();
+	ecs.registerComponent<CollisionComponent>();
 
 	// Register Systems and their signatures
 	ecs.registerSystem<RenderSystem>();
-	ECS::bitset renderSignature;
-	renderSignature.set(ecs.getComponentID<MeshComponent>(), true);
-	renderSignature.set(ecs.getComponentID<TransformComponent>(), true);
-	renderSignature.set(ecs.getComponentID<MaterialComponent>(), true);
-	ecs.setSystemSignature<RenderSystem>(renderSignature);
+	ecs.addSystemComponentType<RenderSystem, MeshComponent>();
+	ecs.addSystemComponentType<RenderSystem, TransformComponent>();
+	ecs.addSystemComponentType<RenderSystem, MaterialComponent>();
 
 	ecs.registerSystem<PhysicsSystem>();
-	ECS::bitset physicsSignature;
-	physicsSignature.set(ecs.getComponentID<TransformComponent>(), true);
-	physicsSignature.set(ecs.getComponentID<PhysicsComponent>(), true);
-	ecs.setSystemSignature<PhysicsSystem>(physicsSignature);
+	ecs.addSystemComponentType<PhysicsSystem, TransformComponent>();
+	ecs.addSystemComponentType<PhysicsSystem, PhysicsComponent>();
+
+	ecs.registerSystem<CollisionSystem>();
+	ecs.addSystemComponentType<CollisionSystem, CollisionComponent>();
+	ecs.addSystemComponentType<CollisionSystem, TransformComponent>();
 
 
 	// Create Entities
@@ -83,6 +79,7 @@ GameEngine::GameEngine() {
 	ecs.addComponent<MeshComponent>(floor, { 2 }); // floor mesh
 	ecs.addComponent<TransformComponent>(floor, { vec3(0, 0, 0), eulerToQuat(vec3(0, 0, 0)), vec3(20, 20, 1)});
 	ecs.addComponent<MaterialComponent>(floor, { MaterialProperties{vec3(0.6f), 0.5f}});
+	ecs.addComponent<CollisionComponent>(floor, { enumGeometry::PLANE });
 	ECS::uint bunny = ecs.createEntity();
 	ecs.addComponent<MeshComponent>(bunny, { 3 }); // bunny mesh
 	ecs.addComponent<TransformComponent>(bunny, { vec3(10, 10, 0), eulerToQuat(vec3(0, 0, 0)), vec3(0.5f) });
@@ -92,29 +89,40 @@ GameEngine::GameEngine() {
 	ecs.addComponent<MeshComponent>(sphere, { 1 }); // sphere mesh
 	ecs.addComponent<TransformComponent>(sphere, { vec3(-5, 5, 10), eulerToQuat(vec3(0)), vec3(0.5f) });
 	ecs.addComponent<MaterialComponent>(sphere, { MaterialProperties{vec3(0.8f, 0.1f, 0.1f), 1.f} });
+	ecs.addComponent<PhysicsComponent>(sphere, { vec3(0), vec3(0), 1 / 5.f, vec3(0), vec3(0), glm::identity<mat3>() });
+	ecs.addComponent<CollisionComponent>(sphere, { enumGeometry::SPHERE });
 	ECS::uint sphere2 = ecs.createEntity();
 	ecs.addComponent<MeshComponent>(sphere2, { 1 }); // sphere mesh
 	ecs.addComponent<TransformComponent>(sphere2, { vec3(-5, 5, 5), eulerToQuat(vec3(0)), vec3(0.8f) });
 	ecs.addComponent<MaterialComponent>(sphere2, { MaterialProperties{vec3(0.1f, 0.8f, 0.1f), 1.f} });
+	ecs.addComponent<PhysicsComponent>(sphere2, { vec3(0), vec3(0), 1 / 10.f, vec3(0), vec3(0), glm::identity<mat3>() });
+	ecs.addComponent<CollisionComponent>(sphere2, { enumGeometry::SPHERE });
 
 	ECS::uint box = ecs.createEntity();
 	ecs.addComponent<MeshComponent>(box, { 0 }); // cube mesh
 	ecs.addComponent<TransformComponent>(box, { vec3(0, 0, 10), eulerToQuat(vec3(45.f, 45.f, 0)), vec3(1, 2, 3) });
 	ecs.addComponent<MaterialComponent>(box, { MaterialProperties{vec3(0.2f, 0.2f, 0.8f), 1.f} });
-	ecs.addComponent<PhysicsComponent>(box, { vec3(0), vec3(0), 1/100.f, vec3(0), vec3(0), glm::identity<mat4>() });
+	ecs.addComponent<PhysicsComponent>(box, { vec3(0), vec3(0), 1/100.f, vec3(0), vec3(0), glm::identity<mat3>() });
+	ecs.addComponent<CollisionComponent>(box, {enumGeometry::BOX});
 	ECS::uint box2 = ecs.createEntity();
 	ecs.addComponent<MeshComponent>(box2, { 0 }); // cube mesh
 	ecs.addComponent<TransformComponent>(box2, { vec3(0, 0, 15), eulerToQuat(vec3(80.f, -45.f, 180.f)), vec3(1, 2, 3) });
 	ecs.addComponent<MaterialComponent>(box2, { MaterialProperties{vec3(0.7f, 0.2f, 0.7f), 1.f} });
+	ecs.addComponent<PhysicsComponent>(box2, { vec3(0), vec3(0), 1 / 50.f, vec3(0), vec3(0), glm::identity<mat3>() });
+	ecs.addComponent<CollisionComponent>(box2, { enumGeometry::BOX });
 
 	ECS::uint earth = ecs.createEntity();
 	ecs.addComponent<MeshComponent>(earth, { 1 }); // sphere mesh
 	ecs.addComponent<TransformComponent>(earth, { vec3(0, 0, 5), eulerToQuat(vec3(0)), vec3(0.8f) });
 	ecs.addComponent<MaterialComponent>(earth, { MaterialProperties{vec3(0.6f), 0.5f} });
+	ecs.addComponent<PhysicsComponent>(earth, { vec3(0), vec3(0), 1 / 5.f, vec3(0), vec3(0), glm::identity<mat3>() });
+	ecs.addComponent<CollisionComponent>(earth, { enumGeometry::SPHERE });
 	ECS::uint cobblestone = ecs.createEntity();
 	ecs.addComponent<MeshComponent>(cobblestone, { 0 }); // cube mesh
 	ecs.addComponent<TransformComponent>(cobblestone, { vec3(0, 0, 20), eulerToQuat(vec3(45.f, 45.f, 0)), vec3(1.f) });
 	ecs.addComponent<MaterialComponent>(cobblestone, { MaterialProperties{vec3(0.6f), 0.5f} });
+	ecs.addComponent<PhysicsComponent>(cobblestone, { vec3(0), vec3(0), 1 / 100.f, vec3(0), vec3(0), glm::identity<mat3>() });
+	ecs.addComponent<CollisionComponent>(cobblestone, { enumGeometry::BOX });
 
 	//PhysicsObject* sphere = new PhysicsObject(vec3(-5, 5, 10), vec3(0, 0, 0), new Sphere(0.5f), 5.f);
 	//PhysicsObject* sphere2 = new PhysicsObject(vec3(-5, 5, 5), vec3(0, 0, 0), new Sphere(0.8f), 10.f);
@@ -155,6 +163,12 @@ bool GameEngine::startup(int windowWidth, int windowHeight) {
 	if (!App3D::startup(windowWidth, windowHeight)) return false;
 
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+	PhysicsSystem* physicsSystem = ecs.getSystem<PhysicsSystem>();
+	physicsSystem->generateInertiaTensors(&ecs);
+
+	auto& physics = ecs.getComponent<PhysicsComponent>(95);
+	mat3 inverseInertia = physics.invInertia;
 
 	meshes[0].generateCube();
 	meshes[0].textureID = 1;
