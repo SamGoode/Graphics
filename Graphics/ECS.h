@@ -134,6 +134,10 @@ namespace ECS {
 		}
 
 		T& getData(uint entityID) {
+			if (entityID >= MAX_ENTITIES || !hasData(entityID)) {
+				float test = 5;
+			}
+
 			assert(entityID < MAX_ENTITIES && hasData(entityID) && "Entity doesn't have this component");
 
 			return components[entityToIndex[entityID]];
@@ -300,6 +304,7 @@ namespace ECS {
 					systems[i]->addEntity(entityID);
 				}
 				else {
+					//if (systems[i]->hasEntity(entityID)) continue;
 					systems[i]->removeEntity(entityID);
 				}
 			}

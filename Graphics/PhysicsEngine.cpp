@@ -10,8 +10,8 @@
 
 
 void PhysicsEngine::update(float deltaTime) {
-	int bodyCount = Registry<PhysicsObject>::count;
-	PhysicsObject** bodies = Registry<PhysicsObject>::entries;
+	//int bodyCount = Registry<PhysicsObject>::count;
+	//PhysicsObject** bodies = Registry<PhysicsObject>::entries;
 
 	PhysicsSystem* physicsSystem = ecs->getSystem<PhysicsSystem>();
 	CollisionSystem* collisionSystem = ecs->getSystem<CollisionSystem>();

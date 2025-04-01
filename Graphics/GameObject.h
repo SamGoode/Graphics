@@ -13,10 +13,10 @@ using glm::mat3;
 using glm::quat;
 
 
-class GameObject : public Registry<GameObject> {
-public:
-    GameObject() {}
-    virtual ~GameObject() {};
-};
+//class GameObject : public Registry<GameObject> {
+//public:
+//    GameObject() {}
+//    virtual ~GameObject() {};
+//};
 
 

@@ -154,7 +154,7 @@ GameEngine::GameEngine() {
 	// Give physics engine access to EntityComponentSystem
 	physicsEngine.setEntityComponentSystemPtr(&ecs);
 	
-	std::cout << Registry<GameObject>::count << " GameObjects created" << std::endl;
+	//std::cout << Registry<GameObject>::count << " GameObjects created" << std::endl;
 }
 
 
@@ -167,8 +167,8 @@ bool GameEngine::startup(int windowWidth, int windowHeight) {
 	PhysicsSystem* physicsSystem = ecs.getSystem<PhysicsSystem>();
 	physicsSystem->generateInertiaTensors(&ecs);
 
-	auto& physics = ecs.getComponent<PhysicsComponent>(95);
-	mat3 inverseInertia = physics.invInertia;
+	//auto& physics = ecs.getComponent<PhysicsComponent>(95);
+	//mat3 inverseInertia = physics.invInertia;
 
 	meshes[0].generateCube();
 	meshes[0].textureID = 1;
@@ -375,7 +375,6 @@ void GameEngine::draw() {
 
 	// Composite Pass
 	gpassFBO.sendStencilBuffer(0);
-	glDisable(GL_STENCIL_TEST);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	
 	glClearColor(0.25f, 0.25f, 0.25f, 0);

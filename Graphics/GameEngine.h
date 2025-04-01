@@ -48,10 +48,10 @@ protected:
 public:
 	GameEngine();
 	virtual ~GameEngine() { 
-		int objectCount = Registry<GameObject>::count;
-		for (int i = 0; i < objectCount; i++) { 
-			delete Registry<GameObject>::entries[0];
-		}
+		//int objectCount = Registry<GameObject>::count;
+		//for (int i = 0; i < objectCount; i++) { 
+		//	delete Registry<GameObject>::entries[0];
+		//}
 	}
 
 	virtual bool startup(int windowWidth, int windowHeight) override;

@@ -24,6 +24,11 @@ void CollisionSystem::checkCollisionBoxBox(IPhysicsEngine* physicsEngine, ECS::u
 	// co-planar edge plane normals
 	for (int i = 0; i < 3; i++) {
 		for (int n = 0; n < 3; n++) {
+			if (abs(dot(axes[i], axes[n + 3])) > 0.9999f) {
+				axes[(i * 3 + n) + 6] = vec3(0);
+				continue;
+			}
+
 			axes[(i * 3 + n) + 6] = normalize(cross(axes[i], axes[n + 3]));
 		}
 	}
@@ -34,6 +39,10 @@ void CollisionSystem::checkCollisionBoxBox(IPhysicsEngine* physicsEngine, ECS::u
 
 	for (int i = 0; i < 15; i++) {
 		vec3 axis = axes[i];
+
+		if (axis == vec3(0)) {
+			continue;
+		}
 
 		float minA;
 		float maxA;
