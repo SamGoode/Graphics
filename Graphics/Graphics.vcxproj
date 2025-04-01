@@ -146,14 +146,11 @@
     <ClCompile Include="CollisionSystem.cpp" />
     <ClCompile Include="GameEngine.cpp" />
     <ClCompile Include="BaseAppClasses.cpp" />
-    <ClCompile Include="Detector.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mesh.cpp" />
-    <ClCompile Include="PhysicsObject.cpp" />
     <ClCompile Include="PhysicsEngine.cpp" />
-    <ClCompile Include="RenderObject.cpp" />
     <ClCompile Include="PhysicsSolver.cpp" />
     <ClCompile Include="stb_image.cpp" />
   </ItemGroup>
@@ -166,9 +163,6 @@
     <ClInclude Include="BaseAppClasses.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Collision.h" />
-    <ClInclude Include="Detector.h" />
-    <ClInclude Include="GameObject.h" />
-    <ClInclude Include="Geometry.h" />
     <ClInclude Include="glmAddon.h" />
     <ClInclude Include="MaterialProperties.h" />
     <ClInclude Include="PhysicsSystem.h" />
@@ -176,10 +170,7 @@
     <ClInclude Include="Shader.h" />
     <ClInclude Include="IPhysicsEngine.h" />
     <ClInclude Include="Mesh.h" />
-    <ClInclude Include="PhysicsObject.h" />
     <ClInclude Include="PhysicsEngine.h" />
-    <ClInclude Include="Registry.h" />
-    <ClInclude Include="RenderObject.h" />
     <ClInclude Include="PhysicsSolver.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="Texture.h" />

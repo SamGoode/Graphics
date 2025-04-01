@@ -1,7 +1,6 @@
 #include "GameEngine.h"
 
 #include "glmAddon.h"
-#include "Geometry.h"
 
 #include "stb_image.h"
 

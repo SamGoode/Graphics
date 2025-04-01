@@ -4,9 +4,6 @@
 
 #include "Camera.h"
 #include "PhysicsEngine.h"
-#include "PhysicsObject.h"
-#include "Registry.h"
-
 
 #include "Mesh.h"
 #include "Texture.h"

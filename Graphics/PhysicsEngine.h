@@ -1,11 +1,9 @@
 #pragma once
 
 #include "IPhysicsEngine.h"
-#include "Detector.h"
 #include "PhysicsSolver.h"
 
 #include "Collision.h"
-#include "PhysicsObject.h"
 #include "ECS.h"
 
 
