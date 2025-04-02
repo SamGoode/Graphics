@@ -68,39 +68,47 @@ bool Mesh::init() {
 void Mesh::loadFromFile(const char* name) {
 	const aiScene* scene = aiImportFile(name, 0);
 
-	aiMesh* mesh = scene->mMeshes[0];
-
-	int faceCount = mesh->mNumFaces;
 	std::vector<unsigned int> indices;
-	for (int i = 0; i < faceCount; i++) {
-		indices.push_back(mesh->mFaces[i].mIndices[0]);
-		indices.push_back(mesh->mFaces[i].mIndices[2]);
-		indices.push_back(mesh->mFaces[i].mIndices[1]);
+	std::vector<vert> vertices;
 
-		if (mesh->mFaces[i].mNumIndices == 4) {
-			indices.push_back(mesh->mFaces[i].mIndices[0]);
-			indices.push_back(mesh->mFaces[i].mIndices[3]);
-			indices.push_back(mesh->mFaces[i].mIndices[2]);
+	int meshCount = scene->mNumMeshes;
+
+	// for now load all meshes in scene as one mesh
+	for (int meshIndex = 0; meshIndex < meshCount; meshIndex++) {
+		aiMesh* mesh = scene->mMeshes[meshIndex];
+
+		int vertCount = mesh->mNumVertices;
+		for (int i = 0; i < vertCount; i++) {
+			vert vertex;
+			vertex.position = vec4(mesh->mVertices[i].x, mesh->mVertices[i].z, mesh->mVertices[i].y, 1);
+			vertex.normal = vec4(mesh->mNormals[i].x, mesh->mNormals[i].z, mesh->mNormals[i].y, 0);
+			vertex.texCoord = mesh->HasTextureCoords(0) ? vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y) : vec2(0);
+			vertices.push_back(vertex);
 		}
+
+		int faceCount = mesh->mNumFaces;
+		for (int i = 0; i < faceCount; i++) {
+			indices.push_back(vertexCount + mesh->mFaces[i].mIndices[0]);
+			indices.push_back(vertexCount + mesh->mFaces[i].mIndices[2]);
+			indices.push_back(vertexCount + mesh->mFaces[i].mIndices[1]);
+			indexCount += 3;
+
+			if (mesh->mFaces[i].mNumIndices == 4) {
+				indices.push_back(vertexCount + mesh->mFaces[i].mIndices[0]);
+				indices.push_back(vertexCount + mesh->mFaces[i].mIndices[3]);
+				indices.push_back(vertexCount + mesh->mFaces[i].mIndices[2]);
+				indexCount += 3;
+			}
+		}
+
+		vertexCount += vertCount;
 	}
 
-	int vCount = mesh->mNumVertices;
-	vertexBuffer = new vert[vCount];
-	for (int i = 0; i < vCount; i++) {
-		vertexBuffer[i].position = vec4(mesh->mVertices[i].x, mesh->mVertices[i].z, mesh->mVertices[i].y, 1);
-		vertexBuffer[i].normal = vec4(mesh->mNormals[i].x, mesh->mNormals[i].z, mesh->mNormals[i].y, 0);
-		if (mesh->HasTextureCoords(0)) {
-			vertexBuffer[i].texCoord = vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
-		}
-		else {
-			vertexBuffer[i].texCoord = vec2(0);
-		}
-	}
-	vertexCount += vCount;
+	vertexBuffer = new vert[vertices.size()];
+	std::memcpy(&vertexBuffer[0], vertices.data(), vertices.size() * sizeof(vert));
 
 	indexBuffer = new unsigned int[indices.size()];
-	std::memcpy(&indexBuffer[indexCount], indices.data(), indices.size() * sizeof(unsigned int));
-	indexCount += indices.size();
+	std::memcpy(&indexBuffer[0], indices.data(), indices.size() * sizeof(unsigned int));
 }
 
 void Mesh::generatePlane() {

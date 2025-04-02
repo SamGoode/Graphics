@@ -40,9 +40,9 @@ public:
 
 GameEngine::GameEngine() {
 	worldUp = vec3(0, 0, 1);
-	camera = Camera(vec3(10, 0, 10), vec3(0.f, 45.f, 180.f), 20.f);
+	camera = Camera(vec3(15, 0, 15), vec3(0.f, 45.f, 180.f), 20.f);
 
-	ambientLighting = vec3(0.2f);
+	ambientLighting = vec3(0.8f);
 	lightColor = vec3(0.8f);
 	lightDirection = normalize(vec3(-1, 1, -1));
 
@@ -123,6 +123,13 @@ GameEngine::GameEngine() {
 	ecs.addComponent<PhysicsComponent>(cobblestone, { vec3(0), vec3(0), 1 / 100.f, vec3(0), vec3(0), glm::identity<mat3>() });
 	ecs.addComponent<CollisionComponent>(cobblestone, { enumGeometry::BOX });
 
+	ECS::uint van = ecs.createEntity();
+	ecs.addComponent<MeshComponent>(van, { 4 }); // van mesh
+	ecs.addComponent<TransformComponent>(van, { vec3(5, -10, 1.6f), eulerToQuat(vec3(0, 0, 90.f)), vec3(0.02f) });
+	ecs.addComponent<MaterialComponent>(van, { MaterialProperties{vec3(1), 0.5f} });
+
+	vanEntity = van;
+
 	//PhysicsObject* sphere = new PhysicsObject(vec3(-5, 5, 10), vec3(0, 0, 0), new Sphere(0.5f), 5.f);
 	//PhysicsObject* sphere2 = new PhysicsObject(vec3(-5, 5, 5), vec3(0, 0, 0), new Sphere(0.8f), 10.f);
 	//PhysicsObject* box = new PhysicsObject(vec3(0, 0, 10), vec3(45.f, 45.f, 0), new Box(1.f, 2.f, 3.f), 100.f);
@@ -132,23 +139,6 @@ GameEngine::GameEngine() {
 
 	//PhysicsObject* earth = new PhysicsObject(vec3(0, 0, 5), vec3(0, 0, 0), new Sphere(0.8f), 5.f);
 	//PhysicsObject* cobblestone = new PhysicsObject(vec3(0, 0, 20), vec3(45.f, 45.f, 0), new Box(1.f, 1.f, 1.f), 100.f);
-
-	//RenderObject* floor = new RenderObject();
-	//floor->meshID = 2;
-	//floor->scale = vec3(20.f);
-	//floor->setColor(vec3(0.6f));
-
-	//RenderObject* bunny = new RenderObject();
-	//bunny->pos = vec3(10, 10, 0);
-	//bunny->meshID = 3;
-	//bunny->scale = vec3(0.5f);
-	//bunny->setColor(vec3(1, 1, 0.86f) * 0.6f);
-	//bunny->setGloss(0.5f);
-
-	//sphere->setColor(vec3(0.8f, 0.1f, 0.1f));
-	//sphere2->setColor(vec3(0.1f, 0.8f, 0.1f));
-	//box->setColor(vec3(0.2f, 0.2f, 0.8f));
-	//box2->setColor(vec3(0.7f, 0.2f, 0.7f));
 
 	// Give physics engine access to EntityComponentSystem
 	physicsEngine.setEntityComponentSystemPtr(&ecs);
@@ -166,25 +156,25 @@ bool GameEngine::startup(int windowWidth, int windowHeight) {
 	PhysicsSystem* physicsSystem = ecs.getSystem<PhysicsSystem>();
 	physicsSystem->generateInertiaTensors(&ecs);
 
-	//auto& physics = ecs.getComponent<PhysicsComponent>(95);
-	//mat3 inverseInertia = physics.invInertia;
-
 	meshes[0].generateCube();
 	meshes[0].textureID = 1;
 	meshes[1].generateSphere();
 	meshes[1].textureID = 2;
 	meshes[2].generatePlane();
-	meshes[3].loadFromFile("stanford/Bunny.obj");
+	meshes[3].loadFromFile("models/Bunny.obj");
+	meshes[4].loadFromFile("models/UtilityVan_v002.fbx");
+	meshes[4].textureID = 3;
 
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < meshCount; i++) {
 		meshes[i].init();
 	}
 
 	textures[0].generate1x1(0xFFFFFFFF); // 1x1 white texture
 	textures[1].loadFromFile("textures/cobblestone.png");
 	textures[2].loadFromFile("textures/earth_diffuse.jpg");
+	textures[3].loadFromFile("textures/UtilityVan_v002_bodyShell1_BaseColor.png", true);
 
-	for (int i = 0; i < 3; i++) {
+	for (int i = 0; i < textureCount; i++) {
 		textures[i].init();
 	}
 
@@ -228,11 +218,10 @@ bool GameEngine::update()  {
 	if (keyPressed(GLFW_KEY_D)) { camera.pos += camera.orientation * vec3(0, 1, 0) * -camera.movementSpeed * deltaTime; }
 	if (keyPressed(GLFW_KEY_A)) { camera.pos += camera.orientation * vec3(0, 1, 0) * camera.movementSpeed * deltaTime; }
 
-	//if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) { bodies[1]->applyAngularImpulse(vec3(0, 0, 1)); }
-	//if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) { bodies[1]->applyAngularImpulse(vec3(0, 0, -1)); }
+	auto& transform = ecs.getComponent<TransformComponent>(vanEntity);
+	transform.rotation = eulerToQuat(vec3(0, 0, 10.f) * deltaTime) * transform.rotation;
 
 	physicsEngine.update(deltaTime);
-	
 
 	return true;
 }
@@ -242,23 +231,11 @@ bool GameEngine::update()  {
 
 void GameEngine::draw() {
 	view = genViewMatrix(camera.pos, camera.orientation * vec3(1, 0, 0), worldUp);
-	
 	mat4 projectionView = projection * view;
 
 	mat4 lightProjection = glm::ortho(-30.f, 30.f, -30.f, 30.f, 1.f, 60.f);
 	mat4 lightView = genViewMatrix(lightDirection * -30.f, lightDirection, worldUp);
 	mat4 lightProjectionView = lightProjection * lightView;
-
-	//int objectCount = Registry<RenderObject>::count;
-	//for (int i = 0; i < objectCount; i++) {
-	//	RenderObject* obj = Registry<RenderObject>::entries[i];
-	//	int meshID = obj->meshID;
-
-	//	mat4 transform = obj->getTransform();
-	//	MaterialProperties material = obj->material;
-
-	//	meshes[meshID].addInstance(transform, material);
-	//}
 
 	RenderSystem* renderSystem = ecs.getSystem<RenderSystem>();
 	renderSystem->addMeshInstances(ecs, meshes);
@@ -278,7 +255,7 @@ void GameEngine::draw() {
 	shadowShader.use();
 	shadowShader.bindUniform(lightProjectionView, "LightProjectionView");
 
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < meshCount; i++) {
 		meshes[i].renderInstances();
 	}
 	glViewport(0, 0, 1600, 900);
@@ -302,7 +279,7 @@ void GameEngine::draw() {
 	gpassShader.use();
 	gpassShader.bindUniform(projectionView, "ProjectionView");
 
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < meshCount; i++) {
 		textures[meshes[i].textureID].bind();
 
 		meshes[i].renderInstances();
@@ -310,8 +287,6 @@ void GameEngine::draw() {
 		
 		textures[0].bind();
 	}
-
-	
 
 	glDisable(GL_DEPTH_TEST);
 

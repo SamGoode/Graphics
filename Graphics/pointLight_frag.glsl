@@ -29,8 +29,9 @@ void main() {
 	float linearDrop = 1 - min(1, dist/vLightRadius);
 	
 	vec3 H = normalize(toView + toLight);
+
 	float S = texture(albedoSpecPass, texCoord).a;
-	float specTerm = pow(max(0, dot(H, sNormal)), S);
+	float specTerm = pow(max(0, dot(H, sNormal)), S * 32.f) * S;
 
 	diffuseLight = vLightColor * lambertTerm * linearDrop;
 	specularLight = vLightColor * specTerm * linearDrop;

@@ -21,14 +21,18 @@ protected:
 
 	ECS::ECSManager ecs;
 
+	ECS::uint vanEntity;
+
 	vec3 ambientLighting;
 	vec3 lightColor;
 	vec3 lightDirection;
 
 	PhysicsEngine physicsEngine;
 
-	Mesh meshes[4];
-	Texture textures[3];
+	const int meshCount = 5;
+	Mesh meshes[5];
+	const int textureCount = 4;
+	Texture textures[4];
 	PointLight pointLights;
 
 	FrameBuffer shadowFBO;
@@ -44,12 +48,7 @@ protected:
 
 public:
 	GameEngine();
-	virtual ~GameEngine() { 
-		//int objectCount = Registry<GameObject>::count;
-		//for (int i = 0; i < objectCount; i++) { 
-		//	delete Registry<GameObject>::entries[0];
-		//}
-	}
+	virtual ~GameEngine() = default;
 
 	virtual bool startup(int windowWidth, int windowHeight) override;
 	virtual bool update() override;

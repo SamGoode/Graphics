@@ -10,12 +10,8 @@
 
 
 void PhysicsEngine::update(float deltaTime) {
-	//int bodyCount = Registry<PhysicsObject>::count;
-	//PhysicsObject** bodies = Registry<PhysicsObject>::entries;
-
 	PhysicsSystem* physicsSystem = ecs->getSystem<PhysicsSystem>();
 	CollisionSystem* collisionSystem = ecs->getSystem<CollisionSystem>();
-	
 
 	// Kinematic updates and gravity
 	physicsSystem->kinematicInitialUpdate(ecs, deltaTime);
@@ -62,9 +58,6 @@ void PhysicsEngine::update(float deltaTime) {
 
 	// Velocity-verlet related
 	physicsSystem->kinematicFinalUpdate(ecs, deltaTime);
-	//for (int i = 0; i < bodyCount; i++) {
-	//	bodies[i]->finaliseUpdate(deltaTime);
-	//}
 }
 
 
