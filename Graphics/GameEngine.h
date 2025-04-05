@@ -22,6 +22,7 @@ protected:
 	ECS::ECSManager ecs;
 
 	ECS::uint vanEntity;
+	float timePassed = 0.f;
 
 	vec3 ambientLighting;
 	vec3 lightColor;
@@ -38,21 +39,23 @@ protected:
 	FrameBuffer shadowFBO;
 	FrameBuffer gpassFBO;
 	FrameBuffer lightFBO;
+	FrameBuffer raymarchFBO;
 
 	Shader shadowShader;
 	Shader gpassShader;
 	Shader lightShader;
 	Shader pointLightShader;
 	Shader compositeShader;
+	Shader raymarchShader;
 
 
 public:
 	GameEngine();
 	virtual ~GameEngine() = default;
 
-	virtual bool startup(int windowWidth, int windowHeight) override;
+	virtual bool init(int windowWidth, int windowHeight) override;
 	virtual bool update() override;
-	virtual void draw() override;
+	virtual void render() override;
 	virtual void shutdown() override;
 
 	virtual void onMouseMoved(MouseInfo mouse) override;

@@ -167,6 +167,7 @@
     <ClInclude Include="MaterialProperties.h" />
     <ClInclude Include="PhysicsSystem.h" />
     <ClInclude Include="PointLight.h" />
+    <ClInclude Include="RenderSystem.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="IPhysicsEngine.h" />
     <ClInclude Include="Mesh.h" />
@@ -189,6 +190,7 @@
     <None Include="fullscreen_quad.glsl" />
     <None Include="pointLight_frag.glsl" />
     <None Include="pointLight_vert.glsl" />
+    <None Include="raymarch.glsl" />
     <None Include="shadow.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -8,9 +8,9 @@
 int main() {
 	BaseApp* app = new GameEngine();
 
-	if (!app->startup(1600, 900)) return -1;
+	if (!app->init(1600, 900)) return -1;
 	while (app->update()) 
-		app->draw();
+		app->render();
 
 	app->shutdown();
 

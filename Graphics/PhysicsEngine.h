@@ -7,25 +7,25 @@
 #include "ECS.h"
 
 
-#define MAX_COLLISIONS 64
+#define MAX_COLLISIONS 128
 
 
 class PhysicsEngine : public IPhysicsEngine {
-public:
-	vec3 gravity = vec3(0, 0, -1.5f);
-	//Plane ground = Plane(vec3(0, 0, 1), 0.f);
-
 private:
-	//Detector detector = Detector(this);
 	PhysicsSolver solver = PhysicsSolver(this);
+
+	const int maxTicksPerUpdate = 5;
+	const float fixedTimeStep = 0.01f;
+	float accumulatedTime = 0.f;
 
 	int collisionCount = 0;
 	const int maxCollisions = MAX_COLLISIONS;
-	//Collision collisions[MAX_COLLISIONS];
 	CollisionECS collisionsECS[MAX_COLLISIONS];
 
 public:
 	PhysicsEngine() {
+		gravity = vec3(0, 0, -4.f);
+
 		iterations = 3;
 
 		biasSlop = 0.005f;
@@ -40,8 +40,8 @@ public:
 	}
 
 	void update(float deltaTime);
+	void tickPhysics();
 
-	//virtual void addCollision(Collision collision) override { if (collisionCount >= maxCollisions) return; collisions[collisionCount++] = collision; }
 	virtual void addCollisionECS(CollisionECS collision) override {
 		if (collisionCount >= maxCollisions) return;
 		collisionsECS[collisionCount++] = collision;

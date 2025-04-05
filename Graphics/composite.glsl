@@ -8,6 +8,7 @@ uniform sampler2D albedoSpecPass;
 uniform sampler2D diffuseLightPass;
 uniform sampler2D specularLightPass;
 uniform sampler2D shadowPass;
+//uniform sampler2D raymarchPass;
 
 out vec4 FragColor;
 
@@ -22,6 +23,8 @@ void main() {
 	vec3 ambient = albedoSpec.rgb * AmbientLighting;
 	vec3 diffuse = albedoSpec.rgb * diffuseLight;
 	vec3 specular = specularLight;
+
+	//vec4 raymarch = texture(raymarchPass, vTexCoord);
 
 	FragColor = vec4(ambient + diffuse + specular, 1);
 

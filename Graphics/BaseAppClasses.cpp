@@ -1,7 +1,7 @@
 #include "BaseAppClasses.h"
 
 
-bool App3D::startup(int windowWidth, int windowHeight) {
+bool App3D::init(int windowWidth, int windowHeight) {
 	if (glfwInit() == false) {
 		return false;
 	}

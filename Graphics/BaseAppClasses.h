@@ -19,9 +19,9 @@ class BaseApp {
 public:
 	virtual ~BaseApp() = default;
 
-	virtual bool startup(int windowWidth, int windowHeight) = 0;
+	virtual bool init(int windowWidth, int windowHeight) = 0;
 	virtual bool update() = 0;
-	virtual void draw() = 0;
+	virtual void render() = 0;
 	virtual void shutdown() = 0; 
 };
 
@@ -68,7 +68,7 @@ public:
 		glDeleteVertexArrays(1, &lineVAO);
 	}
 
-	virtual bool startup(int windowWidth, int windowHeight) override;
+	virtual bool init(int windowWidth, int windowHeight) override;
 	virtual bool update() override;
 	virtual void shutdown() override;
 

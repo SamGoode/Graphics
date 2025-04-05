@@ -8,56 +8,57 @@
 
 
 
-
 void PhysicsEngine::update(float deltaTime) {
+	accumulatedTime += deltaTime;
+
+	for (int step = 0; step < maxTicksPerUpdate && accumulatedTime > fixedTimeStep; step++) {
+		tickPhysics();
+		accumulatedTime -= fixedTimeStep;
+	}
+}
+
+
+void PhysicsEngine::tickPhysics() {
 	PhysicsSystem* physicsSystem = ecs->getSystem<PhysicsSystem>();
 	CollisionSystem* collisionSystem = ecs->getSystem<CollisionSystem>();
 
 	// Kinematic updates and gravity
-	physicsSystem->kinematicInitialUpdate(ecs, deltaTime);
+	physicsSystem->kinematicInitialUpdate(ecs, fixedTimeStep);
 	physicsSystem->applyGravity(ecs, gravity);
-	//for (int i = 0; i < bodyCount; i++) {
-	//	bodies[i]->update(deltaTime);
 
-	//	vec3 gravity = vec3(0, 0, -1.5f);
-	//	bodies[i]->acc += gravity;
-	//}
-
-	// Ground collisions
+	// Collision detection
 	collisionSystem->detectCollisions(ecs, this);
-	//for (int i = 0; i < bodyCount; i++) {
-	//	detector.checkCollision(bodies[i], ground);
 
-	//	for (int n = i + 1; n < bodyCount; n++) {
-	//		detector.checkCollision(bodies[i], bodies[n]);
-	//	}
-	//}
-
-	// Depenetration with pseudo impulses
+	// Depenetration with pseudo position impulses
 	for (int i = 0; i < iterations; i++) {
 		for (int n = 0; n < collisionCount; n++) {
 			solver.solvePosition(collisionsECS[n]);
 		}
 	}
 
-	// Solves collision impulses
+	// Solves collisions at velocity level
 	for (int i = 0; i < iterations; i++) {
+		// Applies friction
 		for (int n = 0; n < collisionCount; n++) {
 			solver.solveFriction(collisionsECS[n]);
 		}
 
+		// Applies normal impulse
 		for (int n = 0; n < collisionCount; n++) {
 			solver.solveImpulse(collisionsECS[n]);
 		}
 	}
 
+	// Applies restitution
 	for (int i = 0; i < collisionCount; i++) {
 		solver.applyRestitution(collisionsECS[i]);
 	}
+
+	// Clear collision data
 	clearCollisions();
 
 	// Velocity-verlet related
-	physicsSystem->kinematicFinalUpdate(ecs, deltaTime);
+	physicsSystem->kinematicFinalUpdate(ecs, fixedTimeStep);
 }
 
 

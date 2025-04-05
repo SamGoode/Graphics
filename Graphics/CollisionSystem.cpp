@@ -199,12 +199,12 @@ void CollisionSystem::checkCollisionBoxBox(IPhysicsEngine* physicsEngine, ECS::u
 }
 
 void CollisionSystem::checkCollisionBoxSphere(IPhysicsEngine* physicsEngine, ECS::uint entityA, TransformComponent box, ECS::uint entityB, TransformComponent sphere) {
-	vec3 toSphere = sphere.position - box.position;
-	vec3 localToSphere = toSphere * box.rotation;
 	vec3 extents = box.scale * 0.5f;
 	float radius = (sphere.scale.x + sphere.scale.y + sphere.scale.z) / 3.f; // should be the same anyway
-	//float radius = static_cast<Sphere*>(sphere->shape)->radius;
-	//vec3 extents = static_cast<Box*>(box->shape)->extents;
+
+	vec3 toSphere = sphere.position - box.position;
+	vec3 localToSphere = toSphere * box.rotation;
+
 	vec3 absOffset = abs(localToSphere);
 	vec3 vertexOffset = absOffset - extents;
 
@@ -262,8 +262,6 @@ void CollisionSystem::checkCollisionBoxSphere(IPhysicsEngine* physicsEngine, ECS
 void CollisionSystem::checkCollisionSphereSphere(IPhysicsEngine* physicsEngine, ECS::uint entityA, TransformComponent sphereA, ECS::uint entityB, TransformComponent sphereB) {
 	float radiusA = (sphereA.scale.x + sphereA.scale.y + sphereA.scale.z) / 3.f;
 	float radiusB = (sphereB.scale.x + sphereB.scale.y + sphereB.scale.z) / 3.f;
-	//float radiusA = static_cast<Sphere*>(sphereA->shape)->radius;
-	//float radiusB = static_cast<Sphere*>(sphereB->shape)->radius;
 	float radii = radiusA + radiusB;
 
 	vec3 AtoB = sphereB.position - sphereA.position;

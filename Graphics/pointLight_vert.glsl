@@ -1,8 +1,8 @@
 #version 410
 
-
 // might do the inbuilt vertex array trick later
-in vec4 Position;
+// per-vertex data
+layout(location = 0) in vec3 Position;
 
 // per-instance data
 layout(location = 1) in struct instanceData {

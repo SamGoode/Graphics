@@ -10,12 +10,10 @@
 
 using glm::vec2;
 using glm::vec3;
-using glm::vec4;
 using glm::mat4;
-using glm::quat;
 
 
-
+#define MAX_INSTANCES 100
 
 class Mesh {
 public:
@@ -23,8 +21,8 @@ public:
 
 private:
 	struct vert {
-		vec4 position;
-		vec4 normal;
+		vec3 position;
+		vec3 normal;
 		vec2 texCoord;
 	};
 
@@ -39,14 +37,13 @@ private:
 	unsigned int instanceVBO;
 
 	int vertexCount = 0;
-	vert* vertexBuffer;
+	vert* vertexBuffer = nullptr;
 
 	int indexCount = 0;
-	unsigned int* indexBuffer;
+	unsigned int* indexBuffer = nullptr;
 
 	int instanceCount = 0;
-	const int maxInstances = 100;
-	instanceData instanceBuffer[100];
+	instanceData instanceBuffer[MAX_INSTANCES];
 
 public:
 	Mesh() {}
@@ -70,15 +67,8 @@ public:
 		glDrawElementsInstanced(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0, instanceCount);
 	}
 
-	void clearInstances() {
-		instanceCount = 0;
-	}
-
-	void addInstance(mat4 instanceTransform, MaterialProperties material) {
-		assert(instanceCount < maxInstances);
-
-		instanceBuffer[instanceCount++] = { instanceTransform, material };
-	}
+	void clearInstances() { instanceCount = 0; }
+	void addInstance(mat4 instanceTransform, MaterialProperties material) { assert(instanceCount < MAX_INSTANCES); instanceBuffer[instanceCount++] = { instanceTransform, material }; }
 
 	void loadFromFile(const char* name);
 
@@ -88,5 +78,5 @@ public:
 	void generatePlane();
 
 private:
-	void addQuad(vec4 v0, vec4 v1, vec4 v2, vec4 v3, vec3 faceNormal);
+	void addQuad(vec3 v0, vec3 v1, vec3 v2, vec3 v3, vec3 faceNormal);
 };

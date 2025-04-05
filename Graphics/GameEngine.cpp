@@ -1,52 +1,35 @@
 #include "GameEngine.h"
 
 #include "glmAddon.h"
-
-#include "stb_image.h"
-
 #include "ECSComponents.h"
 #include "PhysicsSystem.h"
 #include "CollisionSystem.h"
+#include "RenderSystem.h"
 
-
-
-mat4 getTransformMatrix(TransformComponent transformComponent) {
-	mat4 scaleMat = glm::identity<mat4>();
-	scaleMat *= vec4(transformComponent.scale, 1);
-
-	mat4 rotMat = glm::mat4_cast(transformComponent.rotation);
-	mat4 out = rotMat * scaleMat;
-	out[3] += vec4(transformComponent.position, 0);
-
-	return out;
-}
-
-
-class RenderSystem : public ECS::System {
-public:
-	void addMeshInstances(ECS::ECSManager& manager, Mesh* meshArray) {
-		for (int i = 0; i < entityCount; i++) {
-			MeshComponent meshComp = manager.getComponent<MeshComponent>(entities[i]);
-			TransformComponent transformComp = manager.getComponent<TransformComponent>(entities[i]);
-			MaterialComponent materialComp = manager.getComponent<MaterialComponent>(entities[i]);
-
-			mat4 transform = getTransformMatrix(transformComp);
-			MaterialProperties material = materialComp.material;
-
-			meshArray[meshComp.meshID].addInstance(transform, material);
-		}
-	}
-};
 
 GameEngine::GameEngine() {
 	worldUp = vec3(0, 0, 1);
 	camera = Camera(vec3(15, 0, 15), vec3(0.f, 45.f, 180.f), 20.f);
 
-	ambientLighting = vec3(0.8f);
-	lightColor = vec3(0.8f);
+	ambientLighting = vec3(0.5f);
+	lightColor = vec3(0.5f);
 	lightDirection = normalize(vec3(-1, 1, -1));
 
 	projection = glm::perspective(glm::pi<float>() * 0.25f, 16 / 9.f, 0.1f, 1000.f);
+	// 1.35799  0		0		0
+	// 0		2.4142	0		0
+	// 0		0		-1.000199 -0.2
+	// 0		0		-1	0
+	vec4 pos = vec4(-736, 414, -1000, 1);
+
+	vec4 projectedPos = projection * pos;
+	vec4 npPos = projectedPos / projectedPos.w;
+
+	vec4 original = glm::inverse(projection) * vec4(vec2(npPos), 1, 1);
+
+	vec3 test = normalize(vec3(original));
+	vec3 test2 = normalize(vec3(736, 414, 1000));
+	vec3 test3 = normalize(vec3(800, 450, 1100));
 
 	// Initialize EntityComponentSystem
 	ecs.init();
@@ -75,7 +58,7 @@ GameEngine::GameEngine() {
 
 	// Create Entities
 	ECS::uint floor = ecs.createEntity();
-	ecs.addComponent<MeshComponent>(floor, { 2 }); // floor mesh
+	ecs.addComponent<MeshComponent>(floor, { enumGeometry::PLANE }); // floor mesh
 	ecs.addComponent<TransformComponent>(floor, { vec3(0, 0, 0), eulerToQuat(vec3(0, 0, 0)), vec3(20, 20, 1)});
 	ecs.addComponent<MaterialComponent>(floor, { MaterialProperties{vec3(0.6f), 0.5f}});
 	ecs.addComponent<CollisionComponent>(floor, { enumGeometry::PLANE });
@@ -85,39 +68,39 @@ GameEngine::GameEngine() {
 	ecs.addComponent<MaterialComponent>(bunny, { MaterialProperties{vec3(1, 1, 0.86f), 0.5f} });
 
 	ECS::uint sphere = ecs.createEntity();
-	ecs.addComponent<MeshComponent>(sphere, { 1 }); // sphere mesh
+	ecs.addComponent<MeshComponent>(sphere, { enumGeometry::SPHERE }); // sphere mesh
 	ecs.addComponent<TransformComponent>(sphere, { vec3(-5, 5, 10), eulerToQuat(vec3(0)), vec3(0.5f) });
 	ecs.addComponent<MaterialComponent>(sphere, { MaterialProperties{vec3(0.8f, 0.1f, 0.1f), 1.f} });
 	ecs.addComponent<PhysicsComponent>(sphere, { vec3(0), vec3(0), 1 / 5.f, vec3(0), vec3(0), glm::identity<mat3>() });
 	ecs.addComponent<CollisionComponent>(sphere, { enumGeometry::SPHERE });
 	ECS::uint sphere2 = ecs.createEntity();
-	ecs.addComponent<MeshComponent>(sphere2, { 1 }); // sphere mesh
+	ecs.addComponent<MeshComponent>(sphere2, { enumGeometry::SPHERE }); // sphere mesh
 	ecs.addComponent<TransformComponent>(sphere2, { vec3(-5, 5, 5), eulerToQuat(vec3(0)), vec3(0.8f) });
 	ecs.addComponent<MaterialComponent>(sphere2, { MaterialProperties{vec3(0.1f, 0.8f, 0.1f), 1.f} });
 	ecs.addComponent<PhysicsComponent>(sphere2, { vec3(0), vec3(0), 1 / 10.f, vec3(0), vec3(0), glm::identity<mat3>() });
 	ecs.addComponent<CollisionComponent>(sphere2, { enumGeometry::SPHERE });
 
 	ECS::uint box = ecs.createEntity();
-	ecs.addComponent<MeshComponent>(box, { 0 }); // cube mesh
+	ecs.addComponent<MeshComponent>(box, { enumGeometry::BOX }); // cube mesh
 	ecs.addComponent<TransformComponent>(box, { vec3(0, 0, 10), eulerToQuat(vec3(45.f, 45.f, 0)), vec3(1, 2, 3) });
 	ecs.addComponent<MaterialComponent>(box, { MaterialProperties{vec3(0.2f, 0.2f, 0.8f), 1.f} });
 	ecs.addComponent<PhysicsComponent>(box, { vec3(0), vec3(0), 1/100.f, vec3(0), vec3(0), glm::identity<mat3>() });
 	ecs.addComponent<CollisionComponent>(box, {enumGeometry::BOX});
 	ECS::uint box2 = ecs.createEntity();
-	ecs.addComponent<MeshComponent>(box2, { 0 }); // cube mesh
+	ecs.addComponent<MeshComponent>(box2, { enumGeometry::BOX }); // cube mesh
 	ecs.addComponent<TransformComponent>(box2, { vec3(0, 0, 15), eulerToQuat(vec3(80.f, -45.f, 180.f)), vec3(1, 2, 3) });
 	ecs.addComponent<MaterialComponent>(box2, { MaterialProperties{vec3(0.7f, 0.2f, 0.7f), 1.f} });
 	ecs.addComponent<PhysicsComponent>(box2, { vec3(0), vec3(0), 1 / 50.f, vec3(0), vec3(0), glm::identity<mat3>() });
 	ecs.addComponent<CollisionComponent>(box2, { enumGeometry::BOX });
 
 	ECS::uint earth = ecs.createEntity();
-	ecs.addComponent<MeshComponent>(earth, { 1 }); // sphere mesh
+	ecs.addComponent<MeshComponent>(earth, { enumGeometry::SPHERE }); // sphere mesh
 	ecs.addComponent<TransformComponent>(earth, { vec3(0, 0, 5), eulerToQuat(vec3(0)), vec3(0.8f) });
 	ecs.addComponent<MaterialComponent>(earth, { MaterialProperties{vec3(0.6f), 0.5f} });
 	ecs.addComponent<PhysicsComponent>(earth, { vec3(0), vec3(0), 1 / 5.f, vec3(0), vec3(0), glm::identity<mat3>() });
 	ecs.addComponent<CollisionComponent>(earth, { enumGeometry::SPHERE });
 	ECS::uint cobblestone = ecs.createEntity();
-	ecs.addComponent<MeshComponent>(cobblestone, { 0 }); // cube mesh
+	ecs.addComponent<MeshComponent>(cobblestone, { enumGeometry::BOX }); // cube mesh
 	ecs.addComponent<TransformComponent>(cobblestone, { vec3(0, 0, 20), eulerToQuat(vec3(45.f, 45.f, 0)), vec3(1.f) });
 	ecs.addComponent<MaterialComponent>(cobblestone, { MaterialProperties{vec3(0.6f), 0.5f} });
 	ecs.addComponent<PhysicsComponent>(cobblestone, { vec3(0), vec3(0), 1 / 100.f, vec3(0), vec3(0), glm::identity<mat3>() });
@@ -130,26 +113,14 @@ GameEngine::GameEngine() {
 
 	vanEntity = van;
 
-	//PhysicsObject* sphere = new PhysicsObject(vec3(-5, 5, 10), vec3(0, 0, 0), new Sphere(0.5f), 5.f);
-	//PhysicsObject* sphere2 = new PhysicsObject(vec3(-5, 5, 5), vec3(0, 0, 0), new Sphere(0.8f), 10.f);
-	//PhysicsObject* box = new PhysicsObject(vec3(0, 0, 10), vec3(45.f, 45.f, 0), new Box(1.f, 2.f, 3.f), 100.f);
-	//PhysicsObject* box2 = new PhysicsObject(vec3(0, 0, 15), vec3(80.f, -45.f, 180.f), new Box(1.f, 2.f, 3.f), 50.f);
-	//PhysicsObject* box = new PhysicsObject(vec3(0, 0, 5), vec3(0, 0, 0), new Box(3.f, 3.f, 3.f), 100.f);
-	//PhysicsObject* box2 = new PhysicsObject(vec3(0, 0, 10), vec3(0, 0, 0), new Box(3.f, 1.f, 1.f), 50.f);
-
-	//PhysicsObject* earth = new PhysicsObject(vec3(0, 0, 5), vec3(0, 0, 0), new Sphere(0.8f), 5.f);
-	//PhysicsObject* cobblestone = new PhysicsObject(vec3(0, 0, 20), vec3(45.f, 45.f, 0), new Box(1.f, 1.f, 1.f), 100.f);
-
 	// Give physics engine access to EntityComponentSystem
 	physicsEngine.setEntityComponentSystemPtr(&ecs);
 	
-	//std::cout << Registry<GameObject>::count << " GameObjects created" << std::endl;
+	std::cout << (unsigned int)ecs.getEntityCount() << " entities created" << std::endl;
 }
 
-
-
-bool GameEngine::startup(int windowWidth, int windowHeight) {
-	if (!App3D::startup(windowWidth, windowHeight)) return false;
+bool GameEngine::init(int windowWidth, int windowHeight) {
+	if (!App3D::init(windowWidth, windowHeight)) return false;
 
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -182,6 +153,7 @@ bool GameEngine::startup(int windowWidth, int windowHeight) {
 
 	shadowShader.init("shadow.glsl", "empty.glsl");
 	gpassShader.init("gpass_vert.glsl", "gpass_frag.glsl");
+	raymarchShader.init("fullscreen_quad.glsl", "raymarch.glsl");
 	lightShader.init("fullscreen_quad.glsl", "directional_light.glsl");
 	pointLightShader.init("pointLight_vert.glsl", "pointLight_frag.glsl");
 	compositeShader.init("fullscreen_quad.glsl", "composite.glsl");
@@ -197,12 +169,17 @@ bool GameEngine::startup(int windowWidth, int windowHeight) {
 	gpassFBO.genTextureStorage(GL_RGB16F); // Normals
 	gpassFBO.init();
 
+	//raymarchFBO.setSize(windowWidth, windowHeight);
+	//raymarchFBO.genTextureStorage(GL_RGBA8); // AlbedoSpec
+	//raymarchFBO.genTextureStorage(GL_RGBA16F); // Position
+	//raymarchFBO.genTextureStorage(GL_RGB16F); // Normals
+	//raymarchFBO.init();
+
 	lightFBO.setSize(windowWidth, windowHeight);
 	lightFBO.shareRenderBuffer(gpassFBO);
 	lightFBO.genTextureStorage(GL_RGB8); // Diffuse Light
 	lightFBO.genTextureStorage(GL_RGB8); // Specular Light
 	lightFBO.init();
-
 
 	return true;
 }
@@ -213,6 +190,11 @@ bool GameEngine::update()  {
 	
 	float deltaTime = getFrameTime();
 
+	// Avoid taking absurd time steps
+	constexpr float deltaTimeLimit = 1.f;
+	if (deltaTime > deltaTimeLimit) deltaTime = 0.f;
+
+
 	if (keyPressed(GLFW_KEY_W)) { camera.pos += camera.orientation * vec3(1, 0, 0) * camera.movementSpeed * deltaTime; }
 	if (keyPressed(GLFW_KEY_S)) { camera.pos += camera.orientation * vec3(1, 0, 0) * -camera.movementSpeed * deltaTime; }
 	if (keyPressed(GLFW_KEY_D)) { camera.pos += camera.orientation * vec3(0, 1, 0) * -camera.movementSpeed * deltaTime; }
@@ -220,6 +202,7 @@ bool GameEngine::update()  {
 
 	auto& transform = ecs.getComponent<TransformComponent>(vanEntity);
 	transform.rotation = eulerToQuat(vec3(0, 0, 10.f) * deltaTime) * transform.rotation;
+
 
 	physicsEngine.update(deltaTime);
 
@@ -229,7 +212,7 @@ bool GameEngine::update()  {
 
 
 
-void GameEngine::draw() {
+void GameEngine::render() {
 	view = genViewMatrix(camera.pos, camera.orientation * vec3(1, 0, 0), worldUp);
 	mat4 projectionView = projection * view;
 
@@ -276,6 +259,35 @@ void GameEngine::draw() {
 	glClearColor(0.f, 0.f, 0.f, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
+	// Raymarch test
+	//raymarchFBO.bind();
+	//glDisable(GL_STENCIL_TEST);
+
+	//glDepthFunc(GL_ALWAYS);
+
+	vec3 ballPos = vec3(5, 5, 0);
+	vec3 vBallPos = view * vec4(ballPos, 1);
+	float ballRadius = 2.f;
+
+	raymarchShader.use();
+	raymarchShader.bindUniform(view, "View");
+	raymarchShader.bindUniform(glm::inverse(view), "ViewInverse");
+	raymarchShader.bindUniform(projection, "Projection");
+	raymarchShader.bindUniform(glm::inverse(projection), "ProjectionInverse");
+	raymarchShader.bindUniform(vBallPos, "BallPos");
+	raymarchShader.bindUniform(ballRadius, "BallRadius");
+
+	//raymarchShader.bindUniform(0, "albedoSpecPass");
+	//gpassFBO.getRenderTexture(0)->bind(GL_TEXTURE0);
+	//raymarchShader.bindUniform(1, "positionPass");
+	//gpassFBO.getRenderTexture(1)->bind(GL_TEXTURE1);
+	//raymarchShader.bindUniform(2, "normalPass");
+	//gpassFBO.getRenderTexture(2)->bind(GL_TEXTURE2);
+
+	glDrawArrays(GL_TRIANGLES, 0, 3);
+
+	glDepthFunc(GL_LESS);
+
 	gpassShader.use();
 	gpassShader.bindUniform(projectionView, "ProjectionView");
 
@@ -289,6 +301,10 @@ void GameEngine::draw() {
 	}
 
 	glDisable(GL_DEPTH_TEST);
+
+
+
+
 
 
 	// Light Pass
@@ -347,6 +363,7 @@ void GameEngine::draw() {
 	glDisable(GL_BLEND);
 
 
+
 	// Composite Pass
 	gpassFBO.sendStencilBuffer(0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -365,6 +382,8 @@ void GameEngine::draw() {
 	lightFBO.getRenderTexture(1)->bind(GL_TEXTURE2);
 	compositeShader.bindUniform(3, "shadowPass");
 	shadowFBO.getRenderTexture(0)->bind(GL_TEXTURE3);
+	//compositeShader.bindUniform(4, "raymarchPass");
+	//raymarchFBO.getRenderTexture(0)->bind(GL_TEXTURE4);
 	
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 

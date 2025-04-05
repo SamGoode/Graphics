@@ -21,7 +21,7 @@ bool Mesh::init() {
 
 	glGenBuffers(1, &instanceVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-	glBufferData(GL_ARRAY_BUFFER, maxInstances * sizeof(instanceData), instanceBuffer, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, MAX_INSTANCES * sizeof(instanceData), instanceBuffer, GL_DYNAMIC_DRAW);
 
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
@@ -30,9 +30,9 @@ bool Mesh::init() {
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(vert), 0); // position
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(vert), (void*)16); // normal
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(vert), (void*)32); // texCoord
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vert), 0); // position
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(vert), (void*)12); // normal
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(vert), (void*)24); // texCoord
 
 	glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
 	glEnableVertexAttribArray(3);
@@ -66,6 +66,8 @@ bool Mesh::init() {
 }
 
 void Mesh::loadFromFile(const char* name) {
+	assert(vertexBuffer == nullptr && indexBuffer == nullptr);
+
 	const aiScene* scene = aiImportFile(name, 0);
 
 	std::vector<unsigned int> indices;
@@ -80,8 +82,8 @@ void Mesh::loadFromFile(const char* name) {
 		int vertCount = mesh->mNumVertices;
 		for (int i = 0; i < vertCount; i++) {
 			vert vertex;
-			vertex.position = vec4(mesh->mVertices[i].x, mesh->mVertices[i].z, mesh->mVertices[i].y, 1);
-			vertex.normal = vec4(mesh->mNormals[i].x, mesh->mNormals[i].z, mesh->mNormals[i].y, 0);
+			vertex.position = vec3(mesh->mVertices[i].x, mesh->mVertices[i].z, mesh->mVertices[i].y);
+			vertex.normal = vec3(mesh->mNormals[i].x, mesh->mNormals[i].z, mesh->mNormals[i].y);
 			vertex.texCoord = mesh->HasTextureCoords(0) ? vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y) : vec2(0);
 			vertices.push_back(vertex);
 		}
@@ -104,6 +106,8 @@ void Mesh::loadFromFile(const char* name) {
 		vertexCount += vertCount;
 	}
 
+	aiReleaseImport(scene);
+
 	vertexBuffer = new vert[vertices.size()];
 	std::memcpy(&vertexBuffer[0], vertices.data(), vertices.size() * sizeof(vert));
 
@@ -112,25 +116,29 @@ void Mesh::loadFromFile(const char* name) {
 }
 
 void Mesh::generatePlane() {
+	assert(vertexBuffer == nullptr && indexBuffer == nullptr);
+
 	vertexBuffer = new vert[4];
 	indexBuffer = new unsigned int[6];
 
-	addQuad(vec4(1, 1, 0, 1), vec4(1, -1, 0, 1), vec4(-1, -1, 0, 1), vec4(-1, 1, 0, 1), vec3(0, 0, 1));
+	addQuad(vec3(1, 1, 0), vec3(1, -1, 0), vec3(-1, -1, 0), vec3(-1, 1, 0), vec3(0, 0, 1));
 }
 
 void Mesh::generateCube() {
+	assert(vertexBuffer == nullptr && indexBuffer == nullptr);
+
 	vertexBuffer = new vert[24];
 	indexBuffer = new unsigned int[36];
 
-	vec4 vertices[8] = {
-		vec4(0.5, 0.5, -0.5, 1),
-		vec4(0.5, -0.5, -0.5, 1),
-		vec4(-0.5, -0.5, -0.5, 1),
-		vec4(-0.5, 0.5, -0.5, 1),
-		vec4(0.5, 0.5, 0.5, 1),
-		vec4(0.5, -0.5, 0.5, 1),
-		vec4(-0.5, -0.5, 0.5, 1),
-		vec4(-0.5, 0.5, 0.5, 1)
+	vec3 vertices[8] = {
+		vec3(0.5, 0.5, -0.5),
+		vec3(0.5, -0.5, -0.5),
+		vec3(-0.5, -0.5, -0.5),
+		vec3(-0.5, 0.5, -0.5),
+		vec3(0.5, 0.5, 0.5),
+		vec3(0.5, -0.5, 0.5),
+		vec3(-0.5, -0.5, 0.5),
+		vec3(-0.5, 0.5, 0.5)
 	};
 
 	addQuad(vertices[4], vertices[5], vertices[6], vertices[7], vec3(0, 0, 1)); // Top
@@ -142,23 +150,26 @@ void Mesh::generateCube() {
 }
 
 void Mesh::generateSphere() {
+	assert(vertexBuffer == nullptr && indexBuffer == nullptr);
+
 	vertexBuffer = new vert[91];
 	indexBuffer = new unsigned int[360];
 
-	float pi = glm::pi<float>();
+	constexpr float pi = glm::pi<float>();
+	
 
 	vert verts[13 * 7];
 	for (int i = 0; i < 13; i++) {
-		float theta = i * (0.1667f * glm::pi<float>());
+		float theta = i * (0.1667f * pi);
 		float x = cos(theta);
 		float y = sin(theta);
 
 		// top and bottom most vertex are duplicated every arc so tex coords can be used later on
 		for (int n = 0; n < 7; n++) {
-			float beta = n * (0.1667f * glm::pi<float>());
+			float beta = n * (0.1667f * pi);
 			vec3 offsetFromCenter = vec3(x * sin(beta), y * sin(beta), cos(beta));
-			verts[i * 7 + n].position = vec4(offsetFromCenter, 1);
-			verts[i * 7 + n].normal = vec4(offsetFromCenter, 0);
+			verts[i * 7 + n].position = offsetFromCenter;
+			verts[i * 7 + n].normal = offsetFromCenter;
 			verts[i * 7 + n].texCoord = vec2(i / 12.f, n / 6.f);
 		}
 	}
@@ -191,12 +202,12 @@ void Mesh::generateSphere() {
 	indexCount += 360;
 }
 
-void Mesh::addQuad(vec4 v0, vec4 v1, vec4 v2, vec4 v3, vec3 faceNormal) {
+void Mesh::addQuad(vec3 v0, vec3 v1, vec3 v2, vec3 v3, vec3 faceNormal) {
 	vert verts[4] = {
-		vert{v0, vec4(faceNormal, 0), vec2(0, 1)},
-		vert{v1, vec4(faceNormal, 0), vec2(1, 1)},
-		vert{v2, vec4(faceNormal, 0), vec2(1, 0)},
-		vert{v3, vec4(faceNormal, 0), vec2(0, 0)},
+		vert{v0, faceNormal, vec2(0, 1)},
+		vert{v1, faceNormal, vec2(1, 1)},
+		vert{v2, faceNormal, vec2(1, 0)},
+		vert{v3, faceNormal, vec2(0, 0)},
 	};
 
 	unsigned int quadIndices[6] = {

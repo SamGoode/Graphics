@@ -1,8 +1,6 @@
 #version 410
 
-layout(location = 0) in vec4 Position;
-layout(location = 1) in vec4 Normal;
-layout(location = 2) in vec2 TexCoord;
+layout(location = 0) in vec3 Position;
 
 // per-instance data
 layout(location = 3) in struct instanceData {
@@ -14,5 +12,5 @@ layout(location = 3) in struct instanceData {
 uniform mat4 LightProjectionView;
 
 void main() {
-	gl_Position = LightProjectionView * instance.transform * Position;
+	gl_Position = LightProjectionView * instance.transform * vec4(Position, 1);
 }

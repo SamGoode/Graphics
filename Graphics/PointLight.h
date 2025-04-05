@@ -41,15 +41,15 @@ public:
 	bool init() {
 		if (vao != 0) return false;
 
-		vec4 vertices[8] = {
-			vec4(1, 1, -1, 1),
-			vec4(1, -1, -1, 1),
-			vec4(-1, -1, -1, 1),
-			vec4(-1, 1, -1, 1),
-			vec4(1, 1, 1, 1),
-			vec4(1, -1, 1, 1),
-			vec4(-1, -1, 1, 1),
-			vec4(-1, 1, 1, 1)
+		vec3 vertices[8] = {
+			vec3(1, 1, -1),
+			vec3(1, -1, -1),
+			vec3(-1, -1, -1),
+			vec3(-1, 1, -1),
+			vec3(1, 1, 1),
+			vec3(1, -1, 1),
+			vec3(-1, -1, 1),
+			vec3(-1, 1, 1)
 		};
 
 		unsigned int indices[36] = {
@@ -63,7 +63,7 @@ public:
 
 		glGenBuffers(1, &vbo);
 		glBindBuffer(GL_ARRAY_BUFFER, vbo);
-		glBufferData(GL_ARRAY_BUFFER, 8 * sizeof(vec4), vertices, GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, 8 * sizeof(vec3), vertices, GL_STATIC_DRAW);
 		glGenBuffers(1, &ibo);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, 36 * sizeof(unsigned int), indices, GL_STATIC_DRAW);
@@ -77,7 +77,7 @@ public:
 		glBindBuffer(GL_ARRAY_BUFFER, vbo);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(vec4), 0); // position
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), 0); // position
 
 		glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
 		glEnableVertexAttribArray(1);

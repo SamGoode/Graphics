@@ -1,8 +1,8 @@
 #version 410
 
 // per-vertex data
-layout(location = 0) in vec4 Position;
-layout(location = 1) in vec4 Normal;
+layout(location = 0) in vec3 Position;
+layout(location = 1) in vec3 Normal;
 layout(location = 2) in vec2 TexCoord;
 
 // per-instance data
@@ -24,8 +24,8 @@ out float S;
 
 
 void main() {
-	vPosition = instance.transform * Position;
-	vNormal = (instance.transform * Normal).xyz;
+	vPosition = instance.transform * vec4(Position, 1);
+	vNormal = (instance.transform * vec4(Normal, 0)).xyz;
 	vTexCoord = TexCoord;
 
 	Ka = instance.baseColor;

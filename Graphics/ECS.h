@@ -2,33 +2,26 @@
 
 #include <cassert>
 #include <bitset>
+#include <cstdint>
 
 
 namespace ECS {
-	#define MAX_ENTITIES 100
-	#define MAX_COMPONENT_TYPES 10
+	#define MAX_ENTITIES 128
+	#define MAX_COMPONENT_TYPES 8
 
-	
-	// leave UINT32_MAX empty so can be used as a 'nullptr'
-
-	using uint = unsigned int; // can replace later with lower memory type
+	// leave UINT8_MAX empty so can be used as a 'nullptr'
+	using uint = std::uint8_t; // can replace later with lower memory type
 	using bitset = std::bitset<MAX_COMPONENT_TYPES>; // maybe same name is bad idea?
-
 
 	class EntityManager {
 	private:
-		//const uint maxEntities = MAX_ENTITIES;
-
 		uint activeCount = 0;
 		uint inactiveEntities[MAX_ENTITIES];
 		bitset entitySignatures[MAX_ENTITIES];
-		//uint entityIDs[MAX_ENTITIES];
-		//uint entityToIndex[MAX_ENTITIES];
 
 	public:
 		EntityManager() {
 			for (uint i = 0; i < MAX_ENTITIES; i++) {
-				//entityIDs[i] = i;
 				inactiveEntities[i] = i;
 			}
 		}
@@ -36,19 +29,14 @@ namespace ECS {
 		uint createEntity() {
 			assert(activeCount < MAX_ENTITIES);
 
-			//uint newEntity = entityIDs[activeEntities];
-			//entityToIndex[newEntity] = activeEntities;
-			//uint newEntity = inactiveEntities[maxEntities - activeCount];
-
 			activeCount++;
 			return inactiveEntities[MAX_ENTITIES - activeCount];
 		}
 
 		void destroyEntity(uint entityID) {
 			assert(entityID < MAX_ENTITIES && activeCount > 0);
-			//uint entityID = entityIDs[index];
+			
 			entitySignatures[entityID].reset();
-
 			inactiveEntities[MAX_ENTITIES - activeCount] = entityID;
 			activeCount--;
 		}
@@ -60,8 +48,11 @@ namespace ECS {
 		bitset getSignature(uint entityID) {
 			return entitySignatures[entityID];
 		}
-	};
 
+		uint getActiveCount() {
+			return activeCount;
+		}
+	};
 
 
 	class IComponentPool {
@@ -119,7 +110,6 @@ namespace ECS {
 
 			activeComponents--;
 
-			//uint lastIndex = activeComponents;
 			uint removedIndex = entityToIndex[entityID];
 			uint lastEntity = indexToEntity[activeComponents];
 
@@ -342,6 +332,10 @@ namespace ECS {
 			entityManager->destroyEntity(entityID);
 			componentManager->onEntityDestroyed(entityID);
 			systemManager->onEntityDestroyed(entityID);
+		}
+
+		uint getEntityCount() {
+			return entityManager->getActiveCount();
 		}
 
 		// Component Methods

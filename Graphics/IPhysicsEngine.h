@@ -1,9 +1,13 @@
 #pragma once
 
 #include "ECS.h"
+#include "glm/ext.hpp"
+
 
 struct IPhysicsEngine {
 	ECS::ECSManager* ecs;
+
+	glm::vec3 gravity;
 
 	int iterations;
 
@@ -13,7 +17,6 @@ struct IPhysicsEngine {
 	float elasticity;
 	float friction;
 
-	//virtual void addCollision(struct Collision collision) = 0;
 	virtual void addCollisionECS(struct CollisionECS collision) = 0;
 	virtual void clearCollisions() = 0;
 };
