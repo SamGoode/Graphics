@@ -4,8 +4,6 @@ in vec3 vLightPosition;
 in float vLightRadius;
 in vec3 vLightColor;
 
-uniform vec3 CameraPos;
-
 uniform sampler2D albedoSpecPass;
 uniform sampler2D positionPass;
 uniform sampler2D normalPass;

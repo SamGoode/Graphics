@@ -11,7 +11,6 @@ layout(location = 1) in struct instanceData {
 	vec3 lightColor;
 } instance;
 
-
 uniform mat4 View;
 uniform mat4 ProjectionView;
 

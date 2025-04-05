@@ -11,25 +11,11 @@ GameEngine::GameEngine() {
 	worldUp = vec3(0, 0, 1);
 	camera = Camera(vec3(15, 0, 15), vec3(0.f, 45.f, 180.f), 20.f);
 
-	ambientLighting = vec3(0.5f);
-	lightColor = vec3(0.5f);
+	ambientLighting = vec3(0.4f);
+	lightColor = vec3(0.8f);
 	lightDirection = normalize(vec3(-1, 1, -1));
 
 	projection = glm::perspective(glm::pi<float>() * 0.25f, 16 / 9.f, 0.1f, 1000.f);
-	// 1.35799  0		0		0
-	// 0		2.4142	0		0
-	// 0		0		-1.000199 -0.2
-	// 0		0		-1	0
-	vec4 pos = vec4(-736, 414, -1000, 1);
-
-	vec4 projectedPos = projection * pos;
-	vec4 npPos = projectedPos / projectedPos.w;
-
-	vec4 original = glm::inverse(projection) * vec4(vec2(npPos), 1, 1);
-
-	vec3 test = normalize(vec3(original));
-	vec3 test2 = normalize(vec3(736, 414, 1000));
-	vec3 test3 = normalize(vec3(800, 450, 1100));
 
 	// Initialize EntityComponentSystem
 	ecs.init();
@@ -268,8 +254,6 @@ void GameEngine::render() {
 	float ballRadius = 2.f;
 
 	raymarchShader.use();
-	raymarchShader.bindUniform(view, "View");
-	raymarchShader.bindUniform(glm::inverse(view), "ViewInverse");
 	raymarchShader.bindUniform(projection, "Projection");
 	raymarchShader.bindUniform(glm::inverse(projection), "ProjectionInverse");
 	raymarchShader.bindUniform(vBallPos, "BallPos");
@@ -310,7 +294,7 @@ void GameEngine::render() {
 	lightShader.bindUniform(lightColor, "LightColor");
 	lightShader.bindUniform(vec3(view * vec4(lightDirection, 0)), "LightDirection");
 	lightShader.bindUniform(lightProjectionView, "LightProjectionView");
-	lightShader.bindUniform(camera.pos, "CameraPos");
+	//lightShader.bindUniform(camera.pos, "CameraPos");
 
 	lightShader.bindUniform(0, "albedoSpecPass");
 	gpassFBO.getRenderTexture(0)->bind(GL_TEXTURE0);
@@ -332,7 +316,6 @@ void GameEngine::render() {
 	pointLightShader.use();
 	pointLightShader.bindUniform(view, "View");
 	pointLightShader.bindUniform(projectionView, "ProjectionView");
-	pointLightShader.bindUniform(camera.pos, "CameraPos");
 
 	pointLightShader.bindUniform(0, "albedoSpecPass");
 	gpassFBO.getRenderTexture(0)->bind(GL_TEXTURE0);

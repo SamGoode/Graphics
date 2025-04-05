@@ -12,7 +12,6 @@ layout(location = 3) in struct instanceData {
 	float gloss;
 } instance;
 
-
 uniform mat4 View;
 uniform mat4 Projection;
 

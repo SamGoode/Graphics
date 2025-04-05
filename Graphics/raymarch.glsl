@@ -15,14 +15,11 @@ vec3 sdfGradient(vec3 pos, vec3 ballPos, float ballRadius) {
 
 in vec2 vTexCoord;
 
-uniform mat4 View;
-uniform mat4 ViewInverse;
 uniform mat4 Projection;
 uniform mat4 ProjectionInverse;
 
 uniform vec3 BallPos;
 uniform float BallRadius;
-
 
 out vec4 gpassAlbedoSpec;
 out vec3 gpassPosition;

@@ -8,8 +8,6 @@ uniform vec3 LightDirection; // view space
 uniform vec3 LightColor;
 uniform mat4 LightProjectionView;
 
-uniform vec3 CameraPos;
-
 uniform sampler2D albedoSpecPass;
 uniform sampler2D positionPass;
 uniform sampler2D normalPass;
