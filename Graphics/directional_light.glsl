@@ -2,7 +2,9 @@
 
 in vec2 vTexCoord;
 
-uniform vec3 LightDirection;
+uniform mat4 ViewInverse;
+
+uniform vec3 LightDirection; // view space
 uniform vec3 LightColor;
 uniform mat4 LightProjectionView;
 
@@ -24,14 +26,14 @@ void main() {
 	float lambertTerm = max(0, dot(N, -L));
 
 	vec3 position = texture(positionPass, vTexCoord).xyz;
-	vec3 V = normalize(CameraPos - position);
+	vec3 V = normalize(-position);
 	
 	vec3 H = normalize(V - L);
 
 	float S = texture(albedoSpecPass, vTexCoord).a;
 	float specTerm = pow(max(0, dot(H, N)), S * 32.f) * S;
 
-	vec4 lightSpacePosition = LightProjectionView * vec4(position, 1.f);
+	vec4 lightSpacePosition = LightProjectionView * ViewInverse * vec4(position, 1.f);
 	vec3 projCoords = lightSpacePosition.xyz / lightSpacePosition.w;
 	projCoords = projCoords * 0.5f + 0.5f;
 

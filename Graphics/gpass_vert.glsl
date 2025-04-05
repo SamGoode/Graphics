@@ -13,7 +13,8 @@ layout(location = 3) in struct instanceData {
 } instance;
 
 
-uniform mat4 ProjectionView;
+uniform mat4 View;
+uniform mat4 Projection;
 
 out vec4 vPosition;
 out vec3 vNormal;
@@ -24,12 +25,12 @@ out float S;
 
 
 void main() {
-	vPosition = instance.transform * vec4(Position, 1);
-	vNormal = (instance.transform * vec4(Normal, 0)).xyz;
+	vPosition = View * instance.transform * vec4(Position, 1);
+	vNormal = (View * instance.transform * vec4(Normal, 0)).xyz;
 	vTexCoord = TexCoord;
 
 	Ka = instance.baseColor;
 	S = instance.gloss;
 
-	gl_Position = ProjectionView * vPosition;
+	gl_Position = Projection * vPosition;
 }

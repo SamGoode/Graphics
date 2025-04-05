@@ -248,8 +248,11 @@ void GameEngine::render() {
 	gpassFBO.bind();
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
+
 	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
 	glDepthMask(GL_TRUE);
+
 	glEnable(GL_STENCIL_TEST);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 	glStencilFunc(GL_ALWAYS, 1, 0xFF);
@@ -260,12 +263,7 @@ void GameEngine::render() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 	// Raymarch test
-	//raymarchFBO.bind();
-	//glDisable(GL_STENCIL_TEST);
-
-	//glDepthFunc(GL_ALWAYS);
-
-	vec3 ballPos = vec3(5, 5, 0);
+	vec3 ballPos = vec3(5, 5, 2);
 	vec3 vBallPos = view * vec4(ballPos, 1);
 	float ballRadius = 2.f;
 
@@ -277,19 +275,13 @@ void GameEngine::render() {
 	raymarchShader.bindUniform(vBallPos, "BallPos");
 	raymarchShader.bindUniform(ballRadius, "BallRadius");
 
-	//raymarchShader.bindUniform(0, "albedoSpecPass");
-	//gpassFBO.getRenderTexture(0)->bind(GL_TEXTURE0);
-	//raymarchShader.bindUniform(1, "positionPass");
-	//gpassFBO.getRenderTexture(1)->bind(GL_TEXTURE1);
-	//raymarchShader.bindUniform(2, "normalPass");
-	//gpassFBO.getRenderTexture(2)->bind(GL_TEXTURE2);
-
 	glDrawArrays(GL_TRIANGLES, 0, 3);
+	
 
-	glDepthFunc(GL_LESS);
-
+	// Meshes
 	gpassShader.use();
-	gpassShader.bindUniform(projectionView, "ProjectionView");
+	gpassShader.bindUniform(view, "View");
+	gpassShader.bindUniform(projection, "Projection");
 
 	for (int i = 0; i < meshCount; i++) {
 		textures[meshes[i].textureID].bind();
@@ -303,10 +295,6 @@ void GameEngine::render() {
 	glDisable(GL_DEPTH_TEST);
 
 
-
-
-
-
 	// Light Pass
 	lightFBO.bind();
 	glEnable(GL_BLEND);
@@ -318,8 +306,9 @@ void GameEngine::render() {
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	lightShader.use();
+	lightShader.bindUniform(glm::inverse(view), "ViewInverse");
 	lightShader.bindUniform(lightColor, "LightColor");
-	lightShader.bindUniform(lightDirection, "LightDirection");
+	lightShader.bindUniform(vec3(view * vec4(lightDirection, 0)), "LightDirection");
 	lightShader.bindUniform(lightProjectionView, "LightProjectionView");
 	lightShader.bindUniform(camera.pos, "CameraPos");
 
@@ -341,6 +330,7 @@ void GameEngine::render() {
 	glCullFace(GL_FRONT);
 	
 	pointLightShader.use();
+	pointLightShader.bindUniform(view, "View");
 	pointLightShader.bindUniform(projectionView, "ProjectionView");
 	pointLightShader.bindUniform(camera.pos, "CameraPos");
 

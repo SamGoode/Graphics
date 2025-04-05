@@ -11,6 +11,8 @@ layout(location = 1) in struct instanceData {
 	vec3 lightColor;
 } instance;
 
+
+uniform mat4 View;
 uniform mat4 ProjectionView;
 
 out vec3 vLightPosition;
@@ -19,7 +21,7 @@ out vec3 vLightColor;
 
 
 void main() {
-	vLightPosition = instance.lightPosition;
+	vLightPosition = (View * vec4(instance.lightPosition, 1)).xyz;
 	vLightRadius = instance.lightRadius;
 	vLightColor = instance.lightColor;
 	

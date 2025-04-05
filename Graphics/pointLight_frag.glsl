@@ -20,7 +20,7 @@ void main() {
 	vec3 sPosition = texture(positionPass, texCoord).xyz;
 	vec3 sNormal = normalize(texture(normalPass, texCoord).xyz);
 
-	vec3 toView = normalize(CameraPos - sPosition);
+	vec3 toView = normalize(-sPosition);
 	vec3 toLight = vLightPosition - sPosition;
 	float dist = length(toLight);
 	toLight = toLight / dist;
