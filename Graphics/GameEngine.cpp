@@ -104,9 +104,9 @@ GameEngine::GameEngine() {
 	//ecs.addComponent<PhysicsComponent>(floor, { vec3(0), vec3(0), 1 / 100.f, vec3(0), vec3(0), glm::identity<mat3>() });
 	//ecs.removeComponent<MeshComponent>(earth);
 
-	particleManager.addParticle(vec3(5, 5, 2));
+	particleManager.addParticle(vec3(5, 4, 2));
 	particleManager.addParticle(vec3(1, 4, 2));
-	particleManager.addParticle(vec3(1, 4, 4));
+	particleManager.addParticle(vec3(1, 4, 6));
 
 	// Give physics engine access to EntityComponentSystem
 	physicsEngine.setEntityComponentSystemPtr(&ecs);

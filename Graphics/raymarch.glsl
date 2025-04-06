@@ -27,39 +27,44 @@ float sdfSphere(vec3 point, vec3 spherePos, float sphereRadius) {
 
 float sdf(vec3 point, uint particleIndex) {
 	return sdfSphere(point, positions[particleIndex], radius);
-	//return min(sdfBall(point, particleBuffer.position[0], 1.f), sdfBall(point,  particleBuffer.position[1], 1.f));
 }
 
+float smoothMin(float a, float b, float k) {
+	k *= 6.0;
+	float h = max(k - abs(a - b), 0.0)/k;
+	return min(a, b) - h * h * h * k * (1.0/6.0);
 
-float sdfMin(vec3 point, out uint minIndex) {
+//	float x = (b - a)/k;
+//	float y = (-abs(x * x * x) + ((3.0 * x) * (x + 1.0)) + 1.0)/6.0;
+//	if(x > 1.0) {
+//		y = x;
+//	}
+//	else if(x < -1.0) {
+//		y = 0;
+//	}
+//
+//	return b - k * y;
+}
+
+float sdfMin(vec3 point) {
 	float minDist = sdf(point, 0);
-	minIndex = 0;
 
 	for(uint particleIndex = 1; particleIndex < count; particleIndex++) {
 		float dist = sdf(point, particleIndex);
-		if(dist < minDist) {
-			minDist = dist;
-			minIndex = particleIndex;
-		}
+
+		minDist = smoothMin(minDist, dist, 0.01);
 	}
 
 	return minDist;
 }
 
-//uint getNearestParticle(vec3 point) {
-//	float minDist = sdf(point, 0);
-//	uint minIndex = 0;
-//
-//	for(uint particleIndex = 1; particleIndex < count; particleIndex++) {
-//		float dist = sdf(point, particleIndex);
-//		if(dist < minDist) {
-//			minDist = dist;
-//			minIndex = particleIndex;
-//		}
-//	}
-//
-//	return minIndex;
-//}
+vec3 sdfGradient(vec3 point) {
+	float dx = sdfMin(point + vec3(0.001, 0, 0)) - sdfMin(point + vec3(-0.001, 0, 0));
+	float dy = sdfMin(point + vec3(0, 0.001, 0)) - sdfMin(point + vec3(0, -0.001, 0));
+	float dz = sdfMin(point + vec3(0, 0, 0.001)) - sdfMin(point + vec3(0, 0, -0.001));
+	
+	return vec3(dx, dy, dz);
+}
 
 vec3 sdfGradient(vec3 point, uint particleIndex) {
 	float dx = sdf(point + vec3(0.001, 0, 0), particleIndex) - sdf(point + vec3(-0.001, 0, 0), particleIndex);
@@ -72,7 +77,7 @@ vec3 sdfGradient(vec3 point, uint particleIndex) {
 float getRaymarchDist(vec3 rayDir, int steps, out uint particleIndex) {
 	float dist = 0;
 	for(int i = 0; i < steps; i++) {
-		float stepSize = sdfMin(rayDir * dist, particleIndex);
+		float stepSize = sdfMin(rayDir * dist);
 		if(stepSize < 0.05) {
 			return dist;
 		}
@@ -92,11 +97,10 @@ void main() {
 	uint particleIndex;
 	float dist = getRaymarchDist(rayDirection, stepCount, particleIndex);
 	vec3 pos = rayDirection * dist;
-	//uint particleIndex = getNearestParticle(pos);
 	
 	gpassAlbedoSpec = vec4(vec3(0.1, 0.4, 0.8), 0.8);
 	gpassPosition = (vec4(pos, 1)).xyz;
-	gpassNormal = normalize(sdfGradient(pos, particleIndex).xyz);
+	gpassNormal = normalize(sdfGradient(pos).xyz);
 
 	vec4 clipPos = (Projection * vec4(pos, 1));
 	float ndcPosZ = clipPos.z / clipPos.w;
