@@ -77,6 +77,7 @@ void PhysicsSolver::solvePosition(CollisionECS& collision) {
         effMass += calcEffectiveMass(physics, transform, cross(rB, norm));
     }
 
+    // collision depth value isn't being updated upon sequential iterations
     float lambda = std::max(collision.depth - biasSlop, 0.f) * biasFactor / effMass;
     vec3 impulse = norm * lambda;
 

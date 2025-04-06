@@ -81,3 +81,8 @@ void Shader::bindUniform(const mat4& m4, const char* name) {
 	unsigned int uniform = glGetUniformLocation(shader_id, name);
 	glUniformMatrix4fv(uniform, 1, false, glm::value_ptr(m4));
 }
+
+void Shader::bindUniformBuffer(GLuint bindingIndex, const char* name) {
+	unsigned int uniformBlockIndex = glGetUniformBlockIndex(shader_id, name);
+	glUniformBlockBinding(shader_id, uniformBlockIndex, bindingIndex);
+}

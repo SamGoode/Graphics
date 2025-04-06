@@ -5,6 +5,45 @@
 #include <cstdint>
 
 
+// I'll hook this up later
+//// All values must be integers
+//template<typename intType>
+//class SparseIntegerSet {
+//private:
+//	intType count = 0;
+//
+//	intType sparseSet[MAX_ENTITIES];
+//	intType denseSet[MAX_ENTITIES];
+//
+//public:
+//	bool contains(intType value) {
+//		assert(value < MAX_ENTITIES && "Set out of bounds");
+//
+//		intType denseIndex = sparseSet[value];
+//		return denseIndex < count && denseSet[denseIndex] == value;
+//	}
+//
+//	void add(intType value) {
+//		denseSet[count] = value;
+//		sparseSet[value] = count;
+//		count++;
+//	}
+//
+//	void remove(intType value) {
+//		count--;
+//		denseSet[sparseSet[value]] = denseSet[count];
+//		sparseSet[denseSet[count]] = sparseSet[value];
+//	}
+//
+//	intType getIndex(intType value) {
+//		return sparseSet[value];
+//	}
+//
+//	intType getCount() {
+//		return count;
+//	}
+//};
+
 namespace ECS {
 	#define MAX_ENTITIES 128
 	#define MAX_COMPONENT_TYPES 8
@@ -75,28 +114,28 @@ namespace ECS {
 	public:
 		ComponentPool() {
 			// May be unnecessary
-			for (uint i = 0; i < MAX_ENTITIES; i++) {
-				entityToIndex[i] = i;
-				indexToEntity[i] = i;
-			}
+			//for (uint i = 0; i < MAX_ENTITIES; i++) {
+			//	entityToIndex[i] = i;
+			//	indexToEntity[i] = i;
+			//}
 		}
 
 		bool hasData(uint entityID) {
-			assert(entityID < MAX_ENTITIES);
+			assert(entityID < MAX_ENTITIES && "Invalid entity ID");
 
 			uint componentIndex = entityToIndex[entityID];
 			return componentIndex < activeComponents && indexToEntity[componentIndex] == entityID;
 		}
 
 		void insertData(uint entityID, T component) {
-			assert(entityID < MAX_ENTITIES && !hasData(entityID) && "Entity already has this component");
+			assert(!hasData(entityID) && "Entity already has this component");
 			components[activeComponents] = component;
 
 			// this part may be unnecessary
-			uint oldIndex = entityToIndex[entityID];
-			uint oldEntity = indexToEntity[activeComponents];
-			indexToEntity[oldIndex] = oldEntity;
-			entityToIndex[oldEntity] = oldIndex;
+			//uint oldIndex = entityToIndex[entityID];
+			//uint oldEntity = indexToEntity[activeComponents];
+			//indexToEntity[oldIndex] = oldEntity;
+			//entityToIndex[oldEntity] = oldIndex;
 			//---------------------------------
 
 
@@ -106,7 +145,7 @@ namespace ECS {
 		}
 
 		void removeData(uint entityID) {
-			assert(entityID < MAX_ENTITIES && hasData(entityID) && "Entity doesn't have this component");
+			assert(hasData(entityID) && "Entity doesn't have this component");
 
 			activeComponents--;
 
@@ -119,16 +158,12 @@ namespace ECS {
 			entityToIndex[lastEntity] = removedIndex;
 
 			// this part may be unnecessary
-			indexToEntity[activeComponents] = entityID;
-			entityToIndex[entityID] = activeComponents;
+			//indexToEntity[activeComponents] = entityID;
+			//entityToIndex[entityID] = activeComponents;
 		}
 
 		T& getData(uint entityID) {
-			if (entityID >= MAX_ENTITIES || !hasData(entityID)) {
-				float test = 5;
-			}
-
-			assert(entityID < MAX_ENTITIES && hasData(entityID) && "Entity doesn't have this component");
+			assert(hasData(entityID) && "Entity doesn't have this component");
 
 			return components[entityToIndex[entityID]];
 		}
@@ -146,7 +181,6 @@ namespace ECS {
 		static inline bool isRegistered;
 		static inline uint componentID;
 	};
-
 
 	class ComponentManager {
 	private:
@@ -216,6 +250,7 @@ namespace ECS {
 	// SUB OPTIMAL IMPROVE LATER
 	class System {
 	public:
+		// Maybe just replace this with the same sparse integer set structure the component pools use
 		uint entityCount = 0;
 		uint entities[MAX_ENTITIES];
 		bitset signature;
@@ -224,6 +259,7 @@ namespace ECS {
 		virtual ~System() = default;
 
 		void addEntity(uint entityID) {
+			if (hasEntity(entityID)) return;
 			entities[entityCount++] = entityID;
 		}
 
@@ -290,11 +326,9 @@ namespace ECS {
 			for (int i = 0; i < systemsCount; i++) {
 				bitset signature = systems[i]->signature;
 				if ((signature & entitySignature) == signature) {
-					if(systems[i]->hasEntity(entityID)) continue;
 					systems[i]->addEntity(entityID);
 				}
 				else {
-					//if (systems[i]->hasEntity(entityID)) continue;
 					systems[i]->removeEntity(entityID);
 				}
 			}

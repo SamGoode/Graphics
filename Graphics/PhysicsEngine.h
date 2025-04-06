@@ -28,8 +28,8 @@ public:
 
 		iterations = 3;
 
-		biasSlop = 0.005f;
-		biasFactor = 0.2f;
+		biasSlop = 0.01f;
+		biasFactor = 0.15f;
 
 		elasticity = 0.4f;
 		friction = 0.55f;

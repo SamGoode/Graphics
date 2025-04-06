@@ -165,6 +165,7 @@
     <ClInclude Include="Collision.h" />
     <ClInclude Include="glmAddon.h" />
     <ClInclude Include="MaterialProperties.h" />
+    <ClInclude Include="ParticleManager.h" />
     <ClInclude Include="PhysicsSystem.h" />
     <ClInclude Include="PointLight.h" />
     <ClInclude Include="RenderSystem.h" />

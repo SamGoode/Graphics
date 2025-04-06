@@ -99,6 +99,15 @@ GameEngine::GameEngine() {
 
 	vanEntity = van;
 
+	// ECS testing
+	//ecs.removeComponent<PhysicsComponent>(earth);
+	//ecs.addComponent<PhysicsComponent>(floor, { vec3(0), vec3(0), 1 / 100.f, vec3(0), vec3(0), glm::identity<mat3>() });
+	//ecs.removeComponent<MeshComponent>(earth);
+
+	particleManager.addParticle(vec3(5, 5, 2));
+	particleManager.addParticle(vec3(1, 4, 2));
+	particleManager.addParticle(vec3(1, 4, 4));
+
 	// Give physics engine access to EntityComponentSystem
 	physicsEngine.setEntityComponentSystemPtr(&ecs);
 	
@@ -137,6 +146,9 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 
 	pointLights.init();
 
+	particleManager.init();
+
+	// Shaders
 	shadowShader.init("shadow.glsl", "empty.glsl");
 	gpassShader.init("gpass_vert.glsl", "gpass_frag.glsl");
 	raymarchShader.init("fullscreen_quad.glsl", "raymarch.glsl");
@@ -144,6 +156,7 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	pointLightShader.init("pointLight_vert.glsl", "pointLight_frag.glsl");
 	compositeShader.init("fullscreen_quad.glsl", "composite.glsl");
 
+	// Framebuffers
 	shadowFBO.setSize(1024, 1024);
 	shadowFBO.genTextureImage(GL_DEPTH_COMPONENT); // Shadow Map
 	shadowFBO.init();
@@ -155,12 +168,6 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	gpassFBO.genTextureStorage(GL_RGB16F); // Normals
 	gpassFBO.init();
 
-	//raymarchFBO.setSize(windowWidth, windowHeight);
-	//raymarchFBO.genTextureStorage(GL_RGBA8); // AlbedoSpec
-	//raymarchFBO.genTextureStorage(GL_RGBA16F); // Position
-	//raymarchFBO.genTextureStorage(GL_RGB16F); // Normals
-	//raymarchFBO.init();
-
 	lightFBO.setSize(windowWidth, windowHeight);
 	lightFBO.shareRenderBuffer(gpassFBO);
 	lightFBO.genTextureStorage(GL_RGB8); // Diffuse Light
@@ -169,6 +176,7 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 
 	return true;
 }
+
 
 bool GameEngine::update()  {
 	if (!App3D::update()) return false;
@@ -180,7 +188,6 @@ bool GameEngine::update()  {
 	constexpr float deltaTimeLimit = 1.f;
 	if (deltaTime > deltaTimeLimit) deltaTime = 0.f;
 
-
 	if (keyPressed(GLFW_KEY_W)) { camera.pos += camera.orientation * vec3(1, 0, 0) * camera.movementSpeed * deltaTime; }
 	if (keyPressed(GLFW_KEY_S)) { camera.pos += camera.orientation * vec3(1, 0, 0) * -camera.movementSpeed * deltaTime; }
 	if (keyPressed(GLFW_KEY_D)) { camera.pos += camera.orientation * vec3(0, 1, 0) * -camera.movementSpeed * deltaTime; }
@@ -189,13 +196,11 @@ bool GameEngine::update()  {
 	auto& transform = ecs.getComponent<TransformComponent>(vanEntity);
 	transform.rotation = eulerToQuat(vec3(0, 0, 10.f) * deltaTime) * transform.rotation;
 
-
+	// Physics engine has inbuilt fixed update system
 	physicsEngine.update(deltaTime);
 
 	return true;
 }
-
-
 
 
 void GameEngine::render() {
@@ -249,9 +254,11 @@ void GameEngine::render() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 	// Raymarch test
-	vec3 ballPos = vec3(5, 5, 2);
+	vec3 ballPos = vec3(5, 5, 0);
 	vec3 vBallPos = view * vec4(ballPos, 1);
-	float ballRadius = 2.f;
+	float ballRadius = 3.f;
+
+	particleManager.prepRender(view);
 
 	raymarchShader.use();
 	raymarchShader.bindUniform(projection, "Projection");
@@ -259,8 +266,10 @@ void GameEngine::render() {
 	raymarchShader.bindUniform(vBallPos, "BallPos");
 	raymarchShader.bindUniform(ballRadius, "BallRadius");
 
+	raymarchShader.bindUniformBuffer(0, "ParticleUBO");
+	particleManager.bindUBO(0);
+
 	glDrawArrays(GL_TRIANGLES, 0, 3);
-	
 
 	// Meshes
 	gpassShader.use();

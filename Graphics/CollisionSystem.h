@@ -14,13 +14,13 @@ public:
 	void detectCollisions(ECS::ECSManager* manager, IPhysicsEngine* physicsEngine) {
 		for (int i = 0; i < entityCount; i++) {
 			ECS::uint entityA = entities[i];
-			CollisionComponent& collisionCompA = manager->getComponent<CollisionComponent>(entityA);
-			TransformComponent& transformCompA = manager->getComponent<TransformComponent>(entityA);
+			const CollisionComponent& collisionCompA = manager->getComponent<CollisionComponent>(entityA);
+			const TransformComponent& transformCompA = manager->getComponent<TransformComponent>(entityA);
 
 			for (int n = i + 1; n < entityCount; n++) {
 				ECS::uint entityB = entities[n];
-				CollisionComponent& collisionCompB = manager->getComponent<CollisionComponent>(entityB);
-				TransformComponent& transformCompB = manager->getComponent<TransformComponent>(entityB);
+				const CollisionComponent& collisionCompB = manager->getComponent<CollisionComponent>(entityB);
+				const TransformComponent& transformCompB = manager->getComponent<TransformComponent>(entityB);
 
 				//unsigned int collisionType = collisionCompA.geometry + collisionCompB.geometry; // fix this so it works with more than three types
 
@@ -50,7 +50,7 @@ public:
 	}
 
 private:
-	typedef void (CollisionSystem::* func)(IPhysicsEngine* physicsEngine, ECS::uint entityA, TransformComponent transformA, ECS::uint entityB, TransformComponent transformB);
+	typedef void (CollisionSystem::* func)(IPhysicsEngine* physicsEngine, ECS::uint entityA, const TransformComponent& transformA, ECS::uint entityB, const TransformComponent& transformB);
 	func collisionFunctions[6] = {
 		&CollisionSystem::checkCollisionBoxBox,
 		&CollisionSystem::checkCollisionBoxSphere,
@@ -60,14 +60,14 @@ private:
 		&CollisionSystem::checkCollisionPlanePlane
 	};
 
-	void checkCollisionBoxBox(IPhysicsEngine* physicsEngine, ECS::uint entityA, TransformComponent boxA, ECS::uint entityB, TransformComponent boxB);
-	void checkCollisionBoxSphere(IPhysicsEngine* physicsEngine, ECS::uint entityA, TransformComponent box, ECS::uint entityB, TransformComponent sphere);
-	void checkCollisionSphereSphere(IPhysicsEngine* physicsEngine, ECS::uint entityA, TransformComponent sphereA, ECS::uint entityB, TransformComponent sphereB);
-	void checkCollisionBoxPlane(IPhysicsEngine* physicsEngine, ECS::uint entityA, TransformComponent box, ECS::uint entityB, TransformComponent plane);
-	void checkCollisionSpherePlane(IPhysicsEngine* physicsEngine, ECS::uint entityA, TransformComponent sphere, ECS::uint entityB, TransformComponent plane);
-	void checkCollisionPlanePlane(IPhysicsEngine* physicsEngine, ECS::uint entityA, TransformComponent planeA, ECS::uint entityB, TransformComponent planeB);
+	void checkCollisionBoxBox(IPhysicsEngine* physicsEngine, ECS::uint entityA, const TransformComponent& boxA, ECS::uint entityB, const TransformComponent& boxB);
+	void checkCollisionBoxSphere(IPhysicsEngine* physicsEngine, ECS::uint entityA, const TransformComponent& box, ECS::uint entityB, const TransformComponent& sphere);
+	void checkCollisionSphereSphere(IPhysicsEngine* physicsEngine, ECS::uint entityA, const TransformComponent& sphereA, ECS::uint entityB, const TransformComponent& sphereB);
+	void checkCollisionBoxPlane(IPhysicsEngine* physicsEngine, ECS::uint entityA, const TransformComponent& box, ECS::uint entityB, const TransformComponent& plane);
+	void checkCollisionSpherePlane(IPhysicsEngine* physicsEngine, ECS::uint entityA, const TransformComponent& sphere, ECS::uint entityB, const TransformComponent& plane);
+	void checkCollisionPlanePlane(IPhysicsEngine* physicsEngine, ECS::uint entityA, const TransformComponent& planeA, ECS::uint entityB, const TransformComponent& planeB);
 
-	static void getGlobalBoxVerts(vec3 verts[8], TransformComponent box);
+	static void getGlobalBoxVerts(vec3 verts[8], const TransformComponent& box);
 	static void getMinMaxProjection(vec3 axis, vec3 points[8], float& min, float& max);
 };
 

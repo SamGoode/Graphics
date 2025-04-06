@@ -32,4 +32,5 @@ public:
 	void bindUniform(const int& i, const char* name);
 	void bindUniform(const vec3& v3, const char* name);
 	void bindUniform(const mat4& m4, const char* name);
+	void bindUniformBuffer(GLuint bindingIndex, const char* name);
 };

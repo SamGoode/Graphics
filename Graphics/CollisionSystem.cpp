@@ -1,7 +1,7 @@
 #include "CollisionSystem.h"
 
 
-void CollisionSystem::checkCollisionBoxBox(IPhysicsEngine* physicsEngine, ECS::uint entityA, TransformComponent boxA, ECS::uint entityB, TransformComponent boxB) {
+void CollisionSystem::checkCollisionBoxBox(IPhysicsEngine* physicsEngine, ECS::uint entityA, const TransformComponent& boxA, ECS::uint entityB, const TransformComponent& boxB) {
 	vec3 vertsA[8];
 	vec3 vertsB[8];
 	getGlobalBoxVerts(vertsA, boxA);
@@ -188,6 +188,8 @@ void CollisionSystem::checkCollisionBoxBox(IPhysicsEngine* physicsEngine, ECS::u
 		collision.pointA = edgeBaseA + edgeNormA * std::max(std::min(t1, extentsA[edgeNormIndexA] * 2.f), 0.f);
 		collision.pointB = edgeBaseB + edgeNormB * std::max(std::min(t2, extentsB[edgeNormIndexB] * 2.f), 0.f);
 		collision.depth = minOverlap;
+		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+		// I have a hunch something here occasionally gives inaccurate values during certain edge cases.
 
 		physicsEngine->addCollisionECS(collision);
 
@@ -198,7 +200,7 @@ void CollisionSystem::checkCollisionBoxBox(IPhysicsEngine* physicsEngine, ECS::u
 	}
 }
 
-void CollisionSystem::checkCollisionBoxSphere(IPhysicsEngine* physicsEngine, ECS::uint entityA, TransformComponent box, ECS::uint entityB, TransformComponent sphere) {
+void CollisionSystem::checkCollisionBoxSphere(IPhysicsEngine* physicsEngine, ECS::uint entityA, const TransformComponent& box, ECS::uint entityB, const TransformComponent& sphere) {
 	vec3 extents = box.scale * 0.5f;
 	float radius = (sphere.scale.x + sphere.scale.y + sphere.scale.z) / 3.f; // should be the same anyway
 
@@ -259,7 +261,7 @@ void CollisionSystem::checkCollisionBoxSphere(IPhysicsEngine* physicsEngine, ECS
 	physicsEngine->addCollisionECS(collision);
 }
 
-void CollisionSystem::checkCollisionSphereSphere(IPhysicsEngine* physicsEngine, ECS::uint entityA, TransformComponent sphereA, ECS::uint entityB, TransformComponent sphereB) {
+void CollisionSystem::checkCollisionSphereSphere(IPhysicsEngine* physicsEngine, ECS::uint entityA, const TransformComponent& sphereA, ECS::uint entityB, const TransformComponent& sphereB) {
 	float radiusA = (sphereA.scale.x + sphereA.scale.y + sphereA.scale.z) / 3.f;
 	float radiusB = (sphereB.scale.x + sphereB.scale.y + sphereB.scale.z) / 3.f;
 	float radii = radiusA + radiusB;
@@ -286,7 +288,7 @@ void CollisionSystem::checkCollisionSphereSphere(IPhysicsEngine* physicsEngine, 
 	physicsEngine->addCollisionECS(collision);
 }
 
-void CollisionSystem::checkCollisionBoxPlane(IPhysicsEngine* physicsEngine, ECS::uint entityA, TransformComponent box, ECS::uint entityB, TransformComponent plane) {
+void CollisionSystem::checkCollisionBoxPlane(IPhysicsEngine* physicsEngine, ECS::uint entityA, const TransformComponent& box, ECS::uint entityB, const TransformComponent& plane) {
 	vec3 extents = box.scale * 0.5f;
 
 	// assume planes face up by default
@@ -315,7 +317,7 @@ void CollisionSystem::checkCollisionBoxPlane(IPhysicsEngine* physicsEngine, ECS:
 	}
 }
 
-void CollisionSystem::checkCollisionSpherePlane(IPhysicsEngine* physicsEngine, ECS::uint entityA, TransformComponent sphere, ECS::uint entityB, TransformComponent plane) {
+void CollisionSystem::checkCollisionSpherePlane(IPhysicsEngine* physicsEngine, ECS::uint entityA, const TransformComponent& sphere, ECS::uint entityB, const TransformComponent& plane) {
 	float radius = (sphere.scale.x + sphere.scale.y + sphere.scale.z) / 3.f; // should be the same anyway
 
 	// assume planes face up by default
@@ -335,14 +337,14 @@ void CollisionSystem::checkCollisionSpherePlane(IPhysicsEngine* physicsEngine, E
 	}
 }
 
-void CollisionSystem::checkCollisionPlanePlane(IPhysicsEngine* physicsEngine, ECS::uint entityA, TransformComponent planeA, ECS::uint entityB, TransformComponent planeB) {
+void CollisionSystem::checkCollisionPlanePlane(IPhysicsEngine* physicsEngine, ECS::uint entityA, const TransformComponent& planeA, ECS::uint entityB, const TransformComponent& planeB) {
 	// Do nothing
 
 }
 
 
 
-void CollisionSystem::getGlobalBoxVerts(vec3 verts[8], TransformComponent box) {
+void CollisionSystem::getGlobalBoxVerts(vec3 verts[8], const TransformComponent& box) {
 	vec3 extents = box.scale * 0.5f;
 
 	for (int i = 0; i < 8; i++) {

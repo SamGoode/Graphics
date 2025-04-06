@@ -11,6 +11,8 @@ using glm::vec3;
 using glm::vec4;
 
 
+#define MAX_POINTLIGHTS 128
+
 class PointLight {
 private:
 	struct instanceData {
@@ -25,8 +27,7 @@ private:
 	unsigned int instanceVBO = 0;
 
 	unsigned int instanceCount = 0;
-	const int maxInstances = 100;
-	instanceData instanceBuffer[100];
+	instanceData instanceBuffer[MAX_POINTLIGHTS];
 
 
 public:
@@ -70,7 +71,7 @@ public:
 
 		glGenBuffers(1, &instanceVBO);
 		glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-		glBufferData(GL_ARRAY_BUFFER, maxInstances * sizeof(instanceData), instanceBuffer, GL_DYNAMIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, MAX_POINTLIGHTS * sizeof(instanceData), instanceBuffer, GL_DYNAMIC_DRAW);
 
 		glGenVertexArrays(1, &vao);
 		glBindVertexArray(vao);
@@ -110,7 +111,7 @@ public:
 	}
 
 	void addInstance(vec3 lightPosition, float lightRadius, vec3 lightColor) {
-		assert(instanceCount < maxInstances);
+		assert(instanceCount < MAX_POINTLIGHTS);
 
 		instanceBuffer[instanceCount++] = { lightPosition, lightRadius, lightColor };
 	}

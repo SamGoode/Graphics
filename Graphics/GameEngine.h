@@ -8,6 +8,7 @@
 #include "Mesh.h"
 #include "Texture.h"
 #include "PointLight.h"
+#include "ParticleManager.h"
 
 #include "Framebuffer.h"
 
@@ -22,7 +23,6 @@ protected:
 	ECS::ECSManager ecs;
 
 	ECS::uint vanEntity;
-	float timePassed = 0.f;
 
 	vec3 ambientLighting;
 	vec3 lightColor;
@@ -36,10 +36,11 @@ protected:
 	Texture textures[4];
 	PointLight pointLights;
 
+	ParticleManager particleManager;
+
 	FrameBuffer shadowFBO;
 	FrameBuffer gpassFBO;
 	FrameBuffer lightFBO;
-	FrameBuffer raymarchFBO;
 
 	Shader shadowShader;
 	Shader gpassShader;
