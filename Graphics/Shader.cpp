@@ -3,8 +3,8 @@
 #include <fstream>
 
 
-bool Shader::init(const char* vertFileName, const char* fragFileName) {
-	if (shader_id != 0) return false;
+void Shader::init(const char* vertFileName, const char* fragFileName) {
+	assert(gl_id == 0 && "Shader already initialized");
 
 	unsigned int vs = loadShaderFromFile(GL_VERTEX_SHADER, vertFileName);
 	glCompileShader(vs);
@@ -12,29 +12,25 @@ bool Shader::init(const char* vertFileName, const char* fragFileName) {
 	unsigned int fs = loadShaderFromFile(GL_FRAGMENT_SHADER, fragFileName);
 	glCompileShader(fs);
 
-	shader_id = glCreateProgram();
-	glAttachShader(shader_id, vs);
-	glAttachShader(shader_id, fs);
-	glLinkProgram(shader_id);
+	gl_id = glCreateProgram();
+	glAttachShader(gl_id, vs);
+	glAttachShader(gl_id, fs);
+	glLinkProgram(gl_id);
 
 	int success = GL_FALSE;
-	glGetProgramiv(shader_id, GL_LINK_STATUS, &success);
+	glGetProgramiv(gl_id, GL_LINK_STATUS, &success);
 	if (success == GL_FALSE) {
 		int infoLogLength = 0;
-		glGetProgramiv(shader_id, GL_INFO_LOG_LENGTH, &infoLogLength);
+		glGetProgramiv(gl_id, GL_INFO_LOG_LENGTH, &infoLogLength);
 		char* infoLog = new char[infoLogLength + 1];
 
-		glGetProgramInfoLog(shader_id, infoLogLength, 0, infoLog);
+		glGetProgramInfoLog(gl_id, infoLogLength, 0, infoLog);
 		printf("Error: Failed to link Gizmo shader program!\n%s\n", infoLog);
 		delete[] infoLog;
-
-		return false;
 	}
 
 	glDeleteShader(vs);
 	glDeleteShader(fs);
-
-	return true;
 }
 
 unsigned int Shader::loadShaderFromFile(GLenum type, const char* fileName) {
@@ -61,26 +57,52 @@ unsigned int Shader::loadShaderFromFile(GLenum type, const char* fileName) {
 
 
 void Shader::bindUniform(const float& f, const char* name) {
-	unsigned int uniform = glGetUniformLocation(shader_id, name);
+	unsigned int uniform = glGetUniformLocation(gl_id, name);
 	glUniform1f(uniform, f);
 }
 
 void Shader::bindUniform(const int& i, const char* name) {
-	unsigned int uniform = glGetUniformLocation(shader_id, name);
+	unsigned int uniform = glGetUniformLocation(gl_id, name);
 	glUniform1i(uniform, i);
 }
 
 void Shader::bindUniform(const vec3& v3, const char* name) {
-	unsigned int uniform = glGetUniformLocation(shader_id, name);
+	unsigned int uniform = glGetUniformLocation(gl_id, name);
 	glUniform3fv(uniform, 1, glm::value_ptr(v3));
 }
 
 void Shader::bindUniform(const mat4& m4, const char* name) {
-	unsigned int uniform = glGetUniformLocation(shader_id, name);
+	unsigned int uniform = glGetUniformLocation(gl_id, name);
 	glUniformMatrix4fv(uniform, 1, false, glm::value_ptr(m4));
 }
 
 void Shader::bindUniformBuffer(GLuint bindingIndex, const char* name) {
-	unsigned int uniformBlockIndex = glGetUniformBlockIndex(shader_id, name);
-	glUniformBlockBinding(shader_id, uniformBlockIndex, bindingIndex);
+	unsigned int uniformBlockIndex = glGetUniformBlockIndex(gl_id, name);
+	glUniformBlockBinding(gl_id, uniformBlockIndex, bindingIndex);
+}
+
+
+void ComputeShader::init(const char* computeFileName, const char* empty) {
+	assert(gl_id == 0 && "Shader already initialized");
+
+	unsigned int cs = loadShaderFromFile(GL_COMPUTE_SHADER, computeFileName);
+	glCompileShader(cs);
+
+	gl_id = glCreateProgram();
+	glAttachShader(gl_id, cs);
+	glLinkProgram(gl_id);
+
+	int success = GL_FALSE;
+	glGetProgramiv(gl_id, GL_LINK_STATUS, &success);
+	if (success == GL_FALSE) {
+		int infoLogLength = 0;
+		glGetProgramiv(gl_id, GL_INFO_LOG_LENGTH, &infoLogLength);
+		char* infoLog = new char[infoLogLength + 1];
+
+		glGetProgramInfoLog(gl_id, infoLogLength, 0, infoLog);
+		printf("Error: Failed to link Gizmo shader program!\n%s\n", infoLog);
+		delete[] infoLog;
+	}
+
+	glDeleteShader(cs);
 }

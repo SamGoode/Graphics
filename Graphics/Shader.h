@@ -17,20 +17,29 @@ using glm::quat;
 
 
 class Shader {
-private:
-	unsigned int shader_id = 0;
+protected:
+	unsigned int gl_id = 0;
 
 public:
 	Shader() {}
-	~Shader() { glDeleteProgram(shader_id); }
+	virtual ~Shader() { glDeleteProgram(gl_id); }
 
-	bool init(const char* vertFileName, const char* fragFileName);
-	unsigned int loadShaderFromFile(GLenum type, const char* fileName);
+	virtual void init(const char* vertFileName, const char* fragFileName);
 
-	void use() { glUseProgram(shader_id); }
+	void use() { glUseProgram(gl_id); }
 	void bindUniform(const float& f, const char* name);
 	void bindUniform(const int& i, const char* name);
 	void bindUniform(const vec3& v3, const char* name);
 	void bindUniform(const mat4& m4, const char* name);
 	void bindUniformBuffer(GLuint bindingIndex, const char* name);
+
+protected:
+	unsigned int loadShaderFromFile(GLenum type, const char* fileName);
+};
+
+class ComputeShader : public Shader {
+public:
+	ComputeShader() {}
+
+	virtual void init(const char* computeFileName, const char* empty = NULL) override;
 };

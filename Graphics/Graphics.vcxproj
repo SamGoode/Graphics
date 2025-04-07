@@ -176,6 +176,7 @@
     <ClInclude Include="PhysicsSolver.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="Texture.h" />
+    <ClInclude Include="UniformBuffer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="composite.glsl" />
@@ -189,6 +190,7 @@
     <None Include="mesh_vert.glsl" />
     <None Include="laplacian.glsl" />
     <None Include="fullscreen_quad.glsl" />
+    <None Include="particleCompute.glsl" />
     <None Include="pointLight_frag.glsl" />
     <None Include="pointLight_vert.glsl" />
     <None Include="raymarch.glsl" />

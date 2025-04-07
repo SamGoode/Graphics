@@ -1,6 +1,6 @@
 #version 430
 
-#define MAX_PARTICLES 100
+#define MAX_PARTICLES 128
 
 in vec2 vTexCoord;
 
@@ -11,17 +11,10 @@ layout(std140) uniform PVMatrices {
 	mat4 ProjectionInverse;
 };
 
-
-//layout(std140) uniform ParticleData {
-//	uint count;
-//	float radius;
-//	vec3 positions[MAX_PARTICLES];
-//};
-
 layout(binding = 1, std430) readonly buffer ssbo {
 	uint count;
 	float radius;
-	vec3 positions[MAX_PARTICLES];
+	vec3 positions[]; // discards w value
 };
 
 out vec4 gpassAlbedoSpec;
@@ -60,7 +53,7 @@ float sdfMin(vec3 point) {
 	for(uint particleIndex = 1; particleIndex < count; particleIndex++) {
 		float dist = sdf(point, particleIndex);
 
-		minDist = smoothMin(minDist, dist, 0.01);
+		minDist = smoothMin(minDist, dist, radius/4.0);
 	}
 
 	return minDist;

@@ -104,9 +104,10 @@ GameEngine::GameEngine() {
 	//ecs.addComponent<PhysicsComponent>(floor, { vec3(0), vec3(0), 1 / 100.f, vec3(0), vec3(0), glm::identity<mat3>() });
 	//ecs.removeComponent<MeshComponent>(earth);
 
-	particleManager.addParticle(vec3(5, 4, 2));
+	particleManager.setParticleRadius(1.f);
+	particleManager.addParticle(vec3(4, 4, 2));
 	particleManager.addParticle(vec3(1, 4, 2));
-	particleManager.addParticle(vec3(1, 4, 6));
+	particleManager.addParticle(vec3(1, 4, 4));
 
 	// Give physics engine access to EntityComponentSystem
 	physicsEngine.setEntityComponentSystemPtr(&ecs);
@@ -148,7 +149,6 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 
 	particleManager.init();
 
-
 	// Uniform Buffer Objects
 	pvmUBO.buffer.projection = projection;
 	pvmUBO.buffer.projectionInverse = glm::inverse(projection);
@@ -167,6 +167,11 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	raymarchShader.bindUniformBuffer(0, "PVMatrices");
 	lightShader.bindUniformBuffer(0, "PVMatrices");
 	pointLightShader.bindUniformBuffer(0, "PVMatrices");
+
+	// Compute Shaders
+	particleViewShader.init("particleCompute.glsl");
+	particleViewShader.bindUniformBuffer(0, "PVMatrices");
+
 
 	// Framebuffers
 	shadowFBO.setSize(1024, 1024);
@@ -268,13 +273,15 @@ void GameEngine::render() {
 	glClearColor(0.f, 0.f, 0.f, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-	// Raymarch
-	particleManager.prepRender(view);
-
-	raymarchShader.use();
-	//raymarchShader.bindUniformBuffer(1, "ParticleData");
+	// Raymarch Particles
+	particleManager.subData();
 	particleManager.bind(1);
 
+	particleViewShader.use();
+	glDispatchCompute(particleManager.getCount(), 1, 1);
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+	raymarchShader.use();
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
 	// Meshes
