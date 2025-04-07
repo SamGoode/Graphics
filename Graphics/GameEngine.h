@@ -9,6 +9,7 @@
 #include "Texture.h"
 #include "PointLight.h"
 #include "ParticleManager.h"
+#include "FluidSim.h"
 
 #include "UniformBuffer.h"
 #include "FrameBuffer.h"

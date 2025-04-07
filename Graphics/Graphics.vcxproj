@@ -144,6 +144,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CollisionSystem.cpp" />
+    <ClCompile Include="FluidSim.cpp" />
     <ClCompile Include="GameEngine.cpp" />
     <ClCompile Include="BaseAppClasses.cpp" />
     <ClCompile Include="glad.c" />
@@ -158,6 +159,7 @@
     <ClInclude Include="CollisionSystem.h" />
     <ClInclude Include="ECS.h" />
     <ClInclude Include="ECSComponents.h" />
+    <ClInclude Include="FluidSim.h" />
     <ClInclude Include="FrameBuffer.h" />
     <ClInclude Include="GameEngine.h" />
     <ClInclude Include="BaseAppClasses.h" />

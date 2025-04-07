@@ -148,7 +148,7 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	pointLights.init();
 
 	particleManager.init();
-	fluidSim.init(vec3(0, 2, 0), vec3(3, 3, 3), 0.25f);
+	fluidSim.init(vec3(0, 2, 0), vec3(3, 3, 3), 0.1f);
 	//fluidSim.addParticle(vec3(4, 4, 2));
 	//fluidSim.addParticle(vec3(1, 4, 2));
 	//fluidSim.addParticle(vec3(1, 4, 4));
