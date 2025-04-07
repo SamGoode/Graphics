@@ -104,10 +104,10 @@ GameEngine::GameEngine() {
 	//ecs.addComponent<PhysicsComponent>(floor, { vec3(0), vec3(0), 1 / 100.f, vec3(0), vec3(0), glm::identity<mat3>() });
 	//ecs.removeComponent<MeshComponent>(earth);
 
-	particleManager.setParticleRadius(1.f);
-	particleManager.addParticle(vec3(4, 4, 2));
-	particleManager.addParticle(vec3(1, 4, 2));
-	particleManager.addParticle(vec3(1, 4, 4));
+	//particleManager.setParticleRadius(1.f);
+	//particleManager.addParticle(vec3(4, 4, 2));
+	//particleManager.addParticle(vec3(1, 4, 2));
+	//particleManager.addParticle(vec3(1, 4, 4));
 
 	// Give physics engine access to EntityComponentSystem
 	physicsEngine.setEntityComponentSystemPtr(&ecs);
@@ -148,6 +148,13 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	pointLights.init();
 
 	particleManager.init();
+	fluidSim.init(vec3(0, 2, 0), vec3(3, 3, 3), 0.25f);
+	//fluidSim.addParticle(vec3(4, 4, 2));
+	//fluidSim.addParticle(vec3(1, 4, 2));
+	//fluidSim.addParticle(vec3(1, 4, 4));
+	for (int i = 0; i < 50; i++) {
+		fluidSim.spawnRandomParticle();
+	}
 
 	// Uniform Buffer Objects
 	pvmUBO.buffer.projection = projection;
@@ -215,6 +222,7 @@ bool GameEngine::update()  {
 
 	// Physics engine has inbuilt fixed update system
 	physicsEngine.update(deltaTime);
+	fluidSim.update(deltaTime);
 
 	return true;
 }
@@ -274,6 +282,7 @@ void GameEngine::render() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 	// Raymarch Particles
+	fluidSim.transferData(particleManager);
 	particleManager.subData();
 	particleManager.bind(1);
 

@@ -38,6 +38,7 @@ protected:
 	PointLight pointLights;
 
 	ParticleManager particleManager;
+	FluidSimSPH fluidSim;
 
 	struct pvmLayout {
 		mat4 view;
