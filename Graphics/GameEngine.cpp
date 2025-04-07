@@ -148,6 +148,13 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 
 	particleManager.init();
 
+
+	// Uniform Buffer Objects
+	pvmUBO.buffer.projection = projection;
+	pvmUBO.buffer.projectionInverse = glm::inverse(projection);
+	pvmUBO.init();
+	pvmUBO.bind(0);
+
 	// Shaders
 	shadowShader.init("shadow.glsl", "empty.glsl");
 	gpassShader.init("gpass_vert.glsl", "gpass_frag.glsl");
@@ -155,6 +162,11 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	lightShader.init("fullscreen_quad.glsl", "directional_light.glsl");
 	pointLightShader.init("pointLight_vert.glsl", "pointLight_frag.glsl");
 	compositeShader.init("fullscreen_quad.glsl", "composite.glsl");
+
+	gpassShader.bindUniformBuffer(0, "PVMatrices");
+	raymarchShader.bindUniformBuffer(0, "PVMatrices");
+	lightShader.bindUniformBuffer(0, "PVMatrices");
+	pointLightShader.bindUniformBuffer(0, "PVMatrices");
 
 	// Framebuffers
 	shadowFBO.setSize(1024, 1024);
@@ -205,7 +217,10 @@ bool GameEngine::update()  {
 
 void GameEngine::render() {
 	view = genViewMatrix(camera.pos, camera.orientation * vec3(1, 0, 0), worldUp);
-	mat4 projectionView = projection * view;
+	pvmUBO.buffer.view = view;
+	pvmUBO.buffer.viewInverse = glm::inverse(view);
+	pvmUBO.subData();
+
 
 	mat4 lightProjection = glm::ortho(-30.f, 30.f, -30.f, 30.f, 1.f, 60.f);
 	mat4 lightView = genViewMatrix(lightDirection * -30.f, lightDirection, worldUp);
@@ -253,28 +268,17 @@ void GameEngine::render() {
 	glClearColor(0.f, 0.f, 0.f, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-	// Raymarch test
-	vec3 ballPos = vec3(5, 5, 0);
-	vec3 vBallPos = view * vec4(ballPos, 1);
-	float ballRadius = 3.f;
-
+	// Raymarch
 	particleManager.prepRender(view);
 
 	raymarchShader.use();
-	raymarchShader.bindUniform(projection, "Projection");
-	raymarchShader.bindUniform(glm::inverse(projection), "ProjectionInverse");
-	raymarchShader.bindUniform(vBallPos, "BallPos");
-	raymarchShader.bindUniform(ballRadius, "BallRadius");
-
-	raymarchShader.bindUniformBuffer(0, "ParticleUBO");
-	particleManager.bindUBO(0);
+	//raymarchShader.bindUniformBuffer(1, "ParticleData");
+	particleManager.bind(1);
 
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
 	// Meshes
 	gpassShader.use();
-	gpassShader.bindUniform(view, "View");
-	gpassShader.bindUniform(projection, "Projection");
 
 	for (int i = 0; i < meshCount; i++) {
 		textures[meshes[i].textureID].bind();
@@ -299,11 +303,9 @@ void GameEngine::render() {
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	lightShader.use();
-	lightShader.bindUniform(glm::inverse(view), "ViewInverse");
 	lightShader.bindUniform(lightColor, "LightColor");
 	lightShader.bindUniform(vec3(view * vec4(lightDirection, 0)), "LightDirection");
 	lightShader.bindUniform(lightProjectionView, "LightProjectionView");
-	//lightShader.bindUniform(camera.pos, "CameraPos");
 
 	lightShader.bindUniform(0, "albedoSpecPass");
 	gpassFBO.getRenderTexture(0)->bind(GL_TEXTURE0);
@@ -323,8 +325,6 @@ void GameEngine::render() {
 	glCullFace(GL_FRONT);
 	
 	pointLightShader.use();
-	pointLightShader.bindUniform(view, "View");
-	pointLightShader.bindUniform(projectionView, "ProjectionView");
 
 	pointLightShader.bindUniform(0, "albedoSpecPass");
 	gpassFBO.getRenderTexture(0)->bind(GL_TEXTURE0);
@@ -345,7 +345,6 @@ void GameEngine::render() {
 	glDisable(GL_BLEND);
 
 
-
 	// Composite Pass
 	gpassFBO.sendStencilBuffer(0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -364,12 +363,11 @@ void GameEngine::render() {
 	lightFBO.getRenderTexture(1)->bind(GL_TEXTURE2);
 	compositeShader.bindUniform(3, "shadowPass");
 	shadowFBO.getRenderTexture(0)->bind(GL_TEXTURE3);
-	//compositeShader.bindUniform(4, "raymarchPass");
-	//raymarchFBO.getRenderTexture(0)->bind(GL_TEXTURE4);
 	
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
 	glDisable(GL_STENCIL_TEST);
+
 
 	glfwSwapBuffers(window);
 	glfwPollEvents();

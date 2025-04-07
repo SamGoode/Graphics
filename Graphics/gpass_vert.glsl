@@ -12,8 +12,13 @@ layout(location = 3) in struct instanceData {
 	float gloss;
 } instance;
 
-uniform mat4 View;
-uniform mat4 Projection;
+
+layout(std140) uniform PVMatrices {
+	mat4 View;
+	mat4 Projection;
+	mat4 ViewInverse;
+	mat4 ProjectionInverse;
+};
 
 out vec4 vPosition;
 out vec3 vNormal;

@@ -23,14 +23,22 @@ private:
 	};
 
 	// All particles share same radius
-	struct data {
+	//struct ubo {
+	//	unsigned int count;
+	//	float radius;
+	//	vec2 padding;
+	//	particle particles[MAX_PARTICLES];
+	//} buffer;
+
+	struct ssbo {
 		unsigned int count;
 		float radius;
 		vec2 padding;
 		particle particles[MAX_PARTICLES];
 	} buffer;
 
-	unsigned int particleUBO;
+	//unsigned int particleUBO;
+	unsigned int particleSSBO;
 
 	unsigned int particleCount = 0;
 	float particleRadius = 2.f;
@@ -40,14 +48,20 @@ private:
 public:
 	ParticleManager() {}
 	~ParticleManager() {
-		glDeleteBuffers(1, &particleUBO);
+		//glDeleteBuffers(1, &particleUBO);
+		glDeleteBuffers(1, &particleSSBO);
 	}
 
 	void init() {
-		glGenBuffers(1, &particleUBO);
-		glBindBuffer(GL_UNIFORM_BUFFER, particleUBO);
-		glBufferData(GL_UNIFORM_BUFFER, sizeof(data), &buffer, GL_STATIC_DRAW);
-		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+		//glGenBuffers(1, &particleUBO);
+		//glBindBuffer(GL_UNIFORM_BUFFER, particleUBO);
+		//glBufferData(GL_UNIFORM_BUFFER, sizeof(ubo), &buffer, GL_STATIC_DRAW);
+		//glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+		glGenBuffers(1, &particleSSBO);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, particleSSBO);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(ssbo), &buffer, GL_DYNAMIC_DRAW);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
 
 	void prepRender(const mat4& viewMatrix) {
@@ -63,13 +77,19 @@ public:
 			buffer.particles[i].position = vPosition;
 		}
 
-		glBindBuffer(GL_UNIFORM_BUFFER, particleUBO);
-		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(data), &buffer);
-		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+		//glBindBuffer(GL_UNIFORM_BUFFER, particleUBO);
+		//glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(ubo), &buffer);
+		//glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, particleSSBO);
+		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(ssbo), &buffer);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
 
-	void bindUBO(GLuint bindingIndex) {
-		glBindBufferBase(GL_UNIFORM_BUFFER, bindingIndex, particleUBO);
+	void bind(GLuint bindingIndex) {
+		//glBindBufferBase(GL_UNIFORM_BUFFER, bindingIndex, particleUBO);
+
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, bindingIndex, particleSSBO);
 	}
 
 	void clearParticles() {

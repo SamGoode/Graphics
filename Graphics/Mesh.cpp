@@ -70,6 +70,8 @@ void Mesh::loadFromFile(const char* name) {
 
 	const aiScene* scene = aiImportFile(name, 0);
 
+	assert(scene != nullptr && "File does not exist");
+
 	std::vector<unsigned int> indices;
 	std::vector<vert> vertices;
 

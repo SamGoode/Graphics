@@ -2,7 +2,12 @@
 
 in vec2 vTexCoord;
 
-uniform mat4 ViewInverse;
+layout(std140) uniform PVMatrices {
+	mat4 View;
+	mat4 Projection;
+	mat4 ViewInverse;
+	mat4 ProjectionInverse;
+};
 
 uniform vec3 LightDirection; // view space
 uniform vec3 LightColor;

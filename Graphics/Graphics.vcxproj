@@ -158,7 +158,7 @@
     <ClInclude Include="CollisionSystem.h" />
     <ClInclude Include="ECS.h" />
     <ClInclude Include="ECSComponents.h" />
-    <ClInclude Include="Framebuffer.h" />
+    <ClInclude Include="FrameBuffer.h" />
     <ClInclude Include="GameEngine.h" />
     <ClInclude Include="BaseAppClasses.h" />
     <ClInclude Include="Camera.h" />

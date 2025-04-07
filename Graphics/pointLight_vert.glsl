@@ -11,8 +11,13 @@ layout(location = 1) in struct instanceData {
 	vec3 lightColor;
 } instance;
 
-uniform mat4 View;
-uniform mat4 ProjectionView;
+
+layout(std140) uniform PVMatrices {
+	mat4 View;
+	mat4 Projection;
+	mat4 ViewInverse;
+	mat4 ProjectionInverse;
+};
 
 out vec3 vLightPosition;
 out float vLightRadius;
@@ -24,5 +29,6 @@ void main() {
 	vLightRadius = instance.lightRadius;
 	vLightColor = instance.lightColor;
 	
-	gl_Position = ProjectionView * vec4(instance.lightPosition + Position.xyz * instance.lightRadius, 1);
+	//gl_Position = Projection * View * vec4(instance.lightPosition + Position.xyz * instance.lightRadius, 1);
+	gl_Position = Projection * vec4(vLightPosition + Position.xyz * instance.lightRadius, 1);
 }

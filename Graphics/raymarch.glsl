@@ -1,16 +1,24 @@
-#version 410
+#version 430
 
 #define MAX_PARTICLES 100
 
 in vec2 vTexCoord;
 
-uniform mat4 Projection;
-uniform mat4 ProjectionInverse;
+layout(std140) uniform PVMatrices {
+	mat4 View;
+	mat4 Projection;
+	mat4 ViewInverse;
+	mat4 ProjectionInverse;
+};
 
-//uniform vec3 BallPos;
-//uniform float BallRadius;
 
-layout(std140) uniform particleData {
+//layout(std140) uniform ParticleData {
+//	uint count;
+//	float radius;
+//	vec3 positions[MAX_PARTICLES];
+//};
+
+layout(binding = 1, std430) readonly buffer ssbo {
 	uint count;
 	float radius;
 	vec3 positions[MAX_PARTICLES];
