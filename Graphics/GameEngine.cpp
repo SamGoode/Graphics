@@ -147,12 +147,12 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 
 	pointLights.init();
 
-	particleManager.init();
-	fluidSim.init(vec3(0, 2, 0), vec3(3, 3, 3), physicsEngine.gravity, 0.1f);
+	//particleManager.init();
+	fluidSim.init(vec3(10, 0, 0), vec3(1, 1, 3), physicsEngine.gravity, 0.05f);
 	//fluidSim.addParticle(vec3(4, 4, 2));
 	//fluidSim.addParticle(vec3(1, 4, 2));
 	//fluidSim.addParticle(vec3(1, 4, 4));
-	for (int i = 0; i < 64; i++) {
+	for (int i = 0; i < 80; i++) {
 		fluidSim.spawnRandomParticle();
 	}
 
@@ -282,12 +282,14 @@ void GameEngine::render() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 	// Raymarch Particles
-	fluidSim.transferData(particleManager);
-	particleManager.subData();
-	particleManager.bind(1);
+	//fluidSim.transferData(particleManager);
+	fluidSim.sendDataToGPU();
+	fluidSim.bindSSBO(1);
+	//particleManager.subData();
+	//particleManager.bind(1);
 
 	particleViewShader.use();
-	glDispatchCompute(particleManager.getCount(), 1, 1);
+	glDispatchCompute(fluidSim.getParticleCount(), 1, 1);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
 	raymarchShader.use();

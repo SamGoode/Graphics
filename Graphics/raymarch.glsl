@@ -34,17 +34,6 @@ float smoothMin(float a, float b, float k) {
 	k *= 6.0;
 	float h = max(k - abs(a - b), 0.0)/k;
 	return min(a, b) - h * h * h * k * (1.0/6.0);
-
-//	float x = (b - a)/k;
-//	float y = (-abs(x * x * x) + ((3.0 * x) * (x + 1.0)) + 1.0)/6.0;
-//	if(x > 1.0) {
-//		y = x;
-//	}
-//	else if(x < -1.0) {
-//		y = 0;
-//	}
-//
-//	return b - k * y;
 }
 
 float sdfMin(vec3 point) {
@@ -89,7 +78,7 @@ float getRaymarchDist(vec3 rayDir, int steps, out uint particleIndex) {
 	return -1;
 }
 
-const int stepCount = 48;
+const int stepCount = 32;
 
 void main() {
 	vec2 ndc = vTexCoord * 2 - 1;
@@ -99,8 +88,8 @@ void main() {
 	float dist = getRaymarchDist(rayDirection, stepCount, particleIndex);
 	vec3 pos = rayDirection * dist;
 	
-	//gpassAlbedoSpec = vec4(vec3(0.1, 0.4, 0.8), 0.8);
-	gpassAlbedoSpec = vec4(vec3(0.5), 1.0);
+	//gpassAlbedoSpec = vec4(vec3(0.5), 1.0); // Metallic look
+	gpassAlbedoSpec = vec4(vec3(0.1, 0.5, 0.8), 0.5);
 	gpassPosition = (vec4(pos, 1)).xyz;
 	gpassNormal = normalize(sdfGradient(pos).xyz);
 

@@ -176,6 +176,8 @@
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="PhysicsEngine.h" />
     <ClInclude Include="PhysicsSolver.h" />
+    <ClInclude Include="ShaderStorageBuffer.h" />
+    <ClInclude Include="SpatialGrid.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="UniformBuffer.h" />

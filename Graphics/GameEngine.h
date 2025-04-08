@@ -38,7 +38,7 @@ protected:
 	Texture textures[4];
 	PointLight pointLights;
 
-	ParticleManager particleManager;
+	//ParticleManager particleManager;
 	FluidSimSPH fluidSim;
 
 	struct pvmLayout {

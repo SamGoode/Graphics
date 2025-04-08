@@ -4,7 +4,7 @@
 template<typename DataLayout>
 class UniformBuffer {
 private:
-	unsigned int ubo;
+	unsigned int ubo = 0;
 
 public:
 	DataLayout buffer;
@@ -20,7 +20,7 @@ public:
 
 		glGenBuffers(1, &ubo);
 		glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-		glBufferData(GL_UNIFORM_BUFFER, sizeof(DataLayout), &buffer, GL_STATIC_DRAW);
+		glBufferData(GL_UNIFORM_BUFFER, sizeof(DataLayout), NULL, GL_STATIC_DRAW);
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	}
 

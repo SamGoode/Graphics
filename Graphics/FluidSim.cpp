@@ -43,9 +43,10 @@ void FluidSimSPH::tick() {
 	}
 
 	// Build spatial hash grid with projected positions
-	spatialGrid.generateHashList(particleCount, projectedPositions);
-	spatialGrid.sortHashList();
-	spatialGrid.generateLookupTable();
+	spatialGrid.buildSpatialGrid(particleCount, projectedPositions);
+	//spatialGrid.generateHashList(particleCount, projectedPositions);
+	//spatialGrid.sortHashList();
+	//spatialGrid.generateLookupTable();
 
 	// Calculate and cache densities
 	for (int i = 0; i < particleCount; i++) {
@@ -112,17 +113,6 @@ void FluidSimSPH::calculateDensity(int particleIndex) {
 		}
 	}
 
-	//for (int i = 0; i < particleCount; i++) {
-	//	vec3 toParticle = projectedPositions[i] - projectedPos;
-	//	float sqrDist = dot(toParticle, toParticle);
-
-	//	if (sqrDist > smoothingRadius * smoothingRadius) continue;
-
-	//	float dist = sqrt(sqrDist);
-	//	density += densityKernel(smoothingRadius, dist);
-	//	nearDensity += nearDensityKernel(smoothingRadius, dist);
-	//}
-
 	densities[particleIndex] = density;
 	nearDensities[particleIndex] = nearDensity;
 }
@@ -180,32 +170,8 @@ void FluidSimSPH::applyPressure(int particleIndex) {
 			pressureDisplacementSum -= pressureDisplacement;
 		}
 	}
+
 	projectedPos += pressureDisplacementSum;
-
-	//for (int i = 0; i < particleCount; i++) {
-	//	if (i == particleIndex) continue;
-
-	//	vec3 toParticle = projectedPositions[i] - projectedPos;
-	//	float sqrDist = dot(toParticle, toParticle);
-
-	//	if (sqrDist > smoothingRadius * smoothingRadius) continue;
-
-	//	float dist = sqrt(sqrDist);
-	//	vec3 unitDirection = (dist > 0) ? toParticle / dist : glm::sphericalRand(1.f);
-
-	//	float pressure = (densities[i] - restDensity) * pressureMultiplier;
-	//	float nearPressure = nearDensities[i] * nearPressureMultiplier;
-
-	//	float weight = 1 - (dist / smoothingRadius);
-
-	//	float sharedPressure = (pressure * weight + nearPressure * weight * weight);
-	//	vec3 pressureDisplacement = unitDirection * (sharedPressure * 0.5f) * fixedTimeStep * fixedTimeStep;
-
-	//	// assume mass = 1
-	//	projectedPositions[i] += pressureDisplacement;
-	//	pressureDisplacementSum -= pressureDisplacement;
-	//}
-
 }
 
 void FluidSimSPH::applyBoundaryPressure(int particleIndex) {
