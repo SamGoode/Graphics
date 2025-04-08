@@ -148,11 +148,11 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	pointLights.init();
 
 	particleManager.init();
-	fluidSim.init(vec3(0, 2, 0), vec3(3, 3, 3), 0.1f);
+	fluidSim.init(vec3(0, 2, 0), vec3(3, 3, 3), physicsEngine.gravity, 0.1f);
 	//fluidSim.addParticle(vec3(4, 4, 2));
 	//fluidSim.addParticle(vec3(1, 4, 2));
 	//fluidSim.addParticle(vec3(1, 4, 4));
-	for (int i = 0; i < 50; i++) {
+	for (int i = 0; i < 64; i++) {
 		fluidSim.spawnRandomParticle();
 	}
 

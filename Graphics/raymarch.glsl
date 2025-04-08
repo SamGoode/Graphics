@@ -99,7 +99,8 @@ void main() {
 	float dist = getRaymarchDist(rayDirection, stepCount, particleIndex);
 	vec3 pos = rayDirection * dist;
 	
-	gpassAlbedoSpec = vec4(vec3(0.1, 0.4, 0.8), 0.8);
+	//gpassAlbedoSpec = vec4(vec3(0.1, 0.4, 0.8), 0.8);
+	gpassAlbedoSpec = vec4(vec3(0.5), 1.0);
 	gpassPosition = (vec4(pos, 1)).xyz;
 	gpassNormal = normalize(sdfGradient(pos).xyz);
 
