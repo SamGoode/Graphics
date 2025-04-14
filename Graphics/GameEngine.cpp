@@ -99,19 +99,19 @@ GameEngine::GameEngine() {
 
 	vanEntity = van;
 
+	//ECS::uint fluidBounds = ecs.createEntity();
+	//ecs.addComponent<MeshComponent>(fluidBounds, { enumGeometry::BOX });
+	//ecs.addComponent<TransformComponent>(fluidBounds, { vec3(12, 2, 2), eulerToQuat(vec3(0, 0, 0)), vec3(4.f) });
+	//ecs.addComponent<MaterialComponent>(fluidBounds, { MaterialProperties{vec3(1), 0.5f} });
+
 	// ECS testing
 	//ecs.removeComponent<PhysicsComponent>(earth);
 	//ecs.addComponent<PhysicsComponent>(floor, { vec3(0), vec3(0), 1 / 100.f, vec3(0), vec3(0), glm::identity<mat3>() });
 	//ecs.removeComponent<MeshComponent>(earth);
 
-	//particleManager.setParticleRadius(1.f);
-	//particleManager.addParticle(vec3(4, 4, 2));
-	//particleManager.addParticle(vec3(1, 4, 2));
-	//particleManager.addParticle(vec3(1, 4, 4));
-
 	// Give physics engine access to EntityComponentSystem
 	physicsEngine.setEntityComponentSystemPtr(&ecs);
-	
+
 	std::cout << (unsigned int)ecs.getEntityCount() << " entities created" << std::endl;
 }
 
@@ -147,14 +147,12 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 
 	pointLights.init();
 
-	//particleManager.init();
-	fluidSim.init(vec3(10, 0, 0), vec3(1, 1, 3), physicsEngine.gravity, 0.05f);
-	//fluidSim.addParticle(vec3(4, 4, 2));
-	//fluidSim.addParticle(vec3(1, 4, 2));
-	//fluidSim.addParticle(vec3(1, 4, 4));
-	for (int i = 0; i < 80; i++) {
+	fluidSim.init(vec3(10, 0, 0), vec3(4, 4, 3), physicsEngine.gravity);
+	for (int i = 0; i < 1024; i++) {
 		fluidSim.spawnRandomParticle();
 	}
+
+	fluidSim.bindSSBO(1);
 
 	// Uniform Buffer Objects
 	pvmUBO.buffer.projection = projection;
@@ -165,7 +163,7 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	// Shaders
 	shadowShader.init("shadow.glsl", "empty.glsl");
 	gpassShader.init("gpass_vert.glsl", "gpass_frag.glsl");
-	raymarchShader.init("fullscreen_quad.glsl", "raymarch.glsl");
+	raymarchShader.init("fluidsim_vert.glsl", "raymarch.glsl");
 	lightShader.init("fullscreen_quad.glsl", "directional_light.glsl");
 	pointLightShader.init("pointLight_vert.glsl", "pointLight_frag.glsl");
 	compositeShader.init("fullscreen_quad.glsl", "composite.glsl");
@@ -282,20 +280,17 @@ void GameEngine::render() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 	// Raymarch Particles
-	//fluidSim.transferData(particleManager);
-	fluidSim.sendDataToGPU();
-	fluidSim.bindSSBO(1);
-	//particleManager.subData();
-	//particleManager.bind(1);
+	fluidSim.sendDataToGPU(view);
 
-	particleViewShader.use();
-	glDispatchCompute(fluidSim.getParticleCount(), 1, 1);
-	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	//particleViewShader.use();
+	//glDispatchCompute(fluidSim.getParticleCount(), 1, 1);
 
 	raymarchShader.use();
-	glDrawArrays(GL_TRIANGLES, 0, 3);
+	raymarchShader.bindUniform(vec2(1600, 900), "ScreenSize");
+	glDrawArrays(GL_TRIANGLES, 0, 36); // draws cube in vertex shader to save fragment shader dispatches
+	//glDrawArrays(GL_TRIANGLES, 0, 3);
 
-	// Meshes
+	// Rasterize Meshes
 	gpassShader.use();
 
 	for (int i = 0; i < meshCount; i++) {

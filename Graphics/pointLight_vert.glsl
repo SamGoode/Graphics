@@ -1,11 +1,11 @@
-#version 410
+#version 430 core
 
 // might do the inbuilt vertex array trick later
 // per-vertex data
-layout(location = 0) in vec3 Position;
+//layout(location = 0) in vec3 Position;
 
 // per-instance data
-layout(location = 1) in struct instanceData {
+layout(location = 0) in struct instanceData {
 	vec3 lightPosition;
 	float lightRadius;
 	vec3 lightColor;
@@ -25,6 +25,29 @@ out vec3 vLightColor;
 
 
 void main() {
+	// Cube vertices
+	const vec3 vertices[8] = vec3[8](
+		vec3(1, 1, -1),
+		vec3(1, -1, -1),
+		vec3(-1, -1, -1),
+		vec3(-1, 1, -1),
+		vec3(1, 1, 1),
+		vec3(1, -1, 1),
+		vec3(-1, -1, 1),
+		vec3(-1, 1, 1)
+	);
+
+	const uint indices[36] = uint[36](
+		4, 6, 5, 4, 7, 6,
+		3, 1, 2, 3, 0, 1,
+		5, 0, 4, 5, 1, 0,
+		3, 2, 6, 3, 6, 7,
+		3, 4, 0, 3, 7, 4,
+		2, 1, 5, 2, 5, 6
+	);
+
+	vec3 Position = vertices[indices[gl_VertexID]];
+
 	vLightPosition = (View * vec4(instance.lightPosition, 1)).xyz;
 	vLightRadius = instance.lightRadius;
 	vLightColor = instance.lightColor;

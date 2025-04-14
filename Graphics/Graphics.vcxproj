@@ -167,7 +167,6 @@
     <ClInclude Include="Collision.h" />
     <ClInclude Include="glmAddon.h" />
     <ClInclude Include="MaterialProperties.h" />
-    <ClInclude Include="ParticleManager.h" />
     <ClInclude Include="PhysicsSystem.h" />
     <ClInclude Include="PointLight.h" />
     <ClInclude Include="RenderSystem.h" />
@@ -186,6 +185,7 @@
     <None Include="composite.glsl" />
     <None Include="directional_light.glsl" />
     <None Include="empty.glsl" />
+    <None Include="fluidsim_vert.glsl" />
     <None Include="gpass_frag.glsl" />
     <None Include="gpass_vert.glsl" />
     <None Include="line_frag.glsl" />

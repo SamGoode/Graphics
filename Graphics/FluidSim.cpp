@@ -44,9 +44,6 @@ void FluidSimSPH::tick() {
 
 	// Build spatial hash grid with projected positions
 	spatialGrid.buildSpatialGrid(particleCount, projectedPositions);
-	//spatialGrid.generateHashList(particleCount, projectedPositions);
-	//spatialGrid.sortHashList();
-	//spatialGrid.generateLookupTable();
 
 	// Calculate and cache densities
 	for (int i = 0; i < particleCount; i++) {
@@ -71,37 +68,29 @@ void FluidSimSPH::tick() {
 
 
 void FluidSimSPH::calculateDensity(int particleIndex) {
+	const ivec2* hashList = spatialGrid.getHashList();
+	const ivec2* lookupTable = spatialGrid.getLookupTable();
+
 	const vec3& projectedPos = projectedPositions[particleIndex];
-
-	const uvec2* hashList = spatialGrid.getHashList();
-	const uvec2* lookupTable = spatialGrid.getLookupTable();
-
-	uvec3 cellCoords = spatialGrid.getCellCoords(projectedPos);
-
-	// particle's density should include itself
+	ivec3 cellCoords = spatialGrid.getCellCoords(projectedPos);
+	
 	float density = 0.f;
 	float nearDensity = 0.f;
-	for (int i = 0; i < 27; i++) {
-		unsigned int x = i % 3;
-		unsigned int y = (i / 3) % 3;
-		unsigned int z = i / 9;
-
-		uvec3 offset = uvec3(x, y, z);
-		uvec3 offsetCellCoords = cellCoords + offset - uvec3(1);
+	for (unsigned int i = 0; i < 27; i++) {
+		ivec3 offset = ivec3(i % 3, (i / 3) % 3, i / 9);
+		ivec3 offsetCellCoords = cellCoords + offset - ivec3(1);
 		
 		if (!spatialGrid.isValidCoords(offsetCellCoords)) continue;
 
-		unsigned int cellHash = spatialGrid.getCellHash(offsetCellCoords);
+		int cellHash = spatialGrid.getCellHash(offsetCellCoords);
 
-		unsigned int startIndex = lookupTable[cellHash].x;
-		if (startIndex >= particleCount) {
-			continue;
-		}
+		int startIndex = lookupTable[cellHash].x;
+		int endIndex = lookupTable[cellHash].y;
+		if (startIndex == -1) continue; // Cell is empty
 
-		unsigned int endIndex = lookupTable[cellHash].y;
-
-		for (unsigned int n = startIndex; n < endIndex + 1; n++) {
-			unsigned int otherParticle = hashList[n].x;
+		for (int n = startIndex; n < endIndex + 1; n++) {
+			// The particle's local density should include its own influence so it doesn't matter if 'otherParticle' is itself.
+			int otherParticle = hashList[n].x;
 			vec3 toParticle = projectedPositions[otherParticle] - projectedPos;
 			float sqrDist = dot(toParticle, toParticle);
 
@@ -118,20 +107,18 @@ void FluidSimSPH::calculateDensity(int particleIndex) {
 }
 
 void FluidSimSPH::applyPressure(int particleIndex) {
+	const ivec2* hashList = spatialGrid.getHashList();
+	const ivec2* lookupTable = spatialGrid.getLookupTable();
+
 	vec3& projectedPos = projectedPositions[particleIndex];
-
-	const uvec2* hashList = spatialGrid.getHashList();
-	const uvec2* lookupTable = spatialGrid.getLookupTable();
-
 	uvec3 cellCoords = spatialGrid.getCellCoords(projectedPos);
 
-	vec3 pressureDisplacementSum = vec3(0);
-	for (int i = 0; i < 27; i++) {
-		unsigned int x = i % 3;
-		unsigned int y = (i / 3) % 3;
-		unsigned int z = i / 9;
+	float pressure = calculatePressure(densities[particleIndex], restDensity, stiffness);
+	float nearPressure = calculatePressure(nearDensities[particleIndex], 0, nearStiffness);
 
-		uvec3 offset = uvec3(x, y, z);
+	vec3 pressureDisplacementSum = vec3(0);
+	for (unsigned int i = 0; i < 27; i++) {
+		uvec3 offset = uvec3(i % 3, (i / 3) % 3, i / 9);
 		uvec3 offsetCellCoords = cellCoords + offset - uvec3(1);
 
 		if (!spatialGrid.isValidCoords(offsetCellCoords)) continue;
@@ -139,13 +126,12 @@ void FluidSimSPH::applyPressure(int particleIndex) {
 		unsigned int cellHash = spatialGrid.getCellHash(offsetCellCoords);
 
 		unsigned int startIndex = lookupTable[cellHash].x;
-		if (startIndex >= particleCount) {
-			continue;
-		}
+		if (startIndex >= particleCount) continue; // Cell is empty
 
 		unsigned int endIndex = lookupTable[cellHash].y;
 
 		for (unsigned int n = startIndex; n < endIndex + 1; n++) {
+			// The particle should not apply pressure to itself
 			unsigned int otherParticle = hashList[n].x;
 			if (otherParticle == particleIndex) continue;
 
@@ -157,13 +143,8 @@ void FluidSimSPH::applyPressure(int particleIndex) {
 			float dist = sqrt(sqrDist);
 			vec3 unitDirection = (dist > 0) ? toParticle / dist : glm::sphericalRand(1.f);
 
-			float pressure = (densities[otherParticle] - restDensity) * pressureMultiplier;
-			float nearPressure = nearDensities[otherParticle] * nearPressureMultiplier;
-
-			float weight = 1 - (dist / smoothingRadius);
-
-			float sharedPressure = (pressure * weight + nearPressure * weight * weight);
-			vec3 pressureDisplacement = unitDirection * (sharedPressure * 0.5f) * fixedTimeStep * fixedTimeStep;
+			float pressureForce = calculatePressureForce(pressure, nearPressure, smoothingRadius, dist);
+			vec3 pressureDisplacement = unitDirection * pressureForce * fixedTimeStep * fixedTimeStep;
 
 			// assume mass = 1
 			projectedPositions[otherParticle] += pressureDisplacement;
@@ -175,8 +156,8 @@ void FluidSimSPH::applyPressure(int particleIndex) {
 }
 
 void FluidSimSPH::applyBoundaryPressure(int particleIndex) {
-	float artificialDensity = restDensity;
-	float pressure = artificialDensity * nearPressureMultiplier;
+	float artificialDensity = restDensity * 1.5f;
+	float pressure = artificialDensity * nearStiffness;
 
 	vec3& particlePos = projectedPositions[particleIndex];
 	// X-Axis

@@ -4,6 +4,8 @@
 
 #include <glm/ext.hpp>
 
+using glm::ivec2;
+using glm::ivec3;
 using glm::uvec2;
 using glm::uvec3;
 using glm::vec3;
@@ -14,16 +16,16 @@ private:
 	vec3 bounds;
 	float cellSize;
 
-	uvec3 gridBounds;
+	ivec3 gridBounds;
 	unsigned int cellCount;
 
 	unsigned int entries = 0;
 	unsigned int capacity;
 
 	// (position index, cell hash)
-	uvec2* hashList = nullptr;
+	ivec2* hashList = nullptr;
 	// (start index, end index)
-	uvec2* lookupTable = nullptr;
+	ivec2* lookupTable = nullptr;
 
 
 public:
@@ -37,24 +39,35 @@ public:
 		bounds = _bounds;
 		cellSize = _cellSize;
 
-		gridBounds = uvec3(ceil(_bounds / _cellSize));
+		gridBounds = ivec3(ceil(_bounds / _cellSize));
 		cellCount = gridBounds.x * gridBounds.y * gridBounds.z;
 
 		capacity = _capacity;
-		hashList = new uvec2[_capacity];
-		lookupTable = new uvec2[cellCount];
+		hashList = new ivec2[capacity];
+		lookupTable = new ivec2[cellCount]{ ivec2(-1) };
+
+		for (int i = 0; i < cellCount; i++) {
+			lookupTable[i] = ivec2(-1);
+		}
 	}
 
-	const uvec2* getHashList() { return hashList; }
-	const uvec2* getLookupTable() { return lookupTable; }
+	glm::ivec3 getGridBounds() { return gridBounds; }
+	unsigned int getCellCount() { return cellCount; }
+	const ivec2* getHashList() { return hashList; }
+	const ivec2* getLookupTable() { return lookupTable; }
 
 	// returns grid coordinates of cell that 'position' falls into
-	uvec3 getCellCoords(vec3 position) { return uvec3(floor(glm::clamp(position, vec3(0), bounds) / cellSize)); }
-	bool isValidCoords(uvec3 cellCoords) { return cellCoords.x < gridBounds.x && cellCoords.y < gridBounds.y && cellCoords.z < gridBounds.z; }
+	ivec3 getCellCoords(vec3 position) { 
+		//return ivec3(floor(glm::clamp(position, vec3(0), bounds) / cellSize));
+		return glm::clamp(ivec3(floor(position / cellSize)), ivec3(0), gridBounds - ivec3(1));
+	}
+	bool isValidCoords(ivec3 cellCoords) { 
+		return cellCoords.x >= 0 && cellCoords.y >= 0 && cellCoords.z >= 0 && cellCoords.x < gridBounds.x && cellCoords.y < gridBounds.y && cellCoords.z < gridBounds.z;
+	}
 
 	unsigned int getCellHash(const uvec3& cellCoords) {
 		assert(isValidCoords(cellCoords) && "Invalid cell coordinates");
-
+		
 		return cellCoords.x + cellCoords.y * gridBounds.x + cellCoords.z * gridBounds.x * gridBounds.y;
 	}
 
@@ -70,27 +83,30 @@ private:
 
 		entries = count;
 		for (int i = 0; i < entries; i++) {
-			hashList[i] = uvec2(i, getCellHash(getCellCoords(positions[i])));
+			hashList[i] = ivec2(i, getCellHash(getCellCoords(positions[i])));
 		}
 	}
 
-	void sortHashList() { std::sort(hashList, &hashList[entries - 1] + 1, [](const uvec2& a, const uvec2& b) {return a.y < b.y;}); }
+	void sortHashList() { std::sort(&hashList[0], &hashList[entries - 1] + 1, [](const ivec2& a, const ivec2& b) {return a.y < b.y;}); }
 
 	void generateLookupTable() {
 		assert(entries > 0 && "Hashlist is empty");
 
 		for (int i = 0; i < cellCount; i++) {
-			lookupTable[i] = uvec2(-1, -1);
+			lookupTable[i] = ivec2(-1);
 		}
 
 		int currentStartIndex = 0;
 		int previousCellHash = -1;
 		for (int i = 0; i < entries - 1; i++) {
-			if (hashList[i].y == hashList[i + 1].y) continue;
+			if (hashList[i].y == hashList[i + 1].y)
+				continue;
 
 			lookupTable[hashList[i].y].x = currentStartIndex;
 
-			if (previousCellHash != -1) lookupTable[previousCellHash].y = currentStartIndex - 1;
+			if (previousCellHash != -1)
+				lookupTable[previousCellHash].y = currentStartIndex - 1;
+			
 			previousCellHash = hashList[i].y;
 
 			currentStartIndex = i + 1;

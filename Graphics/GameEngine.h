@@ -8,7 +8,6 @@
 #include "Mesh.h"
 #include "Texture.h"
 #include "PointLight.h"
-#include "ParticleManager.h"
 #include "FluidSim.h"
 
 #include "UniformBuffer.h"
@@ -38,7 +37,6 @@ protected:
 	Texture textures[4];
 	PointLight pointLights;
 
-	//ParticleManager particleManager;
 	FluidSimSPH fluidSim;
 
 	struct pvmLayout {

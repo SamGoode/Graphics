@@ -57,23 +57,28 @@ unsigned int Shader::loadShaderFromFile(GLenum type, const char* fileName) {
 
 
 void Shader::bindUniform(const float& f, const char* name) {
-	unsigned int uniform = glGetUniformLocation(gl_id, name);
-	glUniform1f(uniform, f);
+	unsigned int uniformLocation = glGetUniformLocation(gl_id, name);
+	glUniform1f(uniformLocation, f);
 }
 
 void Shader::bindUniform(const int& i, const char* name) {
-	unsigned int uniform = glGetUniformLocation(gl_id, name);
-	glUniform1i(uniform, i);
+	unsigned int uniformLocation = glGetUniformLocation(gl_id, name);
+	glUniform1i(uniformLocation, i);
+}
+
+void Shader::bindUniform(const vec2& v2, const char* name) {
+	unsigned int uniformLocation = glGetUniformLocation(gl_id, name);
+	glUniform2fv(uniformLocation, 1, glm::value_ptr(v2));
 }
 
 void Shader::bindUniform(const vec3& v3, const char* name) {
-	unsigned int uniform = glGetUniformLocation(gl_id, name);
-	glUniform3fv(uniform, 1, glm::value_ptr(v3));
+	unsigned int uniformLocation = glGetUniformLocation(gl_id, name);
+	glUniform3fv(uniformLocation, 1, glm::value_ptr(v3));
 }
 
 void Shader::bindUniform(const mat4& m4, const char* name) {
-	unsigned int uniform = glGetUniformLocation(gl_id, name);
-	glUniformMatrix4fv(uniform, 1, false, glm::value_ptr(m4));
+	unsigned int uniformLocation = glGetUniformLocation(gl_id, name);
+	glUniformMatrix4fv(uniformLocation, 1, false, glm::value_ptr(m4));
 }
 
 void Shader::bindUniformBuffer(GLuint bindingIndex, const char* name) {
