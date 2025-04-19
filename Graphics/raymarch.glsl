@@ -74,9 +74,9 @@ float densityKernel(float radius, float dist) {
 
 float sampleDensity(vec3 point) {
 	// Necessary check because gridBounds could be slightly 'larger' than simBounds.
-	if(!isWithinBounds(point)) {
-		return -1.0;
-	}
+//	if(!isWithinBounds(point)) {
+//		return -1.0;
+//	}
 
 	ivec3 cellCoords = getCellCoords(point);
 
@@ -177,9 +177,9 @@ vec3 densityGradient(vec3 point) {
 
 
 // Raymarch settings
-const int maxSteps = 128;
-const float stepLength = 0.05;
-const float densityThreshold = 0.5;
+const int maxSteps = 32;
+const float stepLength = 0.02;
+const float densityThreshold = 1.0;
 
 
 // crappy color parameters for testing
@@ -197,42 +197,43 @@ void main() {
 	// height = sqrt(radius^2 - distance^2)
 	float depthOffset = sqrt(1 - sqrDist);
 
-	vec3 vPosition = (View * Position).xyz + vec3(0, 0, depthOffset * particleRadius);
+	float smoothingRadius = cellSize;
+	vec3 vPosition = (View * Position).xyz + vec3(0, 0, depthOffset * smoothingRadius);
 
-	gpassAlbedoSpec = water;
-	gpassPosition = vPosition;//(View * Position).xyz;
-	gpassNormal = normalize(vec3(centerOffset, depthOffset));
-
-	vec4 clipPos = (Projection * vec4(vPosition, 1));
-	float ndcPosZ = clipPos.z / clipPos.w;
-	gl_FragDepth = ndcPosZ * 0.5 + 0.5;
-
-//	vec2 screenUVs = gl_FragCoord.xy / ScreenSize;
-//	vec2 ndc = screenUVs * 2 - 1;
-//
-//	// View space
-//	vec3 vRayOrigin = (View * Position).xyz;
-//	vec3 vRayDirection = normalize((ProjectionInverse * vec4(ndc, 1, 1)).xyz);
-//
-//	// World space
-//	vec3 rayOrigin = Position.xyz; // begins on surface of rasterized fluid bounds
-//	vec3 rayDirection = (ViewInverse * vec4(vRayDirection, 0)).xyz;
-//
-//	// Sim space (rotationally aligned with world space)
-//	vec3 sRayOrigin = rayOrigin - simPosition.xyz;
-//
-//	float rayDistance = raymarchDensity(sRayOrigin, rayDirection, maxSteps, stepLength, densityThreshold);
-//	if(rayDistance == -1.0) discard;
-//
-//	vec3 iso_vPos = vRayOrigin + vRayDirection * rayDistance;
-//	vec3 iso_pos = rayOrigin + rayDirection * rayDistance;
-//
 //	gpassAlbedoSpec = water;
-//	gpassPosition = iso_vPos;
-//	gpassNormal = (View * vec4(normalize(densityGradient(iso_pos - simPosition.xyz)), 0)).xyz;
-//	
+//	gpassPosition = vPosition;
+//	gpassNormal = normalize(vec3(centerOffset, depthOffset));
 //
-//	vec4 clipPos = (Projection * vec4(iso_vPos, 1));
+//	vec4 clipPos = (Projection * vec4(vPosition, 1));
 //	float ndcPosZ = clipPos.z / clipPos.w;
 //	gl_FragDepth = ndcPosZ * 0.5 + 0.5;
+
+	vec2 screenUVs = gl_FragCoord.xy / ScreenSize;
+	vec2 ndc = screenUVs * 2 - 1;
+
+	// View space
+	vec3 vRayOrigin = vPosition;//(View * Position).xyz;
+	vec3 vRayDirection = normalize((ProjectionInverse * vec4(ndc, 1, 1)).xyz);
+
+	// World space
+	vec3 rayOrigin = (ViewInverse * vec4(vPosition, 1)).xyz;//Position.xyz; // begins on surface of rasterized particles
+	vec3 rayDirection = (ViewInverse * vec4(vRayDirection, 0)).xyz;
+
+	// Sim space (rotationally aligned with world space)
+	vec3 sRayOrigin = rayOrigin - simPosition.xyz;
+
+	float rayDistance = raymarchDensity(sRayOrigin, rayDirection, maxSteps, stepLength, densityThreshold);
+	if(rayDistance == -1.0) discard;
+
+	vec3 iso_vPos = vRayOrigin + vRayDirection * rayDistance;
+	vec3 iso_pos = rayOrigin + rayDirection * rayDistance;
+
+	gpassAlbedoSpec = water;
+	gpassPosition = iso_vPos;
+	gpassNormal = (View * vec4(normalize(densityGradient(iso_pos - simPosition.xyz)), 0)).xyz;
+	
+
+	vec4 clipPos = (Projection * vec4(iso_vPos, 1));
+	float ndcPosZ = clipPos.z / clipPos.w;
+	gl_FragDepth = ndcPosZ * 0.5 + 0.5;
 }

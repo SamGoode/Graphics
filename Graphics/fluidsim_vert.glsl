@@ -37,7 +37,8 @@ void main() {
 
 	vec4 center = View * vec4(positions[gl_InstanceID].xyz + simPosition.xyz, 1);
 
-	vec4 vPosition = center + vec4(vertexOffsets[gl_VertexID].xy * particleRadius, 0, 0);
+	float smoothingRadius = cellSize;
+	vec4 vPosition = center + vec4(vertexOffsets[gl_VertexID].xy * smoothingRadius, 0, 0);
 	Position = ViewInverse * vPosition;
 	gl_Position = Projection * vPosition;
 
