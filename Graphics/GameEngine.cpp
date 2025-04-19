@@ -147,10 +147,8 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 
 	pointLights.init();
 
-	fluidSim.init(vec3(10, 0, 0), vec3(4, 4, 3), physicsEngine.gravity);
-	for (int i = 0; i < 1024; i++) {
-		fluidSim.spawnRandomParticle();
-	}
+	fluidSim.init(vec3(10, 0, 0), vec3(2, 2, 4), physicsEngine.gravity);
+	fluidSim.spawnRandomParticles(1024);
 
 	fluidSim.bindSSBO(1);
 
@@ -204,7 +202,7 @@ bool GameEngine::update()  {
 	if (!App3D::update()) return false;
 	if (keyPressed(GLFW_KEY_ESCAPE)) return false;
 	
-	float deltaTime = getFrameTime();
+	float deltaTime = (float)getFrameTime();
 
 	// Avoid taking absurd time steps
 	constexpr float deltaTimeLimit = 1.f;
@@ -280,14 +278,18 @@ void GameEngine::render() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 	// Raymarch Particles
-	fluidSim.sendDataToGPU(view);
+	fluidSim.sendDataToGPU();
 
 	//particleViewShader.use();
 	//glDispatchCompute(fluidSim.getParticleCount(), 1, 1);
 
 	raymarchShader.use();
 	raymarchShader.bindUniform(vec2(1600, 900), "ScreenSize");
-	glDrawArrays(GL_TRIANGLES, 0, 36); // draws cube in vertex shader to save fragment shader dispatches
+	//glEnable(GL_PROGRAM_POINT_SIZE);
+	//glDrawArrays(GL_POINTS, 0, fluidSim.getParticleCount());
+	glDrawArraysInstanced(GL_QUADS, 0, 4 * fluidSim.getParticleCount(), fluidSim.getParticleCount());
+	// Draws fluid bounds as cube in vertex shader to save fragment shader dispatches
+	//glDrawArrays(GL_TRIANGLES, 0, 36);
 	//glDrawArrays(GL_TRIANGLES, 0, 3);
 
 	// Rasterize Meshes

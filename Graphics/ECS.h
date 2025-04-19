@@ -112,13 +112,7 @@ namespace ECS {
 		uint indexToEntity[MAX_ENTITIES];
 
 	public:
-		ComponentPool() {
-			// May be unnecessary
-			//for (uint i = 0; i < MAX_ENTITIES; i++) {
-			//	entityToIndex[i] = i;
-			//	indexToEntity[i] = i;
-			//}
-		}
+		ComponentPool() {}
 
 		bool hasData(uint entityID) {
 			assert(entityID < MAX_ENTITIES && "Invalid entity ID");
@@ -130,13 +124,6 @@ namespace ECS {
 		void insertData(uint entityID, T component) {
 			assert(!hasData(entityID) && "Entity already has this component");
 			components[activeComponents] = component;
-
-			// this part may be unnecessary
-			//uint oldIndex = entityToIndex[entityID];
-			//uint oldEntity = indexToEntity[activeComponents];
-			//indexToEntity[oldIndex] = oldEntity;
-			//entityToIndex[oldEntity] = oldIndex;
-			//---------------------------------
 
 
 			indexToEntity[activeComponents] = entityID;
@@ -156,10 +143,6 @@ namespace ECS {
 
 			indexToEntity[removedIndex] = lastEntity;
 			entityToIndex[lastEntity] = removedIndex;
-
-			// this part may be unnecessary
-			//indexToEntity[activeComponents] = entityID;
-			//entityToIndex[entityID] = activeComponents;
 		}
 
 		T& getData(uint entityID) {

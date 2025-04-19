@@ -39,8 +39,9 @@ public:
 		glDeleteVertexArrays(1, &vao);
 	}
 
-	bool init() {
-		if (vao != 0) return false;
+	void init() {
+		assert(vao == 0 && "Already initialized");
+		//if (vao != 0) return false;
 
 		//vec3 vertices[8] = {
 		//	vec3(1, 1, -1),
