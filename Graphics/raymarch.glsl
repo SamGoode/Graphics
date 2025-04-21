@@ -8,12 +8,6 @@ in vec2 vTexCoord;
 
 uniform sampler2D fluidDepthPass;
 
-//in vec4 vPosition;
-//in float Depth;
-//in vec2 CenterOffset;
-
-//uniform vec2 ScreenSize;
-
 layout(std140) uniform PVMatrices {
 	mat4 View;
 	mat4 Projection;
@@ -25,8 +19,7 @@ layout(std140) uniform PVMatrices {
 layout(binding = 1, std430) readonly restrict buffer FluidSimSSBO {
 	uint particleCount;
 	float smoothingRadius;
-	//float cellSize;
-	//float padding;
+	vec2 padding;
 	vec4 positions[MAX_PARTICLES];
 	uint hashTable[MAX_PARTICLES];
 	uint cellEntries[MAX_PARTICLES];
@@ -37,13 +30,10 @@ layout(location = 0) out vec4 gpassAlbedoSpec;
 layout(location = 1) out vec3 gpassPosition;
 layout(location = 2) out vec3 gpassNormal;
 
-//layout(depth_greater) out float gl_FragDepth;
-
 
 // All 'point' parameters are in world space
 
 ivec3 getCellCoords(vec3 point) {
-	//return ivec3(floor(point / cellSize));
 	return ivec3(floor(point / smoothingRadius));
 }
 
@@ -99,7 +89,6 @@ float raymarchDensity(vec3 rayOrigin, vec3 rayDir, int maxSteps, float stepLengt
 		accumulatedDensity += density;
 
 		if(accumulatedDensity > isoDensity) {
-			//return stepLength * i;
 			return stepLength * i + startDepth;
 		}
 	}
@@ -163,7 +152,6 @@ void main() {
 //	float ndcPosZ = clipPos.z / clipPos.w;
 //	gl_FragDepth = ndcPosZ * 0.5 + 0.5;
 
-	//vec2 screenUVs = gl_FragCoord.xy / ScreenSize;
 	vec2 screenUVs = vTexCoord;
 	vec2 ndc = screenUVs * 2 - 1;
 

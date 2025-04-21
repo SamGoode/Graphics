@@ -32,7 +32,7 @@ private:
 	float accumulatedTime = 0.f;
 
 	vec3 gravity;
-	float smoothingRadius; // radius of influence
+	float smoothingRadius; // density kernel radius
 	float restDensity;
 	float stiffness;
 	float nearStiffness;
@@ -89,26 +89,15 @@ public:
 		particleSSBO.buffer = {
 			.particleCount = particleCount,
 			.smoothingRadius = smoothingRadius
-			//.particleRadius = particleRadius
-			//.cellSize = smoothingRadius
 		};
 
 		for (int i = 0; i < particleCount; i++) {
 			particleSSBO.buffer.positions[i] = vec4(positions[i], 1);
 		}
 
-		//for (int i = 0; i < MAX_PARTICLES; i++) {
-		//	particleSSBO.buffer.hashTable[i] = spatialHashGrid.getHashTable()[i];
-		//	particleSSBO.buffer.cellEntries[i] = spatialHashGrid.getCellEntries()[i];
-		//}
-		
-		//for (int i = 0; i < spatialHashGrid.getUsedCells() * MAX_PARTICLES_PER_CELL; i++) {
-		//	particleSSBO.buffer.cells[i] = spatialHashGrid.getCells()[i];
-		//}
 		std::memcpy(particleSSBO.buffer.hashTable, spatialHashGrid.getHashTable(), MAX_PARTICLES * sizeof(unsigned int));
 		std::memcpy(particleSSBO.buffer.cellEntries, spatialHashGrid.getCellEntries(), MAX_PARTICLES * sizeof(unsigned int));
 		std::memcpy(particleSSBO.buffer.cells, spatialHashGrid.getCells(), spatialHashGrid.getUsedCells() * MAX_PARTICLES_PER_CELL * sizeof(unsigned int));
-
 
 		particleSSBO.subData();
 	}
