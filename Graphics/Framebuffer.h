@@ -82,7 +82,7 @@ public:
 	}
 
 	// Uses render buffer of specified FrameBuffer instance
-	void shareRenderBuffer(FrameBuffer& other) {
+	void shareRenderBuffer(const FrameBuffer& other) {
 		renderBuffer = other.renderBuffer;
 		rboAttachment = other.rboAttachment;
 	}
@@ -91,6 +91,12 @@ public:
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, frameBuffer);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboID);
 		glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_STENCIL_BUFFER_BIT, GL_NEAREST );
+	}
+
+	void sendStencilBuffer(const FrameBuffer& other) {
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, frameBuffer);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, other.frameBuffer);
+		glBlitFramebuffer(0, 0, width, height, 0, 0, other.width, other.height, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
 	}
 
 	void genRenderBuffer(GLenum attachment, GLenum internalFormat) {

@@ -4,8 +4,8 @@
 void FluidSimSPH::addParticle(vec3 localPosition) {
 	assert(particleCount < MAX_PARTICLES);
 
-	positions[particleCount] = localPosition;
-	projectedPositions[particleCount] = localPosition;
+	previousPositions[particleCount] = localPosition + position;
+	positions[particleCount] = localPosition + position;
 	particleCount++;
 }
 
@@ -14,10 +14,10 @@ void FluidSimSPH::spawnRandomParticles(unsigned int spawnCount) {
 	assert(particleCount + spawnCount <= MAX_PARTICLES);
 
 	for (int i = 0; i < spawnCount; i++) {
-		vec3 randomPosition = glm::linearRand(vec3(0), bounds);
+		vec3 randomPosition = glm::linearRand(position, position + bounds);
 
+		previousPositions[particleCount] = randomPosition;
 		positions[particleCount] = randomPosition;
-		projectedPositions[particleCount] = randomPosition;
 		particleCount++;
 	}
 }
@@ -34,49 +34,51 @@ void FluidSimSPH::update(float deltaTime) {
 
 void FluidSimSPH::tick() {
 	// Apply gravity
-	for (int i = 0; i < particleCount; i++) {
+	for (unsigned int i = 0; i < particleCount; i++) {
 		velocities[i] += gravity * fixedTimeStep;
 	}
 
-	// Advance and project particle positions
-	for (int i = 0; i < particleCount; i++) {
-		positions[i] = projectedPositions[i];
-		projectedPositions[i] += velocities[i] * fixedTimeStep;
+	// Project current and update previous particle positions
+	for (unsigned int i = 0; i < particleCount; i++) {
+		previousPositions[i] = positions[i];
+		positions[i] += velocities[i] * fixedTimeStep;
 	}
 
 	// Build spatial hash grid with projected positions
-	//spatialGrid.buildSpatialGrid(particleCount, projectedPositions);
-
-	spatialHashGrid.generateHashTable(particleCount, projectedPositions);
+	spatialHashGrid.generateHashTable(particleCount, positions);
 
 	// Calculate and cache densities
-	for (int i = 0; i < particleCount; i++) {
+	for (unsigned int i = 0; i < particleCount; i++) {
 		calculateDensity(i);
 	}
 
 	// Apply pressure as displacement
-	for (int i = 0; i < particleCount; i++) {
+	for (unsigned int i = 0; i < particleCount; i++) {
+		// Issue: displacements do not occur in parallel and each iteration affects subsequent iterations
+		// since there's a final radial distance check between particles
 		applyPressure(i);
 	}
 
 	// Boundaries
-	for (int i = 0; i < particleCount; i++) {
+	for (unsigned int i = 0; i < particleCount; i++) {
+		applyBoundaryConstraints(i);
 		applyBoundaryPressure(i);
 	}
 
+
 	// Compute implicit velocity
-	for (int i = 0; i < particleCount; i++) {
-		velocities[i] = (projectedPositions[i] - positions[i]) / fixedTimeStep;
+	for (unsigned int i = 0; i < particleCount; i++) {
+		velocities[i] = (positions[i] - previousPositions[i]) / fixedTimeStep;
 	}
 }
 
-void FluidSimSPH::calculateDensity(int particleIndex) {
+void FluidSimSPH::calculateDensity(unsigned int particleIndex) {
 	const unsigned int* hashTable = spatialHashGrid.getHashTable();
 	const unsigned int* cellEntries = spatialHashGrid.getCellEntries();
 	const unsigned int* cells = spatialHashGrid.getCells();
 
-	const vec3& projectedPos = projectedPositions[particleIndex];
-	ivec3 cellCoords = spatialHashGrid.getCellCoords(projectedPos);
+	const vec3& particlePos = positions[particleIndex];
+	ivec3 cellCoords = spatialHashGrid.getCellCoords(particlePos);
 	
 	float density = 0.f;
 	float nearDensity = 0.f;
@@ -91,7 +93,7 @@ void FluidSimSPH::calculateDensity(int particleIndex) {
 		for (unsigned int n = 0; n < entries; n++) {
 			// The particle's local density should include its own influence so it doesn't matter if 'otherParticle' is itself.
 			unsigned int otherParticle = cells[cellIndex * MAX_PARTICLES_PER_CELL + n];
-			vec3 toParticle = projectedPositions[otherParticle] - projectedPos;
+			vec3 toParticle = positions[otherParticle] - particlePos;
 			float sqrDist = dot(toParticle, toParticle);
 
 			if (sqrDist > smoothingRadius * smoothingRadius) continue;
@@ -106,13 +108,13 @@ void FluidSimSPH::calculateDensity(int particleIndex) {
 	nearDensities[particleIndex] = nearDensity;
 }
 
-void FluidSimSPH::applyPressure(int particleIndex) {
+void FluidSimSPH::applyPressure(unsigned int particleIndex) {
 	const unsigned int* hashTable = spatialHashGrid.getHashTable();
 	const unsigned int* cellEntries = spatialHashGrid.getCellEntries();
 	const unsigned int* cells = spatialHashGrid.getCells();
 
-	vec3& projectedPos = projectedPositions[particleIndex];
-	ivec3 cellCoords = spatialHashGrid.getCellCoords(projectedPos);
+	vec3& particlePos = positions[particleIndex];
+	ivec3 cellCoords = spatialHashGrid.getCellCoords(particlePos);
 
 	float pressure = calculatePressure(densities[particleIndex], restDensity, stiffness);
 	float nearPressure = calculatePressure(nearDensities[particleIndex], 0, nearStiffness);
@@ -131,7 +133,7 @@ void FluidSimSPH::applyPressure(int particleIndex) {
 			unsigned int otherParticle = cells[cellIndex * MAX_PARTICLES_PER_CELL + n];
 			if (otherParticle == particleIndex) continue;
 
-			vec3 toParticle = projectedPositions[otherParticle] - projectedPos;
+			vec3 toParticle = positions[otherParticle] - particlePos;
 			float sqrDist = dot(toParticle, toParticle);
 
 			if (sqrDist > smoothingRadius * smoothingRadius) continue;
@@ -143,13 +145,75 @@ void FluidSimSPH::applyPressure(int particleIndex) {
 			vec3 pressureDisplacement = unitDirection * pressureForce * fixedTimeStep * fixedTimeStep;
 
 			// assume mass = 1
-			projectedPositions[otherParticle] += pressureDisplacement;
+			positions[otherParticle] += pressureDisplacement;
 			pressureDisplacementSum -= pressureDisplacement;
 		}
 	}
 
-	projectedPos += pressureDisplacementSum;
+	particlePos += pressureDisplacementSum;
 }
+
+void FluidSimSPH::applyBoundaryConstraints(unsigned int particleIndex) {
+	vec3& particlePos = positions[particleIndex];
+
+	vec3 boundsMin = position;
+	vec3 boundsMax = position + bounds;
+
+	particlePos = glm::clamp(particlePos, boundsMin, boundsMax);
+}
+
+void FluidSimSPH::applyBoundaryPressure(unsigned int particleIndex) {
+	float artificialDensity = restDensity * 1.f;
+	float pressure = artificialDensity * nearStiffness;
+
+	vec3& particlePos = positions[particleIndex];
+
+	vec3 boundsMin = position;
+	vec3 boundsMax = position + bounds;
+	// X-Axis
+	if (particlePos.x + smoothingRadius > boundsMax.x) {
+		float dist = boundsMax.x - particlePos.x;
+		float value = 1 - (dist / smoothingRadius);
+
+		particlePos.x -= pressure * value * value * fixedTimeStep * fixedTimeStep;
+	}
+	else if (particlePos.x - smoothingRadius < boundsMin.x) {
+		float dist = particlePos.x - boundsMin.x;
+		float value = 1 - (dist / smoothingRadius);
+
+		particlePos.x += pressure * value * value * fixedTimeStep * fixedTimeStep;
+	}
+	// Y-Axis
+	if (particlePos.y + smoothingRadius > boundsMax.y) {
+		float dist = boundsMax.y - particlePos.y;
+		float value = 1 - (dist / smoothingRadius);
+
+		particlePos.y -= pressure * value * value * fixedTimeStep * fixedTimeStep;
+	}
+	else if (particlePos.y - smoothingRadius < boundsMin.y) {
+		float dist = particlePos.y - boundsMin.y;
+		float value = 1 - (dist / smoothingRadius);
+
+		particlePos.y += pressure * value * value * fixedTimeStep * fixedTimeStep;
+	}
+	// Z-Axis
+	if (particlePos.z + smoothingRadius > boundsMax.z) {
+		float dist = boundsMax.z - particlePos.z;
+		float value = 1 - (dist / smoothingRadius);
+
+		particlePos.z -= pressure * value * value * fixedTimeStep * fixedTimeStep;
+	}
+	else if (particlePos.z - smoothingRadius < boundsMin.z) {
+		float dist = particlePos.z - boundsMin.z;
+		float value = 1 - (dist / smoothingRadius);
+
+		particlePos.z += pressure * value * value * fixedTimeStep * fixedTimeStep;
+	}
+}
+
+
+
+// For use with bounded spatial grid
 
 //void FluidSimSPH::calculateDensity(int particleIndex) {
 //	const ivec2* hashList = spatialGrid.getHashList();
@@ -238,49 +302,3 @@ void FluidSimSPH::applyPressure(int particleIndex) {
 //
 //	projectedPos += pressureDisplacementSum;
 //}
-
-void FluidSimSPH::applyBoundaryPressure(int particleIndex) {
-	float artificialDensity = restDensity * 1.5f;
-	float pressure = artificialDensity * nearStiffness;
-
-	vec3& particlePos = projectedPositions[particleIndex];
-	// X-Axis
-	if (particlePos.x + smoothingRadius > bounds.x) {
-		float dist = bounds.x - particlePos.x;
-		float value = 1 - (dist / smoothingRadius);
-
-		particlePos.x -= pressure * value * value * fixedTimeStep * fixedTimeStep;
-	}
-	else if (particlePos.x - smoothingRadius < 0) {
-		float dist = particlePos.x;
-		float value = 1 - (dist / smoothingRadius);
-
-		particlePos.x += pressure * value * value * fixedTimeStep * fixedTimeStep;
-	}
-	// Y-Axis
-	if (particlePos.y + smoothingRadius > bounds.y) {
-		float dist = bounds.y - particlePos.y;
-		float value = 1 - (dist / smoothingRadius);
-
-		particlePos.y -= pressure * value * value * fixedTimeStep * fixedTimeStep;
-	}
-	else if (particlePos.y - smoothingRadius < 0) {
-		float dist = particlePos.y;
-		float value = 1 - (dist / smoothingRadius);
-
-		particlePos.y += pressure * value * value * fixedTimeStep * fixedTimeStep;
-	}
-	// Z-Axis
-	if (particlePos.z + smoothingRadius > bounds.z) {
-		float dist = bounds.z - particlePos.z;
-		float value = 1 - (dist / smoothingRadius);
-
-		particlePos.z -= pressure * value * value * fixedTimeStep * fixedTimeStep;
-	}
-	else if (particlePos.z - smoothingRadius < 0) {
-		float dist = particlePos.z;
-		float value = 1 - (dist / smoothingRadius);
-
-		particlePos.z += pressure * value * value * fixedTimeStep * fixedTimeStep;
-	}
-}

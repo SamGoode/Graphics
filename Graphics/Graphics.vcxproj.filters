@@ -172,7 +172,13 @@
     <None Include="particleCompute.glsl">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="fluidsim_vert.glsl">
+    <None Include="fluidDepth_vert.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="raymarch_bounds.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="fluidDepth_frag.glsl">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

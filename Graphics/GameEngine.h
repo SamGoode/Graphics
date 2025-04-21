@@ -44,10 +44,12 @@ protected:
 		mat4 projection;
 		mat4 viewInverse;
 		mat4 projectionInverse;
+		vec4 cameraPos;
 	};
 	UniformBuffer<pvmLayout> pvmUBO;
 
 	FrameBuffer shadowFBO;
+	FrameBuffer fluidDepthFBO;
 	FrameBuffer gpassFBO;
 	FrameBuffer lightFBO;
 
@@ -56,6 +58,7 @@ protected:
 	Shader lightShader;
 	Shader pointLightShader;
 	Shader compositeShader;
+	Shader fluidDepthShader;
 	Shader raymarchShader;
 
 	ComputeShader particleViewShader;

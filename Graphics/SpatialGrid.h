@@ -12,13 +12,9 @@ using glm::vec3;
 
 
 // Uses an actual hashing algorithm to allow for infinite bounds
-class SpatialHashCompact {
+class SpatialHashGrid {
 private:
-	vec3 bounds;
 	float cellSize;
-
-	ivec3 gridBounds;
-	unsigned int cellCount;
 
 	unsigned int entries = 0;
 	unsigned int capacity;
@@ -33,19 +29,15 @@ private:
 	// 'cells' is dense/contiguous and contains ids of positions within that cell.
 
 public:
-	SpatialHashCompact() {}
-	~SpatialHashCompact() {
+	SpatialHashGrid() {}
+	~SpatialHashGrid() {
 		delete[] hashTable;
 		delete[] cellEntries;
 		delete[] cells;
 	}
 
-	void init(vec3 _bounds, float _cellSize, unsigned int _capacity, unsigned int _cellCapacity) {
-		bounds = _bounds;
+	void init(float _cellSize, unsigned int _capacity, unsigned int _cellCapacity) {
 		cellSize = _cellSize;
-
-		gridBounds = ivec3(ceil(_bounds / _cellSize));
-		cellCount = gridBounds.x * gridBounds.y * gridBounds.z;
 
 		capacity = _capacity;
 		cellCapacity = _cellCapacity;
@@ -55,8 +47,6 @@ public:
 		cells = new unsigned int[capacity * cellCapacity] {0};
 	}
 
-	ivec3 getGridBounds() { return gridBounds; }
-	unsigned int getCellCount() { return cellCount; }
 	const unsigned int* getHashTable() { return hashTable; }
 	const unsigned int* getCellEntries() { return cellEntries; }
 	unsigned int getUsedCells() { return usedCells; }
@@ -70,7 +60,7 @@ public:
 	unsigned int getCellHash(const ivec3& cellCoords) {
 		// Three large prime numbers (from the brain of Matthias Teschner)
 		constexpr unsigned int p1 = 73856093;
-		constexpr unsigned int p2 = 19349663;
+		constexpr unsigned int p2 = 19349663; // Apparently this one isn't prime
 		constexpr unsigned int p3 = 83492791;
 
 		return ((p1 * (unsigned int)cellCoords.x) ^ (p2 * (unsigned int)cellCoords.y) ^ (p3 * (unsigned int)cellCoords.z)) % capacity;

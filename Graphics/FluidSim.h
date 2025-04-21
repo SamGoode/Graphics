@@ -17,8 +17,7 @@ using glm::vec3;
 using glm::vec4;
 using glm::uvec4;
 
-#define MAX_PARTICLES 1024
-#define MAX_CELL_COUNT 8192
+#define MAX_PARTICLES 4096
 #define MAX_PARTICLES_PER_CELL 16
 
 
@@ -33,67 +32,49 @@ private:
 	float accumulatedTime = 0.f;
 
 	vec3 gravity;
-	float particleRadius;
 	float smoothingRadius; // radius of influence
 	float restDensity;
 	float stiffness;
 	float nearStiffness;
 
 	unsigned int particleCount = 0;
+	vec3 previousPositions[MAX_PARTICLES];
 	vec3 positions[MAX_PARTICLES];
-	vec3 projectedPositions[MAX_PARTICLES];
 	vec3 velocities[MAX_PARTICLES];
 	float densities[MAX_PARTICLES];
 	float nearDensities[MAX_PARTICLES];
 
 	struct data {
-		vec4 simPosition;
-		vec4 simBounds;
-		glm::ivec4 gridBounds;
 		unsigned int particleCount;
-		float particleRadius; // All particles share same radius
-		float cellSize;
-		float padding;
+		float smoothingRadius; // All particles share same radius
+		vec2 padding;
 		vec4 positions[MAX_PARTICLES];
-		//ivec2 hashList[MAX_PARTICLES];
-		//ivec2 lookupTable[MAX_CELL_COUNT];
 		unsigned int hashTable[MAX_PARTICLES];
 		unsigned int cellEntries[MAX_PARTICLES];
 		unsigned int cells[MAX_PARTICLES * MAX_PARTICLES_PER_CELL];
 	};
 	ShaderStorageBuffer<data> particleSSBO;
-	//SpatialGrid spatialGrid;
-	SpatialHashCompact spatialHashGrid;
+	SpatialHashGrid spatialHashGrid;
 
 public:
 	FluidSimSPH() {}
 	~FluidSimSPH() {}
 
-	void init(vec3 _position, vec3 _bounds, vec3 _gravity, float _particleRadius = 0.1f,
+	void init(vec3 _position, vec3 _bounds, vec3 _gravity, float _smoothingRadius = 0.1f,
 		float _restDensity = 2.f, float _stiffness = 10.f, float _nearStiffness = 40.f) {
 		
 		position = _position;
 		bounds = _bounds;
 
 		gravity = _gravity;
-		particleRadius = _particleRadius;
-		smoothingRadius = particleRadius * 1.5f;
+		smoothingRadius = _smoothingRadius;
 		restDensity = _restDensity;
 		stiffness = _stiffness;
 		nearStiffness = _nearStiffness;
 
 		particleSSBO.init();
 
-		//for (int i = 0; i < MAX_PARTICLES; i++) {
-		//	particleSSBO.buffer.cellEntries[i] = 0;
-		//}
-
-		//for (int i = 0; i < MAX_CELL_COUNT; i++) {
-		//	particleSSBO.buffer.lookupTable[i] = uvec2(-1, -1);
-		//}
-
-		//spatialGrid.init(bounds, smoothingRadius, MAX_PARTICLES);
-		spatialHashGrid.init(bounds, smoothingRadius, MAX_PARTICLES, MAX_PARTICLES_PER_CELL);
+		spatialHashGrid.init(smoothingRadius, MAX_PARTICLES, MAX_PARTICLES_PER_CELL);
 	}
 
 	unsigned int getParticleCount() { return particleCount; }
@@ -106,36 +87,28 @@ public:
 
 	void sendDataToGPU() {
 		particleSSBO.buffer = {
-			.simPosition = vec4(position, 1),
-			.simBounds = vec4(bounds, 0),
-			//.gridBounds = glm::ivec4(spatialGrid.getGridBounds(), 0),
-			.gridBounds = glm::ivec4(spatialHashGrid.getGridBounds(), 0),
 			.particleCount = particleCount,
-			.particleRadius = particleRadius,
-			.cellSize = smoothingRadius
+			.smoothingRadius = smoothingRadius
+			//.particleRadius = particleRadius
+			//.cellSize = smoothingRadius
 		};
 
-		// build spatial grid with current positions (not projected)
-		//spatialGrid.buildSpatialGrid(particleCount, positions);
-		//spatialGrid.buildSpatialGrid(particleCount, projectedPositions);
-
 		for (int i = 0; i < particleCount; i++) {
-			particleSSBO.buffer.positions[i] = vec4(projectedPositions[i], 1);
-			//particleSSBO.buffer.hashList[i] = spatialGrid.getHashList()[i];
+			particleSSBO.buffer.positions[i] = vec4(positions[i], 1);
 		}
 
-		for (int i = 0; i < MAX_PARTICLES; i++) {
-			particleSSBO.buffer.hashTable[i] = spatialHashGrid.getHashTable()[i];
-			particleSSBO.buffer.cellEntries[i] = spatialHashGrid.getCellEntries()[i];
-		}
-		
-		for (int i = 0; i < spatialHashGrid.getUsedCells() * MAX_PARTICLES_PER_CELL; i++) {
-			particleSSBO.buffer.cells[i] = spatialHashGrid.getCells()[i];
-		}
-
-		//for (int i = 0; i < spatialGrid.getCellCount(); i++) {
-		//	particleSSBO.buffer.lookupTable[i] = spatialGrid.getLookupTable()[i];
+		//for (int i = 0; i < MAX_PARTICLES; i++) {
+		//	particleSSBO.buffer.hashTable[i] = spatialHashGrid.getHashTable()[i];
+		//	particleSSBO.buffer.cellEntries[i] = spatialHashGrid.getCellEntries()[i];
 		//}
+		
+		//for (int i = 0; i < spatialHashGrid.getUsedCells() * MAX_PARTICLES_PER_CELL; i++) {
+		//	particleSSBO.buffer.cells[i] = spatialHashGrid.getCells()[i];
+		//}
+		std::memcpy(particleSSBO.buffer.hashTable, spatialHashGrid.getHashTable(), MAX_PARTICLES * sizeof(unsigned int));
+		std::memcpy(particleSSBO.buffer.cellEntries, spatialHashGrid.getCellEntries(), MAX_PARTICLES * sizeof(unsigned int));
+		std::memcpy(particleSSBO.buffer.cells, spatialHashGrid.getCells(), spatialHashGrid.getUsedCells() * MAX_PARTICLES_PER_CELL * sizeof(unsigned int));
+
 
 		particleSSBO.subData();
 	}
@@ -164,7 +137,9 @@ private:
 		return pressure * weight + nearPressure * weight * weight * 0.5f;
 	}
 
-	void calculateDensity(int particleIndex);
-	void applyPressure(int particleIndex);
-	void applyBoundaryPressure(int particleIndex);
+	void calculateDensity(unsigned int particleIndex);
+	void applyPressure(unsigned int particleIndex);
+
+	void applyBoundaryConstraints(unsigned int particleIndex);
+	void applyBoundaryPressure(unsigned int particleIndex);
 };

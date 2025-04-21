@@ -185,7 +185,8 @@
     <None Include="composite.glsl" />
     <None Include="directional_light.glsl" />
     <None Include="empty.glsl" />
-    <None Include="fluidsim_vert.glsl" />
+    <None Include="fluidDepth_frag.glsl" />
+    <None Include="fluidDepth_vert.glsl" />
     <None Include="gpass_frag.glsl" />
     <None Include="gpass_vert.glsl" />
     <None Include="line_frag.glsl" />
@@ -198,6 +199,7 @@
     <None Include="pointLight_frag.glsl" />
     <None Include="pointLight_vert.glsl" />
     <None Include="raymarch.glsl" />
+    <None Include="raymarch_bounds.glsl" />
     <None Include="shadow.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
