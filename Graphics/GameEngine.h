@@ -61,7 +61,7 @@ protected:
 	Shader fluidDepthShader;
 	Shader raymarchShader;
 
-	ComputeShader particleViewShader;
+	//ComputeShader particleComputeShader;
 
 
 public:

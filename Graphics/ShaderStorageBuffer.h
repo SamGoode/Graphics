@@ -30,6 +30,12 @@ public:
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
 
+	void subData(int offset, int size, const void* data) {
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+		glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, size, data);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	}
+
 	void bind(GLuint bindingIndex) {
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, bindingIndex, ssbo);
 	}

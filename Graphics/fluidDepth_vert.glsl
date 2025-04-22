@@ -12,37 +12,66 @@ layout(std140) uniform PVMatrices {
 	vec4 CameraPos;
 };
 
-layout(binding = 1, std430) readonly restrict buffer FluidSimSSBO {
-	uint particleCount;
+layout(binding = 1, std140) uniform FluidConfig {
+	vec4 boundsMin;
+	vec4 boundsMax;
+
+	vec4 gravity;
 	float smoothingRadius;
-	vec2 padding;
+	float restDensity;
+	float stiffness;
+	float nearStiffness;
+	
+	float timeStep;
+	uint particleCount;
+} config;
+
+layout(binding = 2, std430) readonly restrict buffer FluidData {
 	vec4 positions[MAX_PARTICLES];
+	vec4 previousPositions[MAX_PARTICLES];
+	vec4 velocities[MAX_PARTICLES];
+	vec4 pressureDisplacements[MAX_PARTICLES];
+	float densities[MAX_PARTICLES];
+	float nearDensities[MAX_PARTICLES];
+
+	uint usedCells;
 	uint hashTable[MAX_PARTICLES];
 	uint cellEntries[MAX_PARTICLES];
 	uint cells[MAX_PARTICLES * MAX_PARTICLES_PER_CELL];
-};
+} data;
+
+//layout(binding = 1, std430) readonly restrict buffer FluidSimSSBO {
+//	uint particleCount;
+//	float smoothingRadius;
+//	vec2 padding;
+//	vec4 positions[MAX_PARTICLES];
+//	uint hashTable[MAX_PARTICLES];
+//	uint cellEntries[MAX_PARTICLES];
+//	uint cells[MAX_PARTICLES * MAX_PARTICLES_PER_CELL];
+//};
 
 out vec4 vPosition;
 //out float Depth;
 out vec2 CenterOffset;
 
-flat out float vSmoothingRadius;
+flat out float SmoothingRadius;
 
 
 void main() {
 	const vec2 vertexOffsets[4] = vec2[4](vec2(-1, 1), vec2(-1, -1), vec2(1, -1), vec2(1, 1));
 
-	vec4 center = View * vec4(positions[gl_InstanceID].xyz, 1);
+	uint particleIndex = gl_InstanceID;
+	vec4 center = View * vec4(data.positions[particleIndex].xyz, 1);
 
 	// Also offset towards camera by smoothing radius for depth testing reasons
 //	SmoothingRadius = cellSize;
 //	vPosition = center + vec4(vertexOffsets[gl_VertexID].xy * SmoothingRadius, SmoothingRadius, 0);
 
-	vPosition = center + vec4(vertexOffsets[gl_VertexID].xy * smoothingRadius, smoothingRadius, 0);
+	vPosition = center + vec4(vertexOffsets[gl_VertexID].xy * config.smoothingRadius, config.smoothingRadius, 0);
 	
 	//Depth = length(vPosition.xyz);
 	CenterOffset = vertexOffsets[gl_VertexID].xy;
-	vSmoothingRadius = smoothingRadius;
+	SmoothingRadius = config.smoothingRadius;
 
 	gl_Position = Projection * vPosition;
 }

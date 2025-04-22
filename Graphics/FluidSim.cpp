@@ -26,8 +26,17 @@ void FluidSimSPH::spawnRandomParticles(unsigned int spawnCount) {
 void FluidSimSPH::update(float deltaTime) {
 	accumulatedTime += deltaTime;
 
+	particleComputeShader.use();
+
 	for (int step = 0; step < maxTicksPerUpdate && accumulatedTime > fixedTimeStep; step++) {
-		tick();
+		unsigned int usedCells = 0;
+		particleSSBO.subData(18 * MAX_PARTICLES * sizeof(float), sizeof(unsigned int), &usedCells);
+		particleSSBO.subData(((19 * MAX_PARTICLES) + 1) * sizeof(float), MAX_PARTICLES * sizeof(unsigned int), particleSSBO.buffer.cellEntries);
+
+		glDispatchCompute(particleCount/1, 1, 1);
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+		//tick();
 		accumulatedTime -= fixedTimeStep;
 	}
 }
@@ -41,7 +50,7 @@ void FluidSimSPH::tick() {
 	// Project current and update previous particle positions
 	for (unsigned int i = 0; i < particleCount; i++) {
 		previousPositions[i] = positions[i];
-		positions[i] += velocities[i] * fixedTimeStep;
+		//positions[i] += velocities[i] * fixedTimeStep;
 	}
 
 	// Build spatial hash grid with projected positions

@@ -4,7 +4,7 @@ in vec4 vPosition;
 //in float Depth;
 in vec2 CenterOffset;
 
-flat in float vSmoothingRadius;
+flat in float SmoothingRadius;
 
 layout(std140) uniform PVMatrices {
 	mat4 View;
@@ -31,7 +31,7 @@ void main() {
 	//float minDepth = Depth + (1 - depthOffset) * SmoothingRadius;
 	//float maxDepth = Depth + depthOffset;
 
-	vec3 depthOffsetPos = vPosition.xyz - vec3(0, 0, (1 - depthOffset) * vSmoothingRadius);
+	vec3 depthOffsetPos = vPosition.xyz - vec3(0, 0, (1 - depthOffset) * SmoothingRadius);
 	float minDepth = length(depthOffsetPos);
 	float maxDepth = 0;
 

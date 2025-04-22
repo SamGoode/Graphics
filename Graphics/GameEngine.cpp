@@ -150,7 +150,9 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	fluidSim.init(vec3(10, 0, 0), vec3(1, 2, 4), physicsEngine.gravity);
 	fluidSim.spawnRandomParticles(4096);
 
-	fluidSim.bindSSBO(1);
+	fluidSim.bindConfigUBO(1);
+	fluidSim.bindParticleSSBO(2);
+	fluidSim.sendDataToGPU();
 
 	// Uniform Buffer Objects
 	pvmUBO.buffer.projection = projection;
@@ -174,8 +176,8 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	pointLightShader.bindUniformBuffer(0, "PVMatrices");
 
 	// Compute Shaders
-	particleViewShader.init("particleCompute.glsl");
-	particleViewShader.bindUniformBuffer(0, "PVMatrices");
+	//particleComputeShader.init("particleCompute.glsl");
+	//particleComputeShader.bindUniformBuffer(0, "PVMatrices");
 
 
 	// Framebuffers
@@ -248,7 +250,7 @@ void GameEngine::render() {
 	RenderSystem* renderSystem = ecs.getSystem<RenderSystem>();
 	renderSystem->addMeshInstances(ecs, meshes);
 
-	fluidSim.sendDataToGPU();
+	//fluidSim.sendDataToGPU();
 
 
 	// Shadow Pass
@@ -283,7 +285,7 @@ void GameEngine::render() {
 	glEnable(GL_STENCIL_TEST);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 	glStencilFunc(GL_ALWAYS, 1, 0xFF);
-	glStencilMask(0x01);
+	glStencilMask(0xFF);
 
 	glClearStencil(0);
 	glClearColor(0.f, 0.f, 0.f, 0);
@@ -315,6 +317,7 @@ void GameEngine::render() {
 	fluidDepthShader.use();
 	//glEnable(GL_PROGRAM_POINT_SIZE);
 	//glDrawArrays(GL_POINTS, 0, fluidSim.getParticleCount());
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	glDrawArraysInstanced(GL_QUADS, 0, 4, fluidSim.getParticleCount()); // change this later
 
 	// Raymarch Particles

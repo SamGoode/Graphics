@@ -16,15 +16,42 @@ layout(std140) uniform PVMatrices {
 	vec4 CameraPos;
 };
 
-layout(binding = 1, std430) readonly restrict buffer FluidSimSSBO {
-	uint particleCount;
+layout(binding = 1, std140) uniform FluidConfig {
+	vec4 boundsMin;
+	vec4 boundsMax;
+	vec4 gravity;
 	float smoothingRadius;
-	vec2 padding;
+	float restDensity;
+	float stiffness;
+	float nearStiffness;
+	
+	float timeStep;
+	uint particleCount;
+} config;
+
+layout(binding = 2, std430) readonly restrict buffer FluidData {
 	vec4 positions[MAX_PARTICLES];
+	vec4 previousPositions[MAX_PARTICLES];
+	vec4 velocities[MAX_PARTICLES];
+	vec4 pressureDisplacements[MAX_PARTICLES];
+	float densities[MAX_PARTICLES];
+	float nearDensities[MAX_PARTICLES];
+
+	uint usedCells;
 	uint hashTable[MAX_PARTICLES];
 	uint cellEntries[MAX_PARTICLES];
 	uint cells[MAX_PARTICLES * MAX_PARTICLES_PER_CELL];
-};
+} data;
+
+//layout(binding = 1, std430) readonly restrict buffer FluidSimSSBO {
+//	uint particleCount;
+//	float smoothingRadius;
+//	vec2 padding;
+//	vec4 positions[MAX_PARTICLES];
+//	uint hashTable[MAX_PARTICLES];
+//	uint cellEntries[MAX_PARTICLES];
+//	uint cells[MAX_PARTICLES * MAX_PARTICLES_PER_CELL];
+//};
 
 layout(location = 0) out vec4 gpassAlbedoSpec;
 layout(location = 1) out vec3 gpassPosition;
@@ -34,7 +61,7 @@ layout(location = 2) out vec3 gpassNormal;
 // All 'point' parameters are in world space
 
 ivec3 getCellCoords(vec3 point) {
-	return ivec3(floor(point / smoothingRadius));
+	return ivec3(floor(point / config.smoothingRadius));
 }
 
 uint getCellHash(ivec3 cellCoords) {
@@ -55,24 +82,28 @@ float sampleDensity(vec3 point) {
 	ivec3 cellCoords = getCellCoords(point);
 
 	float density = 0.0;
+//	if(data.cellEntries[getCellHash(cellCoords)] > 2) {
+//		density = 1000.0;
+//	}
+
 	for(int i = 0; i < 27; i++) {
 		ivec3 offset = ivec3(i % 3, (i / 3) % 3, i / 9) - ivec3(1); // inefficient?
 		ivec3 offsetCoords = ivec3(cellCoords) + offset;
 
 		uint cellHash = getCellHash(offsetCoords);
-		uint entries = cellEntries[cellHash];
+		uint entries = data.cellEntries[cellHash];
 
-		uint cellIndex = hashTable[cellHash];
+		uint cellIndex = data.hashTable[cellHash];
 
 		for(uint n = 0; n < entries; n++) {
-			uint particleIndex = cells[(cellIndex * MAX_PARTICLES_PER_CELL) + n];
-			vec3 toParticle = positions[particleIndex].xyz - point;
+			uint particleIndex = data.cells[(cellIndex * MAX_PARTICLES_PER_CELL) + n];
+			vec3 toParticle = data.positions[particleIndex].xyz - point;
 			float sqrDist = dot(toParticle, toParticle);
 			
-			if(sqrDist > smoothingRadius * smoothingRadius) continue;
+			if(sqrDist > config.smoothingRadius * config.smoothingRadius) continue;
 
 			float dist = sqrt(sqrDist);
-			density += densityKernel(smoothingRadius, dist);
+			density += densityKernel(config.smoothingRadius, dist);
 		}
 	}
 	return density;
@@ -108,7 +139,7 @@ vec3 densityGradient(vec3 point) {
 // Raymarch settings
 const int maxSteps = 64;
 const float stepLength = 0.02;
-const float densityThreshold = 0.5;
+const float isoDensity = 0.5;
 
 
 // crappy color parameters for testing
@@ -148,9 +179,10 @@ void main() {
 //	gpassNormal = normalize(vec3(-dx, -dy, dz));
 //	//gpassNormal = normalize(vec3(CenterOffset, depthOffset));
 //
-//	vec4 clipPos = (Projection * vec4(depthOffsetPos, 1));
-//	float ndcPosZ = clipPos.z / clipPos.w;
-//	gl_FragDepth = ndcPosZ * 0.5 + 0.5;
+//	float clipZ = depthOffsetPos.z * Projection[2].z + Projection[3].z;
+//	float ndcZ = clipZ / -depthOffsetPos.z;
+//	gl_FragDepth = ndcZ * 0.5 + 0.5;
+
 
 	vec2 screenUVs = vTexCoord;
 	vec2 ndc = screenUVs * 2 - 1;
@@ -163,7 +195,7 @@ void main() {
 	float minDepth = minMaxDepth.r;
 	float maxDepth = minMaxDepth.g;
 
-	float rayDistance = raymarchDensity(CameraPos.xyz, rayDirection, maxSteps, stepLength, densityThreshold, minDepth);
+	float rayDistance = raymarchDensity(CameraPos.xyz, rayDirection, maxSteps, stepLength, isoDensity, minDepth);
 	if(rayDistance == -1.0) discard;
 
 	vec3 iso_vPos = vRayDirection * rayDistance;
