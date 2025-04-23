@@ -1,7 +1,6 @@
 #version 430 core
 
-#define MAX_PARTICLES 4096
-#define MAX_PARTICLES_PER_CELL 16
+#include "common.h"
 
 
 layout(std140) uniform PVMatrices {

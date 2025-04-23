@@ -1,10 +1,9 @@
 #version 430 core
 
-#define MAX_PARTICLES 4096
-#define MAX_PARTICLES_PER_CELL 16
+#include "common.h"
 
 
-layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = WORKGROUP_SIZE_X, local_size_y = 1, local_size_z = 1) in;
 
 
 layout(binding = 1, std140) uniform FluidConfig {
@@ -171,29 +170,21 @@ void main() {
 
 	// Project current and update previous particle positions
 	data.previousPositions[particleIndex].xyz = data.positions[particleIndex].xyz;
-	data.positions[particleIndex].xyz += data.velocities[particleIndex].xyz * config.timeStep;
+	//data.positions[particleIndex].xyz += data.velocities[particleIndex].xyz * config.timeStep;
 
-	//applyBoundaryConstraints(particleIndex);
 
 	uint cellHash = getCellHash(getCellCoords(data.positions[particleIndex].xyz));
-	//uint cellEntryCount = atomicAdd(data.cellEntries[cellHash], 1);
 
 	uint assignedCellIndex = atomicAdd(data.usedCells, uint(data.hashTable[cellHash] == 0xFFFFFFFF));
     atomicCompSwap(data.hashTable[cellHash], 0xFFFFFFFF, assignedCellIndex);
 
+	//uint cellEntryCount = atomicAdd(data.cellEntries[cellHash], 1);
 	//uint assignedCellIndex = atomicAdd(data.usedCells, uint(cellEntryCount == 0));
 	//atomicCompSwap(data.hashTable[cellHash], data.hashTable[cellHash] + cellEntryCount, assignedCellIndex);
 	//uint value = atomicExchange(data.hashTable[cellHash], assignedCellIndex);
 	//uint value = data.hashTable[cellHash];
 	//uint oldValue = atomicCompSwap(data.hashTable[cellHash], data.hashTable[cellHash] + cellEntryCount, assignedCellIndex);
 
-	//uint cellIndex = data.hashTable[cellHash];
-	//uint cellEntryIndex = cellIndex * MAX_PARTICLES_PER_CELL + cellEntryCount;
-	
-	// data.cells[cellEntryIndex] = particleIndex;
-
-	//memoryBarrier();
-	//barrier();
 
 //	// Memory barrier needed here
 //

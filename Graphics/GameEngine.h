@@ -61,8 +61,6 @@ protected:
 	Shader fluidDepthShader;
 	Shader raymarchShader;
 
-	//ComputeShader particleComputeShader;
-
 
 public:
 	GameEngine();

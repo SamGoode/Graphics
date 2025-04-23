@@ -148,7 +148,7 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	pointLights.init();
 
 	fluidSim.init(vec3(10, 0, 0), vec3(1, 2, 4), physicsEngine.gravity);
-	fluidSim.spawnRandomParticles(4096);
+	fluidSim.spawnRandomParticles(2000);
 
 	fluidSim.bindConfigUBO(1);
 	fluidSim.bindParticleSSBO(2);
@@ -176,8 +176,6 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	pointLightShader.bindUniformBuffer(0, "PVMatrices");
 
 	// Compute Shaders
-	//particleComputeShader.init("particleCompute.glsl");
-	//particleComputeShader.bindUniformBuffer(0, "PVMatrices");
 
 
 	// Framebuffers

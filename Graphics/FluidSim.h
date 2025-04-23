@@ -6,6 +6,8 @@
 #include <glm/ext.hpp>
 #include <glm/fwd.hpp>
 
+#include "common.h"
+
 #include "SpatialGrid.h"
 #include "UniformBuffer.h"
 #include "ShaderStorageBuffer.h"
@@ -18,9 +20,6 @@ using glm::vec2;
 using glm::vec3;
 using glm::vec4;
 using glm::uvec4;
-
-#define MAX_PARTICLES 4096
-#define MAX_PARTICLES_PER_CELL 16
 
 
 // SPH Fluid simulation within a bounding box

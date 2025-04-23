@@ -1,10 +1,8 @@
 #version 430 core
 
-#define MAX_PARTICLES 4096
-#define MAX_PARTICLES_PER_CELL 16
+#include "common.h"
 
-
-layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = WORKGROUP_SIZE_X, local_size_y = 1, local_size_z = 1) in;
 
 
 layout(binding = 1, std140) uniform FluidConfig {
@@ -191,5 +189,5 @@ void main() {
 	//applyBoundaryPressure(particleIndex);
 
 	// Compute implicit velocity
-	data.velocities[particleIndex] = (data.positions[particleIndex].xyz - data.previousPositions[particleIndex].xyz) / config.timeStep;
+	data.velocities[particleIndex].xyz = (data.positions[particleIndex].xyz - data.previousPositions[particleIndex].xyz) / config.timeStep;
 }

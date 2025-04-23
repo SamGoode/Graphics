@@ -1,7 +1,8 @@
 #include "Shader.h"
 
 #include <fstream>
-
+#include <string>
+#include <iostream>
 
 void Shader::init(const char* vertFileName, const char* fragFileName) {
 	assert(gl_id == 0 && "Shader already initialized");
@@ -25,7 +26,7 @@ void Shader::init(const char* vertFileName, const char* fragFileName) {
 		char* infoLog = new char[infoLogLength + 1];
 
 		glGetProgramInfoLog(gl_id, infoLogLength, 0, infoLog);
-		printf("Error: Failed to link Gizmo shader program!\n%s\n", infoLog);
+		printf("Error: Failed to link shader program!\n%s\n", infoLog);
 		delete[] infoLog;
 	}
 
@@ -39,18 +40,50 @@ unsigned int Shader::loadShaderFromFile(GLenum type, const char* fileName) {
 	std::ifstream fileStream;
 	fileStream.open(fileName, std::ios::in | std::ios::binary);
 
-	fileStream.seekg(0, fileStream.end);
-	int fileLength = fileStream.tellg();
-	fileStream.seekg(0, fileStream.beg);
+	std::string fileString;
+	
+	std::string line;
+	while (std::getline(fileStream, line)) {
+		if (line[0] == '#') {
+			if (line.substr(1, 7) == "include") {
+				size_t nameStart = line.find_first_of('"', 7) + 1;
+				size_t nameEnd = line.find_first_of('"', nameStart);
+				std::string name = line.substr(nameStart, nameEnd - nameStart);
 
-	char* fileText = new char[fileLength + 1];
-	fileStream.read(fileText, fileLength);
-	fileText[fileLength] = NULL;
+				std::ifstream includeFile;
+				includeFile.open(name, std::ios::in | std::ios::binary);
+				
+				includeFile.seekg(0, includeFile.end);
+				int fileLength = includeFile.tellg();
+				includeFile.seekg(0, includeFile.beg);
 
-	glShaderSource(shader, 1, (const char**)&fileText, 0);
+				char* buffer = new char[fileLength + 1];
+				includeFile.read(buffer, fileLength);
+				buffer[fileLength] = NULL;
+				
+				includeFile.close();
 
+				fileString.append(buffer);
+				fileString.append("\n");
+
+				delete[] buffer;
+
+				continue;
+			}
+		}
+		fileString.append(line + "\n");
+	}
 	fileStream.close();
-	delete[] fileText;
+
+	//fileStream.read(test.data(), fileLength);
+	//test.copy(fileText, sizeof(char) * (fileLength + 1));
+	//fileString[fileLength] = NULL;
+
+	const char* c_str = fileString.c_str();
+	glShaderSource(shader, 1, &c_str, 0);
+	//glShaderSource(shader, 1, (const char**)&fileText, 0);
+
+	//delete[] fileText;
 
 	return shader;
 }
@@ -105,7 +138,7 @@ void ComputeShader::init(const char* computeFileName, const char* empty) {
 		char* infoLog = new char[infoLogLength + 1];
 
 		glGetProgramInfoLog(gl_id, infoLogLength, 0, infoLog);
-		printf("Error: Failed to link Gizmo shader program!\n%s\n", infoLog);
+		printf("Error: Failed to link shader program!\n%s\n", infoLog);
 		delete[] infoLog;
 	}
 

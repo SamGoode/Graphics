@@ -35,10 +35,10 @@ void FluidSimSPH::update(float deltaTime) {
 		particleSSBO.subData(((19 * MAX_PARTICLES) + 1) * sizeof(float), MAX_PARTICLES * sizeof(unsigned int), particleSSBO.buffer.cellEntries);
 
 		particleComputeShader.use();
-		glDispatchCompute(particleCount / 256, 1, 1);
+		glDispatchCompute((particleCount / WORKGROUP_SIZE_X) + ((particleCount % WORKGROUP_SIZE_X) != 0), 1, 1);
 		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 		particleComputeShader2.use();
-		glDispatchCompute(particleCount / 256, 1, 1);
+		glDispatchCompute((particleCount / WORKGROUP_SIZE_X) + ((particleCount % WORKGROUP_SIZE_X) != 0), 1, 1);
 		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
 		//tick();
