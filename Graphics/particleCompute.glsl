@@ -4,7 +4,7 @@
 #define MAX_PARTICLES_PER_CELL 16
 
 
-layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 8, local_size_y = 1, local_size_z = 1) in;
 
 
 layout(binding = 1, std140) uniform FluidConfig {
@@ -161,14 +161,6 @@ void applyBoundaryConstraints(uint particleIndex) {
 //shared uint usedCells;
 
 void main() {
-//	if(gl_LocalInvocationID.x == 0) {
-//		atomicExchange(usedCells, 0);
-//
-//		for(int i = 0; i < config.particleCount; i++) {
-//			//atomicExchange(data.cellEntries[i], 0);
-//		}
-//	}
-
 	uint particleIndex = gl_GlobalInvocationID.x;
 	if(particleIndex >= config.particleCount) {
 		return;
@@ -183,42 +175,30 @@ void main() {
 
 	//applyBoundaryConstraints(particleIndex);
 
-	// Clear cellEntries
-	//usedCells = 0;
-	//data.cellEntries[gl_GlobalInvocationID.x] = 0;
-//	if(gl_GlobalInvocationID.x == 0) {
-//		atomicExchange(data.usedCells, 0);
-//		for(int i = 0; i < config.particleCount; i++) {
-//			//data.cellEntries[i] = 0;
-//			atomicExchange(data.cellEntries[i], 0);
-//		}
-//	}
 
-	//memoryBarrierBuffer();
-	memoryBarrier();
-	barrier();
-
-	// Memory barrier needed here
 	// usedCells and cellEntries are shared
 
 	uint cellHash = getCellHash(getCellCoords(data.positions[particleIndex].xyz));
 	uint cellEntryCount = atomicAdd(data.cellEntries[cellHash], 1);
 	//uint cellEntryCount = data.cellEntries[cellHash]++;
 
-	//memoryBarrierBuffer();
+	//memoryBarrier();
+	//barrier();
+	//uint assignedCellIndex = -1;
+	uint assignedCellIndex = atomicAdd(data.usedCells, 0x01 & cellEntryCount);
+	if(cellEntryCount == 0) {
+		//assignedCellIndex = atomicAdd(data.usedCells, 1);
+		atomicExchange(data.hashTable[cellHash], assignedCellIndex); // Allocates new 'memory'
+	}
+	//uint assignedCellIndex = atomicAdd(data.usedCells, 1 * min(cellEntryCount, 1));
+	//atomicExchange(data.hashTable[cellHash], assignedCellIndex * min(cellEntryCount, 1)); // Allocates new 'memory'
+
 	memoryBarrier();
 	barrier();
 
-	if(cellEntryCount == 0) {
-		uint assignedCellIndex = atomicAdd(data.usedCells, 1);
-		memoryBarrier();
-		barrier();
-		atomicExchange(data.hashTable[cellHash], assignedCellIndex); // Allocates new 'memory'
-		memoryBarrier();
-		barrier();
-	}
-	//memoryBarrierShared();
-	//memoryBarrierBuffer();
+	// if(cellEntryCount == 0) {
+	// 	atomicExchange(data.hashTable[cellHash], assignedCellIndex); // Allocates new 'memory'
+	// }
 	memoryBarrier();
 	barrier();
 
@@ -227,8 +207,8 @@ void main() {
 	
 	data.cells[cellEntryIndex] = particleIndex;
 
-	memoryBarrier();
-	barrier();
+	//memoryBarrier();
+	//barrier();
 
 //	// Memory barrier needed here
 //

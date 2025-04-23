@@ -33,7 +33,7 @@ void FluidSimSPH::update(float deltaTime) {
 		particleSSBO.subData(18 * MAX_PARTICLES * sizeof(float), sizeof(unsigned int), &usedCells);
 		particleSSBO.subData(((19 * MAX_PARTICLES) + 1) * sizeof(float), MAX_PARTICLES * sizeof(unsigned int), particleSSBO.buffer.cellEntries);
 
-		glDispatchCompute(particleCount/1, 1, 1);
+		glDispatchCompute(particleCount/8, 1, 1);
 		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
 		//tick();
@@ -71,7 +71,7 @@ void FluidSimSPH::tick() {
 	// Boundaries
 	for (unsigned int i = 0; i < particleCount; i++) {
 		applyBoundaryConstraints(i);
-		applyBoundaryPressure(i);
+		//applyBoundaryPressure(i);
 	}
 
 

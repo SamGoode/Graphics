@@ -161,27 +161,27 @@ void main() {
 //	vec2 screenUVs = gl_FragCoord.xy / ScreenSize;
 	//vec2 texCoord = gl_FragCoord.xy / vec2(1600, 900);//textureSize(fluidDepthPass, 0).xy;
 
-//	vec2 minMaxDepth = texture(fluidDepthPass, vTexCoord).rg;
-//	float minDepth = minMaxDepth.r;
-//
-//	vec2 screenUVs = vTexCoord;
-//	vec2 ndc = screenUVs * 2 - 1;
-//	vec3 vRayDirection = normalize((ProjectionInverse * vec4(ndc, 1, 1)).xyz);
-//	vec3 depthOffsetPos = vRayDirection * minDepth;
-//
-//	gpassAlbedoSpec = water;
-//	gpassPosition = depthOffsetPos;
-//
-//	float dz = 0.001;
-//	float dx = (texture(fluidDepthPass, vTexCoord + vec2(dz, 0)).r - texture(fluidDepthPass, vTexCoord + vec2(-dz, 0)).r) * 0.5;
-//	float dy = (texture(fluidDepthPass, vTexCoord + vec2(0, dz)).r - texture(fluidDepthPass, vTexCoord + vec2(0, -dz)).r) * 0.5;
-//
-//	gpassNormal = normalize(vec3(-dx, -dy, dz));
-//	//gpassNormal = normalize(vec3(CenterOffset, depthOffset));
-//
-//	float clipZ = depthOffsetPos.z * Projection[2].z + Projection[3].z;
-//	float ndcZ = clipZ / -depthOffsetPos.z;
-//	gl_FragDepth = ndcZ * 0.5 + 0.5;
+	// vec2 minMaxDepth = texture(fluidDepthPass, vTexCoord).rg;
+	// float minDepth = minMaxDepth.r;
+
+	// vec2 screenUVs = vTexCoord;
+	// vec2 ndc = screenUVs * 2 - 1;
+	// vec3 vRayDirection = normalize((ProjectionInverse * vec4(ndc, 1, 1)).xyz);
+	// vec3 depthOffsetPos = vRayDirection * minDepth;
+
+	// gpassAlbedoSpec = water;
+	// gpassPosition = depthOffsetPos;
+
+	// float dz = 0.001;
+	// float dx = (texture(fluidDepthPass, vTexCoord + vec2(dz, 0)).r - texture(fluidDepthPass, vTexCoord + vec2(-dz, 0)).r) * 0.5;
+	// float dy = (texture(fluidDepthPass, vTexCoord + vec2(0, dz)).r - texture(fluidDepthPass, vTexCoord + vec2(0, -dz)).r) * 0.5;
+
+	// gpassNormal = normalize(vec3(-dx, -dy, dz));
+	// //gpassNormal = normalize(vec3(CenterOffset, depthOffset));
+
+	// float clipZ = depthOffsetPos.z * Projection[2].z + Projection[3].z;
+	// float ndcZ = clipZ / -depthOffsetPos.z;
+	// gl_FragDepth = ndcZ * 0.5 + 0.5;
 
 
 	vec2 screenUVs = vTexCoord;
