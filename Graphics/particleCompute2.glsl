@@ -166,37 +166,14 @@ void main() {
 		return;
 	}
 
-	// Apply gravity
-	data.velocities[particleIndex].xyz += config.gravity.xyz * config.timeStep;
-
-	// Project current and update previous particle positions
-	data.previousPositions[particleIndex].xyz = data.positions[particleIndex].xyz;
-	data.positions[particleIndex].xyz += data.velocities[particleIndex].xyz * config.timeStep;
-
-	//applyBoundaryConstraints(particleIndex);
-
 	uint cellHash = getCellHash(getCellCoords(data.positions[particleIndex].xyz));
-	//uint cellEntryCount = atomicAdd(data.cellEntries[cellHash], 1);
-
-	uint assignedCellIndex = atomicAdd(data.usedCells, uint(data.hashTable[cellHash] == 0xFFFFFFFF));
-    atomicCompSwap(data.hashTable[cellHash], 0xFFFFFFFF, assignedCellIndex);
-
-	//uint assignedCellIndex = atomicAdd(data.usedCells, uint(cellEntryCount == 0));
-	//atomicCompSwap(data.hashTable[cellHash], data.hashTable[cellHash] + cellEntryCount, assignedCellIndex);
-	//uint value = atomicExchange(data.hashTable[cellHash], assignedCellIndex);
-	//uint value = data.hashTable[cellHash];
-	//uint oldValue = atomicCompSwap(data.hashTable[cellHash], data.hashTable[cellHash] + cellEntryCount, assignedCellIndex);
-
-	//uint cellIndex = data.hashTable[cellHash];
-	//uint cellEntryIndex = cellIndex * MAX_PARTICLES_PER_CELL + cellEntryCount;
+	uint cellIndex = data.hashTable[cellHash];
+    
+	uint cellEntryCount = atomicAdd(data.cellEntries[cellHash], 1);
+	uint cellEntryIndex = cellIndex * MAX_PARTICLES_PER_CELL + cellEntryCount;
 	
-	// data.cells[cellEntryIndex] = particleIndex;
+	data.cells[cellEntryIndex] = particleIndex;
 
-	//memoryBarrier();
-	//barrier();
-
-//	// Memory barrier needed here
-//
 //	calculateDensity(particleIndex);
 //
 //	// Memory barrier needed here
@@ -210,9 +187,9 @@ void main() {
 //	positions[particleIndex].xyz += pressureDisplacements[particleIndex].xyz;
 
 	// Boundaries
-	//applyBoundaryConstraints(particleIndex);
+	applyBoundaryConstraints(particleIndex);
 	//applyBoundaryPressure(particleIndex);
 
 	// Compute implicit velocity
-	//data.velocities[particleIndex] = (data.positions[particleIndex] - data.previousPositions[particleIndex]) / config.timeStep;
+	data.velocities[particleIndex] = (data.positions[particleIndex].xyz - data.previousPositions[particleIndex].xyz) / config.timeStep;
 }

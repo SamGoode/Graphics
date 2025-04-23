@@ -181,5 +181,6 @@
     <None Include="fluidDepth_frag.glsl">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="particleCompute2.glsl" />
   </ItemGroup>
 </Project>

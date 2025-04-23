@@ -196,6 +196,7 @@
     <None Include="laplacian.glsl" />
     <None Include="fullscreen_quad.glsl" />
     <None Include="particleCompute.glsl" />
+    <None Include="particleCompute2.glsl" />
     <None Include="pointLight_frag.glsl" />
     <None Include="pointLight_vert.glsl" />
     <None Include="raymarch.glsl" />
