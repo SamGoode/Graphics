@@ -3,7 +3,7 @@
 #include "common.h"
 
 
-layout(std140) uniform PVMatrices {
+layout(binding = PROJECTIONVIEW_UBO, std140) uniform PVMatrices {
 	mat4 View;
 	mat4 Projection;
 	mat4 ViewInverse;
@@ -11,7 +11,7 @@ layout(std140) uniform PVMatrices {
 	vec4 CameraPos;
 };
 
-layout(binding = 1, std140) uniform FluidConfig {
+layout(binding = FLUID_CONFIG_UBO, std140) uniform FluidConfig {
 	vec4 boundsMin;
 	vec4 boundsMax;
 
@@ -25,7 +25,7 @@ layout(binding = 1, std140) uniform FluidConfig {
 	uint particleCount;
 } config;
 
-layout(binding = 2, std430) readonly restrict buffer FluidData {
+layout(binding = FLUID_DATA_SSBO, std430) readonly restrict buffer FluidData {
 	vec4 positions[MAX_PARTICLES];
 	vec4 previousPositions[MAX_PARTICLES];
 	vec4 velocities[MAX_PARTICLES];

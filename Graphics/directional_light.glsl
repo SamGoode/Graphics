@@ -1,8 +1,11 @@
-#version 410
+#version 430 core
+
+#include "common.h"
+
 
 in vec2 vTexCoord;
 
-layout(std140) uniform PVMatrices {
+layout(binding = PROJECTIONVIEW_UBO, std140) uniform PVMatrices {
 	mat4 View;
 	mat4 Projection;
 	mat4 ViewInverse;

@@ -60,9 +60,6 @@ private:
 	};
 
 	struct ssboData {
-		//unsigned int particleCount;
-		//float smoothingRadius; // All particles share same radius
-		//vec2 padding;
 		vec4 positions[MAX_PARTICLES];
 		vec4 previousPositions[MAX_PARTICLES];
 		vec4 velocities[MAX_PARTICLES];
@@ -80,9 +77,12 @@ private:
 
 	UniformBuffer<uboData> configUBO;
 	ShaderStorageBuffer<ssboData> particleSSBO;
+	DispatchIndirectBuffer dispatchIndirect;
 
 	ComputeShader particleComputeShader;
-	ComputeShader particleComputeShader2;
+	ComputeShader computeDensityShader;
+	ComputeShader computePressureShader;
+
 
 public:
 	FluidSimSPH() {}
@@ -104,9 +104,12 @@ public:
 		
 		configUBO.init();
 		particleSSBO.init();
+		dispatchIndirect.init();
 
 		particleComputeShader.init("particleCompute.glsl");
-		particleComputeShader2.init("particleCompute2.glsl");
+		computeDensityShader.init("computeDensity.glsl");
+		computePressureShader.init("computePressure.glsl");
+
 
 		for (int i = 0; i < MAX_PARTICLES; i++) {
 			particleSSBO.buffer.hashTable[i] = 0xFFFFFFFF;

@@ -40,3 +40,40 @@ public:
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, bindingIndex, ssbo);
 	}
 };
+
+
+class DispatchIndirectBuffer {
+private:
+	unsigned int gl_id = 0;
+
+public:
+	DispatchIndirectBuffer() {}
+	~DispatchIndirectBuffer() {
+		glDeleteBuffers(1, &gl_id);
+	}
+
+	void init() {
+		assert(gl_id == 0 && "Indirect Dispatch buffer already initialized");
+
+		glGenBuffers(1, &gl_id);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, gl_id);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, 3 * sizeof(unsigned int), NULL, GL_DYNAMIC_DRAW);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	}
+
+	void clear() {
+		unsigned int empty[3] = { 0, 0, 0 };
+
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, gl_id);
+		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 3 * sizeof(unsigned int), empty);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	}
+
+	void bindToIndex(GLuint bindingIndex) {
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, bindingIndex, gl_id);
+	}
+
+	void bind() {
+		glBindBuffer(GL_DISPATCH_INDIRECT_BUFFER, gl_id);
+	}
+};

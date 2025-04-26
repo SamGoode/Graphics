@@ -122,6 +122,9 @@
     <ClInclude Include="ShaderStorageBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="mesh_vert.glsl">
@@ -181,6 +184,11 @@
     <None Include="fluidDepth_frag.glsl">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="particleCompute2.glsl" />
+    <None Include="computeDensity.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="computePressure.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

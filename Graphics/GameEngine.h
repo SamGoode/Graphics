@@ -49,17 +49,17 @@ protected:
 	UniformBuffer<pvmLayout> pvmUBO;
 
 	FrameBuffer shadowFBO;
-	FrameBuffer fluidDepthFBO;
 	FrameBuffer gpassFBO;
+	FrameBuffer fluidDepthFBO;
 	FrameBuffer lightFBO;
 
 	Shader shadowShader;
 	Shader gpassShader;
+	Shader fluidDepthShader;
+	Shader raymarchShader;
 	Shader lightShader;
 	Shader pointLightShader;
 	Shader compositeShader;
-	Shader fluidDepthShader;
-	Shader raymarchShader;
 
 
 public:

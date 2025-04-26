@@ -147,33 +147,28 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 
 	pointLights.init();
 
-	fluidSim.init(vec3(10, 0, 0), vec3(1, 2, 4), physicsEngine.gravity);
-	fluidSim.spawnRandomParticles(2000);
+	fluidSim.init(vec3(8, -2, 1), vec3(4, 4, 4), physicsEngine.gravity);
+	fluidSim.bindConfigUBO(FLUID_CONFIG_UBO);
+	fluidSim.bindParticleSSBO(FLUID_DATA_SSBO);
 
-	fluidSim.bindConfigUBO(1);
-	fluidSim.bindParticleSSBO(2);
+	fluidSim.spawnRandomParticles(65536);
 	fluidSim.sendDataToGPU();
+
 
 	// Uniform Buffer Objects
 	pvmUBO.buffer.projection = projection;
 	pvmUBO.buffer.projectionInverse = glm::inverse(projection);
 	pvmUBO.init();
-	pvmUBO.bind(0);
+	pvmUBO.bind(PROJECTIONVIEW_UBO);
 
 	// Shaders
 	shadowShader.init("shadow.glsl", "empty.glsl");
+	gpassShader.init("gpass_vert.glsl", "gpass_frag.glsl");
 	fluidDepthShader.init("fluidDepth_vert.glsl", "fluidDepth_frag.glsl");
 	raymarchShader.init("fullscreen_quad.glsl", "raymarch.glsl");
-	gpassShader.init("gpass_vert.glsl", "gpass_frag.glsl");
 	lightShader.init("fullscreen_quad.glsl", "directional_light.glsl");
 	pointLightShader.init("pointLight_vert.glsl", "pointLight_frag.glsl");
 	compositeShader.init("fullscreen_quad.glsl", "composite.glsl");
-
-	fluidDepthShader.bindUniformBuffer(0, "PVMatrices");
-	raymarchShader.bindUniformBuffer(0, "PVMatrices");
-	gpassShader.bindUniformBuffer(0, "PVMatrices");
-	lightShader.bindUniformBuffer(0, "PVMatrices");
-	pointLightShader.bindUniformBuffer(0, "PVMatrices");
 
 	// Compute Shaders
 
@@ -192,7 +187,6 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 
 	fluidDepthFBO.setSize(windowWidth, windowHeight);
 	fluidDepthFBO.genRenderBuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
-	//fluidDepthFBO.shareRenderBuffer(gpassFBO);
 	fluidDepthFBO.genTextureStorage(GL_RG32F); // Min and Max ray depth
 	fluidDepthFBO.init();
 

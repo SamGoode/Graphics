@@ -1,4 +1,5 @@
-#version 410
+#version 430 core
+
 
 in vec3 vLightPosition;
 in float vLightRadius;

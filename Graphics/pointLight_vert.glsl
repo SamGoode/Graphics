@@ -1,8 +1,7 @@
 #version 430 core
 
-// might do the inbuilt vertex array trick later
-// per-vertex data
-//layout(location = 0) in vec3 Position;
+#include "common.h"
+
 
 // per-instance data
 layout(location = 0) in struct instanceData {
@@ -12,7 +11,7 @@ layout(location = 0) in struct instanceData {
 } instance;
 
 
-layout(std140) uniform PVMatrices {
+layout(binding = PROJECTIONVIEW_UBO, std140) uniform PVMatrices {
 	mat4 View;
 	mat4 Projection;
 	mat4 ViewInverse;

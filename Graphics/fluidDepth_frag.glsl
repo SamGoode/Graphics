@@ -1,12 +1,15 @@
 #version 430 core
 
+#include "common.h"
+
+
 in vec4 vPosition;
 //in float Depth;
 in vec2 CenterOffset;
 
 flat in float SmoothingRadius;
 
-layout(std140) uniform PVMatrices {
+layout(binding = PROJECTIONVIEW_UBO, std140) uniform PVMatrices {
 	mat4 View;
 	mat4 Projection;
 	mat4 ViewInverse;

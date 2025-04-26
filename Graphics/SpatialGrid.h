@@ -21,12 +21,13 @@ private:
 	unsigned int cellCapacity; // max positions per cell
 
 	unsigned int* hashTable = nullptr;
-	unsigned int* cellEntries = nullptr; // keeps track of amount of positions per cell hash
+	unsigned int* cellEntries = nullptr; // keeps track of amount of positions per used cell index
 	unsigned int usedCells = 0;
 	unsigned int* cells = nullptr;
 
 	// 'hashTable' is sparse and maps to 'cells'
 	// 'cells' is dense/contiguous and contains ids of positions within that cell.
+	// 'cellEntries' is also dense/contiguous
 
 public:
 	SpatialHashGrid() {}
@@ -42,9 +43,9 @@ public:
 		capacity = _capacity;
 		cellCapacity = _cellCapacity;
 
-		hashTable = new unsigned int[capacity] {0};
-		cellEntries = new unsigned int[capacity] {0};
-		cells = new unsigned int[capacity * cellCapacity] {0};
+		hashTable = new unsigned int[capacity] {};
+		cellEntries = new unsigned int[capacity] {};
+		cells = new unsigned int[capacity * cellCapacity] {};
 	}
 
 	const unsigned int* getHashTable() { return hashTable; }
@@ -66,6 +67,12 @@ public:
 		return ((p1 * (unsigned int)cellCoords.x) ^ (p2 * (unsigned int)cellCoords.y) ^ (p3 * (unsigned int)cellCoords.z)) % capacity;
 	}
 
+	void resetHashTable() {
+		for (int i = 0; i < capacity; i++) {
+			hashTable[i] = 0xFFFFFFFF;
+		}
+	}
+
 	void clearCellEntries() {
 		for (int i = 0; i < capacity; i++) {
 			cellEntries[i] = 0;
@@ -76,21 +83,24 @@ public:
 		assert(count <= capacity);
 
 		// these need to be reset
-		clearCellEntries();
 		usedCells = 0;
+		resetHashTable();
+		clearCellEntries();
 
 		entries = count;
 		for (int i = 0; i < entries; i++) {
 			unsigned int cellHash = getCellHash(getCellCoords(positions[i]));
-			assert(cellEntries[cellHash] <= cellCapacity && "Cell's allocated capacity reached");
+			//assert(cellEntries[cellHash] <= cellCapacity && "Cell's allocated capacity reached");
 
-			if (cellEntries[cellHash] == 0) {
+			if (hashTable[cellHash] == 0xFFFFFFFF) {
 				hashTable[cellHash] = usedCells++; // Allocates new 'memory'
 			}
 
 			unsigned int cellIndex = hashTable[cellHash];
-			cells[cellIndex * cellCapacity + cellEntries[cellHash]] = i;
-			cellEntries[cellHash]++;
+			cells[cellIndex * cellCapacity + cellEntries[cellIndex]] = i;
+			cellEntries[cellIndex]++;
+			//cells[cellIndex * cellCapacity + cellEntries[cellHash]] = i;
+			//cellEntries[cellHash]++;
 		}
 	}
 };

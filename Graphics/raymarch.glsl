@@ -7,7 +7,7 @@ in vec2 vTexCoord;
 
 uniform sampler2D fluidDepthPass;
 
-layout(std140) uniform PVMatrices {
+layout(binding = PROJECTIONVIEW_UBO, std140) uniform PVMatrices {
 	mat4 View;
 	mat4 Projection;
 	mat4 ViewInverse;
@@ -15,7 +15,7 @@ layout(std140) uniform PVMatrices {
 	vec4 CameraPos;
 };
 
-layout(binding = 1, std140) uniform FluidConfig {
+layout(binding = FLUID_CONFIG_UBO, std140) uniform FluidConfig {
 	vec4 boundsMin;
 	vec4 boundsMax;
 	vec4 gravity;
@@ -28,7 +28,7 @@ layout(binding = 1, std140) uniform FluidConfig {
 	uint particleCount;
 } config;
 
-layout(binding = 2, std430) readonly restrict buffer FluidData {
+layout(binding = FLUID_DATA_SSBO, std430) readonly restrict buffer FluidData {
 	vec4 positions[MAX_PARTICLES];
 	vec4 previousPositions[MAX_PARTICLES];
 	vec4 velocities[MAX_PARTICLES];
@@ -39,18 +39,9 @@ layout(binding = 2, std430) readonly restrict buffer FluidData {
 	uint usedCells;
 	uint hashTable[MAX_PARTICLES];
 	uint cellEntries[MAX_PARTICLES];
-	uint cells[MAX_PARTICLES * MAX_PARTICLES_PER_CELL];
+	uint cells[];
 } data;
 
-//layout(binding = 1, std430) readonly restrict buffer FluidSimSSBO {
-//	uint particleCount;
-//	float smoothingRadius;
-//	vec2 padding;
-//	vec4 positions[MAX_PARTICLES];
-//	uint hashTable[MAX_PARTICLES];
-//	uint cellEntries[MAX_PARTICLES];
-//	uint cells[MAX_PARTICLES * MAX_PARTICLES_PER_CELL];
-//};
 
 layout(location = 0) out vec4 gpassAlbedoSpec;
 layout(location = 1) out vec3 gpassPosition;
@@ -81,18 +72,16 @@ float sampleDensity(vec3 point) {
 	ivec3 cellCoords = getCellCoords(point);
 
 	float density = 0.0;
-//	if(data.cellEntries[getCellHash(cellCoords)] > 2) {
-//		density = 1000.0;
-//	}
-
 	for(int i = 0; i < 27; i++) {
 		ivec3 offset = ivec3(i % 3, (i / 3) % 3, i / 9) - ivec3(1); // inefficient?
 		ivec3 offsetCoords = ivec3(cellCoords) + offset;
 
 		uint cellHash = getCellHash(offsetCoords);
-		uint entries = data.cellEntries[cellHash];
-
 		uint cellIndex = data.hashTable[cellHash];
+
+		if(cellIndex == 0xFFFFFFFF) continue;
+
+		uint entries = data.cellEntries[cellIndex];
 
 		for(uint n = 0; n < entries; n++) {
 			uint particleIndex = data.cells[(cellIndex * MAX_PARTICLES_PER_CELL) + n];
