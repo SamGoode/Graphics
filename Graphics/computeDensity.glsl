@@ -20,17 +20,17 @@ layout(binding = FLUID_CONFIG_UBO, std140) uniform FluidConfig {
 } config;
 
 layout(binding = FLUID_DATA_SSBO, std430) restrict buffer FluidData {
-	vec4 positions[MAX_PARTICLES];
-	vec4 previousPositions[MAX_PARTICLES];
-	vec4 velocities[MAX_PARTICLES];
-	vec4 pressureDisplacements[MAX_PARTICLES];
-	float densities[MAX_PARTICLES];
-	float nearDensities[MAX_PARTICLES];
+	readonly vec4 positions[MAX_PARTICLES];
+	readonly vec4 previousPositions[MAX_PARTICLES];
+	readonly vec4 velocities[MAX_PARTICLES];
+	readonly vec4 pressureDisplacements[MAX_PARTICLES];
+	writeonly float densities[MAX_PARTICLES]; // These
+	writeonly float nearDensities[MAX_PARTICLES]; // Ones
 
-	uint usedCells;
-	uint hashTable[MAX_PARTICLES];
-	uint cellEntries[MAX_PARTICLES];
-	uint cells[];
+	readonly uint usedCells;
+	readonly uint hashTable[MAX_PARTICLES];
+	readonly uint cellEntries[MAX_PARTICLES];
+	readonly uint cells[];
 } data;
 
 
@@ -85,7 +85,6 @@ void calculateDensity(uint particleIndex) {
 		ivec3 offsetCellCoords = cellCoords + offset;
 		
 		uint cellHash = getCellHash(offsetCellCoords);
-		//uint entries = data.cellEntries[cellHash];
 		uint cellIndex = data.hashTable[cellHash];
 		if(cellIndex == 0xFFFFFFFF) continue;
 
@@ -117,7 +116,7 @@ void applyBoundaryConstraints(uint particleIndex) {
 }
 
 
-shared ivec3 cellCoords;
+//shared ivec3 cellCoords;
 
 //shared float densityCache[MAX_PARTICLES_PER_CELL];
 //shared float nearDensityCache[MAX_PARTICLES_PER_CELL];
@@ -199,29 +198,4 @@ void main() {
 //
 //	data.densities[particleIndex] = total;
 //	data.nearDensities[particleIndex] = nearTotal;
-
-
-//	memoryBarrierShared();
-//	barrier();
-
-
-
-
-
-//	// Memory barrier needed here
-//	// pressureDisplacements cache is shared
-//
-//	calculatePressureDisplacements(particleIndex);
-//
-//	// Memory barrier
-//
-//	// Apply pressure displacements
-//	positions[particleIndex].xyz += pressureDisplacements[particleIndex].xyz;
-
-	// Boundaries
-	//applyBoundaryConstraints(particleIndex);
-	//applyBoundaryPressure(particleIndex);
-
-	// Compute implicit velocity
-	//data.velocities[particleIndex].xyz = (data.positions[particleIndex].xyz - data.previousPositions[particleIndex].xyz) / config.timeStep;
 }

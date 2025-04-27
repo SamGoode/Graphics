@@ -127,7 +127,7 @@ vec3 densityGradient(vec3 point) {
 // Raymarch settings
 const int maxSteps = 64;
 const float stepLength = 0.02;
-const float isoDensity = 0.5;
+const float isoDensity = 1.0;
 
 
 // crappy color parameters for testing

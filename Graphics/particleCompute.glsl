@@ -72,6 +72,56 @@ void applyBoundaryConstraints(uint particleIndex) {
 	data.positions[particleIndex].xyz = clamp(particlePos, config.boundsMin.xyz, config.boundsMax.xyz);
 }
 
+void applyBoundaryPressure(uint particleIndex) {
+	float artificialDensity = config.restDensity * 1.f;
+	float pressure = artificialDensity * config.nearStiffness;
+
+	vec3 particlePos = data.positions[particleIndex].xyz;
+
+	vec3 boundsMin = config.boundsMin.xyz;
+	vec3 boundsMax = config.boundsMax.xyz;
+	// X-Axis
+	if (particlePos.x + config.smoothingRadius > boundsMax.x) {
+		float dist = boundsMax.x - particlePos.x;
+		float value = 1 - (dist / config.smoothingRadius);
+
+		particlePos.x -= pressure * value * value * config.timeStep * config.timeStep;
+	}
+	else if (particlePos.x - config.smoothingRadius < boundsMin.x) {
+		float dist = particlePos.x - boundsMin.x;
+		float value = 1 - (dist / config.smoothingRadius);
+
+		particlePos.x += pressure * value * value * config.timeStep * config.timeStep;
+	}
+	// Y-Axis
+	if (particlePos.y + config.smoothingRadius > boundsMax.y) {
+		float dist = boundsMax.y - particlePos.y;
+		float value = 1 - (dist / config.smoothingRadius);
+
+		particlePos.y -= pressure * value * value * config.timeStep * config.timeStep;
+	}
+	else if (particlePos.y - config.smoothingRadius < boundsMin.y) {
+		float dist = particlePos.y - boundsMin.y;
+		float value = 1 - (dist / config.smoothingRadius);
+
+		particlePos.y += pressure * value * value * config.timeStep * config.timeStep;
+	}
+	// Z-Axis
+	if (particlePos.z + config.smoothingRadius > boundsMax.z) {
+		float dist = boundsMax.z - particlePos.z;
+		float value = 1 - (dist / config.smoothingRadius);
+
+		particlePos.z -= pressure * value * value * config.timeStep * config.timeStep;
+	}
+	else if (particlePos.z - config.smoothingRadius < boundsMin.z) {
+		float dist = particlePos.z - boundsMin.z;
+		float value = 1 - (dist / config.smoothingRadius);
+
+		particlePos.z += pressure * value * value * config.timeStep * config.timeStep;
+	}
+
+	data.positions[particleIndex].xyz = particlePos;
+}
 
 
 void main() {
@@ -80,12 +130,30 @@ void main() {
 		return;
 	}
 
+	//---------(From previous timestep)--------------
+	// Apply pressure displacements
+	data.positions[particleIndex].xyz += data.pressureDisplacements[particleIndex].xyz;
+	data.pressureDisplacements[particleIndex].xyz = vec3(0); // reset
+
+	// Boundaries
+	applyBoundaryConstraints(particleIndex);
+	applyBoundaryPressure(particleIndex);
+
+	// Compute implicit velocity
+	data.velocities[particleIndex].xyz = (data.positions[particleIndex].xyz - data.previousPositions[particleIndex].xyz) / config.timeStep;
+	//------------------------------------------------
+
+
 	// Apply gravity
 	data.velocities[particleIndex].xyz += config.gravity.xyz * config.timeStep;
 
 	// Project current and update previous particle positions
 	data.previousPositions[particleIndex].xyz = data.positions[particleIndex].xyz;
 	data.positions[particleIndex].xyz += data.velocities[particleIndex].xyz * config.timeStep;
+
+	// Boundaries
+	//applyBoundaryConstraints(particleIndex);
+	//applyBoundaryPressure(particleIndex);
 
 
 	uint cellHash = getCellHash(getCellCoords(data.positions[particleIndex].xyz));
@@ -106,20 +174,13 @@ void main() {
 	}
     
 	uint cellEntryCount = atomicAdd(data.cellEntries[cellIndex], 1);
-
 	uint cellEntryIndex = cellIndex * MAX_PARTICLES_PER_CELL + cellEntryCount;
 	
 	data.cells[cellEntryIndex] = particleIndex;
 
-	atomicMax(indirectCmd.num_groups_x, (data.usedCells / COMPUTE_CELLS_PER_WORKGROUP) + uint((data.usedCells % COMPUTE_CELLS_PER_WORKGROUP) != 0));
+
 	//atomicMax(indirectCmd.num_groups_x, data.usedCells);
+	atomicMax(indirectCmd.num_groups_x, (data.usedCells / COMPUTE_CELLS_PER_WORKGROUP) + uint((data.usedCells % COMPUTE_CELLS_PER_WORKGROUP) != 0));
 	indirectCmd.num_groups_y = 1;
 	indirectCmd.num_groups_z = 1;
-
-	// Boundaries
-	//applyBoundaryConstraints(particleIndex);
-	//applyBoundaryPressure(particleIndex);
-
-	// Compute implicit velocity
-	//data.velocities[particleIndex] = (data.positions[particleIndex] - data.previousPositions[particleIndex]) / config.timeStep;
 }

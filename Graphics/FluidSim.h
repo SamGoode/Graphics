@@ -89,7 +89,7 @@ public:
 	~FluidSimSPH() {}
 
 	void init(vec3 _position, vec3 _bounds, vec3 _gravity, float _smoothingRadius = 0.1f,
-		float _restDensity = 2.f, float _stiffness = 10.f, float _nearStiffness = 40.f) {
+		float _restDensity = 2.f, float _stiffness = 20.f, float _nearStiffness = 80.f) {
 		
 		position = _position;
 		bounds = _bounds;
@@ -143,12 +143,14 @@ public:
 
 		for (int i = 0; i < particleCount; i++) {
 			particleSSBO.buffer.positions[i] = vec4(positions[i], 1);
+			particleSSBO.buffer.previousPositions[i] = vec4(positions[i], 1);
 			particleSSBO.buffer.velocities[i] = vec4(0, 0, 0, 1);
+			particleSSBO.buffer.pressureDisplacements[i] = vec4(0, 0, 0, 1);
 		}
 
-		//std::memcpy(particleSSBO.buffer.hashTable, spatialHashGrid.getHashTable(), MAX_PARTICLES * sizeof(unsigned int));
-		//std::memcpy(particleSSBO.buffer.cellEntries, spatialHashGrid.getCellEntries(), MAX_PARTICLES * sizeof(unsigned int));
-		//std::memcpy(particleSSBO.buffer.cells, spatialHashGrid.getCells(), spatialHashGrid.getUsedCells() * MAX_PARTICLES_PER_CELL * sizeof(unsigned int));
+		std::memcpy(particleSSBO.buffer.hashTable, spatialHashGrid.getHashTable(), MAX_PARTICLES * sizeof(unsigned int));
+		std::memcpy(particleSSBO.buffer.cellEntries, spatialHashGrid.getCellEntries(), MAX_PARTICLES * sizeof(unsigned int));
+		std::memcpy(particleSSBO.buffer.cells, spatialHashGrid.getCells(), spatialHashGrid.getUsedCells() * MAX_PARTICLES_PER_CELL * sizeof(unsigned int));
 
 		configUBO.subData();
 		particleSSBO.subData();

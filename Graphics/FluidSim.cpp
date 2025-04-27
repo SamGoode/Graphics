@@ -26,38 +26,34 @@ void FluidSimSPH::spawnRandomParticles(unsigned int spawnCount) {
 void FluidSimSPH::update(float deltaTime) {
 	accumulatedTime += deltaTime;
 
-	//particleComputeShader.use();
-	
-	
-
 	for (int step = 0; step < maxTicksPerUpdate && accumulatedTime > fixedTimeStep; step++) {
-		unsigned int usedCells = 0;
-		particleSSBO.subData(18 * MAX_PARTICLES * sizeof(float), sizeof(unsigned int), &usedCells);
-		particleSSBO.subData(((18 * MAX_PARTICLES) + 1) * sizeof(float), MAX_PARTICLES * sizeof(unsigned int), particleSSBO.buffer.hashTable);
-		particleSSBO.subData(((19 * MAX_PARTICLES) + 1) * sizeof(float), MAX_PARTICLES * sizeof(unsigned int), particleSSBO.buffer.cellEntries);
-		glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
+		//unsigned int usedCells = 0;
+		//particleSSBO.subData(18 * MAX_PARTICLES * sizeof(float), sizeof(unsigned int), &usedCells);
+		//particleSSBO.subData(((18 * MAX_PARTICLES) + 1) * sizeof(float), MAX_PARTICLES * sizeof(unsigned int), particleSSBO.buffer.hashTable);
+		//particleSSBO.subData(((19 * MAX_PARTICLES) + 1) * sizeof(float), MAX_PARTICLES * sizeof(unsigned int), particleSSBO.buffer.cellEntries);
+		//glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
 
-		dispatchIndirect.bindToIndex(3);
-		dispatchIndirect.clear();
+		//dispatchIndirect.bindToIndex(3);
+		//dispatchIndirect.clear();
 
-		particleComputeShader.use();
-		glDispatchCompute((particleCount / WORKGROUP_SIZE_X) + ((particleCount % WORKGROUP_SIZE_X) != 0), 1, 1);
-		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-		
-		dispatchIndirect.bind();
-		glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
-		
-		computeDensityShader.use();
-		glDispatchComputeIndirect(0);
-		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+		//particleComputeShader.use();
+		//glDispatchCompute((particleCount / WORKGROUP_SIZE_X) + ((particleCount % WORKGROUP_SIZE_X) != 0), 1, 1);
+		//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+		//
+		//dispatchIndirect.bind();
+		//glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
+		//
+		//computeDensityShader.use();
+		//glDispatchComputeIndirect(0);
+		//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
-		computePressureShader.use();
-		int time = std::time(0);
-		computePressureShader.bindUniform(time, "time");
-		glDispatchComputeIndirect(0);
-		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+		//computePressureShader.use();
+		//int time = std::time(0);
+		//computePressureShader.bindUniform(time, "time");
+		//glDispatchComputeIndirect(0);
+		//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
-		//tick();
+		tick();
 		accumulatedTime -= fixedTimeStep;
 	}
 }
@@ -71,7 +67,7 @@ void FluidSimSPH::tick() {
 	// Project current and update previous particle positions
 	for (unsigned int i = 0; i < particleCount; i++) {
 		previousPositions[i] = positions[i];
-		//positions[i] += velocities[i] * fixedTimeStep;
+		positions[i] += velocities[i] * fixedTimeStep;
 	}
 
 	// Build spatial hash grid with projected positions
@@ -92,7 +88,7 @@ void FluidSimSPH::tick() {
 	// Boundaries
 	for (unsigned int i = 0; i < particleCount; i++) {
 		applyBoundaryConstraints(i);
-		//applyBoundaryPressure(i);
+		applyBoundaryPressure(i);
 	}
 
 

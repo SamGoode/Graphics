@@ -20,21 +20,21 @@ layout(binding = FLUID_CONFIG_UBO, std140) uniform FluidConfig {
 } config;
 
 layout(binding = FLUID_DATA_SSBO, std430) restrict buffer FluidData {
-	vec4 positions[MAX_PARTICLES];
-	vec4 previousPositions[MAX_PARTICLES];
-	vec4 velocities[MAX_PARTICLES];
-	vec4 pressureDisplacements[MAX_PARTICLES];
-	float densities[MAX_PARTICLES];
-	float nearDensities[MAX_PARTICLES];
+	readonly vec4 positions[MAX_PARTICLES];
+	readonly vec4 previousPositions[MAX_PARTICLES];
+	readonly vec4 velocities[MAX_PARTICLES];
+	writeonly vec4 pressureDisplacements[MAX_PARTICLES]; // This one
+	readonly float densities[MAX_PARTICLES];
+	readonly float nearDensities[MAX_PARTICLES];
 
-	uint usedCells;
-	uint hashTable[MAX_PARTICLES];
-	uint cellEntries[MAX_PARTICLES];
-	uint cells[];
+	readonly uint usedCells;
+	readonly uint hashTable[MAX_PARTICLES];
+	readonly uint cellEntries[MAX_PARTICLES];
+	readonly uint cells[];
 } data;
 
-uniform uint time;
 
+uniform uint time;
 
 // Random function
 vec3 randVec(uint index) {
@@ -140,7 +140,7 @@ void applyBoundaryConstraints(uint particleIndex) {
 }
 
 void applyBoundaryPressure(uint particleIndex) {
-	float artificialDensity = config.restDensity * 1.5f;
+	float artificialDensity = config.restDensity * 1.f;
 	float pressure = artificialDensity * config.nearStiffness;
 
 	vec3 particlePos = data.positions[particleIndex].xyz;
@@ -259,16 +259,16 @@ void main() {
 
 	data.pressureDisplacements[particleIndex].xyz = pressureDisplacementSum;
 
-
 	// Apply pressure displacements
 	//data.positions[particleIndex].xyz += data.pressureDisplacements[particleIndex].xyz;
-	data.positions[particleIndex].xyz += pressureDisplacementSum;
+	//data.positions[particleIndex].xyz += pressureDisplacementSum;
+	//memoryBarrierBuffer();
 
 
-	// Boundaries
-	applyBoundaryConstraints(particleIndex);
-	applyBoundaryPressure(particleIndex);
-
-	// Compute implicit velocity
-	data.velocities[particleIndex].xyz = (data.positions[particleIndex].xyz - data.previousPositions[particleIndex].xyz) / config.timeStep;
+//	// Boundaries
+//	applyBoundaryConstraints(particleIndex);
+//	applyBoundaryPressure(particleIndex);
+//
+//	// Compute implicit velocity
+//	data.velocities[particleIndex].xyz = (data.positions[particleIndex].xyz - data.previousPositions[particleIndex].xyz) / config.timeStep;
 }
