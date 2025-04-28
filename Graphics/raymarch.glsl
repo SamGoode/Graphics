@@ -32,11 +32,12 @@ layout(binding = FLUID_DATA_SSBO, std430) readonly restrict buffer FluidData {
 	vec4 positions[MAX_PARTICLES];
 	vec4 previousPositions[MAX_PARTICLES];
 	vec4 velocities[MAX_PARTICLES];
-	vec4 pressureDisplacements[MAX_PARTICLES];
+	//vec4 pressureDisplacements[MAX_PARTICLES];
 	float densities[MAX_PARTICLES];
 	float nearDensities[MAX_PARTICLES];
 
 	uint usedCells;
+	uint hashes[MAX_PARTICLES];
 	uint hashTable[MAX_PARTICLES];
 	uint cellEntries[MAX_PARTICLES];
 	uint cells[];

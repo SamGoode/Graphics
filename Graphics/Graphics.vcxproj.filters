@@ -190,5 +190,8 @@
     <None Include="computePressure.glsl">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="buildHashTable.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

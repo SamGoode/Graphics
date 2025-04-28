@@ -151,7 +151,7 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	fluidSim.bindConfigUBO(FLUID_CONFIG_UBO);
 	fluidSim.bindParticleSSBO(FLUID_DATA_SSBO);
 
-	fluidSim.spawnRandomParticles(10000);
+	fluidSim.spawnRandomParticles(60000);
 	fluidSim.sendDataToGPU();
 
 
@@ -242,7 +242,7 @@ void GameEngine::render() {
 	RenderSystem* renderSystem = ecs.getSystem<RenderSystem>();
 	renderSystem->addMeshInstances(ecs, meshes);
 
-	fluidSim.sendDataToGPU();
+	//fluidSim.sendDataToGPU();
 
 
 	// Shadow Pass

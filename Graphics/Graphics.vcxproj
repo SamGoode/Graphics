@@ -183,6 +183,7 @@
     <ClInclude Include="UniformBuffer.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="buildHashTable.glsl" />
     <None Include="composite.glsl" />
     <None Include="directional_light.glsl" />
     <None Include="empty.glsl" />

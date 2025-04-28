@@ -20,14 +20,15 @@ layout(binding = FLUID_CONFIG_UBO, std140) uniform FluidConfig {
 } config;
 
 layout(binding = FLUID_DATA_SSBO, std430) restrict buffer FluidData {
-	readonly vec4 positions[MAX_PARTICLES];
+	vec4 positions[MAX_PARTICLES];
 	readonly vec4 previousPositions[MAX_PARTICLES];
 	readonly vec4 velocities[MAX_PARTICLES];
-	writeonly vec4 pressureDisplacements[MAX_PARTICLES]; // This one
+	//writeonly vec4 pressureDisplacements[MAX_PARTICLES]; // This one
 	readonly float densities[MAX_PARTICLES];
 	readonly float nearDensities[MAX_PARTICLES];
 
 	readonly uint usedCells;
+	uint hashes[MAX_PARTICLES];
 	readonly uint hashTable[MAX_PARTICLES];
 	readonly uint cellEntries[MAX_PARTICLES];
 	readonly uint cells[];
@@ -88,51 +89,51 @@ float calculatePressureForce(float pressure, float nearPressure, float radius, f
 }
 
 
-// Calculates pressure displacements caused by specified particle
-void calculatePressureDisplacements(uint particleIndex) {
-	ivec3 cellCoords = getCellCoords(data.positions[particleIndex].xyz);
+// // Calculates pressure displacements caused by specified particle
+// void calculatePressureDisplacements(uint particleIndex) {
+// 	ivec3 cellCoords = getCellCoords(data.positions[particleIndex].xyz);
 
-	float sqrSmoothingRadius = config.smoothingRadius * config.smoothingRadius;
+// 	float sqrSmoothingRadius = config.smoothingRadius * config.smoothingRadius;
 
-	float pressure = calculatePressure(data.densities[particleIndex], config.restDensity, config.stiffness);
-	float nearPressure = calculatePressure(data.nearDensities[particleIndex], 0, config.nearStiffness);
+// 	float pressure = calculatePressure(data.densities[particleIndex], config.restDensity, config.stiffness);
+// 	float nearPressure = calculatePressure(data.nearDensities[particleIndex], 0, config.nearStiffness);
 
-	vec3 pressureDisplacementSum = vec3(0);
-	for (unsigned int i = 0; i < 27; i++) {
-		ivec3 offset = ivec3(i % 3, (i / 3) % 3, i / 9) - ivec3(1);
-		ivec3 offsetCellCoords = cellCoords + offset;
+// 	vec3 pressureDisplacementSum = vec3(0);
+// 	for (unsigned int i = 0; i < 27; i++) {
+// 		ivec3 offset = ivec3(i % 3, (i / 3) % 3, i / 9) - ivec3(1);
+// 		ivec3 offsetCellCoords = cellCoords + offset;
 
-		unsigned int cellHash = getCellHash(offsetCellCoords);
-		//uint entries = data.cellEntries[cellHash];
-		uint cellIndex = data.hashTable[cellHash];
-		if(cellIndex == 0xFFFFFFFF) continue;
+// 		unsigned int cellHash = getCellHash(offsetCellCoords);
+// 		//uint entries = data.cellEntries[cellHash];
+// 		uint cellIndex = data.hashTable[cellHash];
+// 		if(cellIndex == 0xFFFFFFFF) continue;
 
-		uint entries = data.cellEntries[cellIndex];
+// 		uint entries = data.cellEntries[cellIndex];
 
-		for (unsigned int n = 0; n < entries; n++) {
-			uint cellEntryIndex = cellIndex * MAX_PARTICLES_PER_CELL + n;
-			unsigned int otherParticleIndex = data.cells[cellEntryIndex];
-			if (otherParticleIndex == particleIndex) continue;
+// 		for (unsigned int n = 0; n < entries; n++) {
+// 			uint cellEntryIndex = cellIndex * MAX_PARTICLES_PER_CELL + n;
+// 			unsigned int otherParticleIndex = data.cells[cellEntryIndex];
+// 			if (otherParticleIndex == particleIndex) continue;
 
-			vec3 toParticle = data.positions[otherParticleIndex].xyz - data.positions[particleIndex].xyz;
-			float sqrDist = dot(toParticle, toParticle);
+// 			vec3 toParticle = data.positions[otherParticleIndex].xyz - data.positions[particleIndex].xyz;
+// 			float sqrDist = dot(toParticle, toParticle);
 
-			if (sqrDist > sqrSmoothingRadius) continue;
+// 			if (sqrDist > sqrSmoothingRadius) continue;
 
-			float dist = sqrt(sqrDist);
-			vec3 unitDirection = (dist > 0) ? toParticle / dist : normalize(randVec(particleIndex % gl_GlobalInvocationID.x));
+// 			float dist = sqrt(sqrDist);
+// 			vec3 unitDirection = (dist > 0) ? toParticle / dist : normalize(randVec(particleIndex % gl_GlobalInvocationID.x));
 
-			// assume mass = 1
-			float pressureForce = calculatePressureForce(pressure, nearPressure, config.smoothingRadius, dist);
-			vec3 pressureDisplacement = unitDirection * pressureForce * config.timeStep * config.timeStep;
+// 			// assume mass = 1
+// 			float pressureForce = calculatePressureForce(pressure, nearPressure, config.smoothingRadius, dist);
+// 			vec3 pressureDisplacement = unitDirection * pressureForce * config.timeStep * config.timeStep;
 
-			data.pressureDisplacements[otherParticleIndex].xyz += pressureDisplacement;
-			pressureDisplacementSum -= pressureDisplacement;
-		}
-	}
+// 			data.pressureDisplacements[otherParticleIndex].xyz += pressureDisplacement;
+// 			pressureDisplacementSum -= pressureDisplacement;
+// 		}
+// 	}
 
-	data.pressureDisplacements[particleIndex].xyz += pressureDisplacementSum;
-}
+// 	data.pressureDisplacements[particleIndex].xyz += pressureDisplacementSum;
+// }
 
 void applyBoundaryConstraints(uint particleIndex) {
 	vec3 particlePos = data.positions[particleIndex].xyz;
@@ -191,26 +192,14 @@ void applyBoundaryPressure(uint particleIndex) {
 }
 
 
-//shared ivec3 cellCoords[COMPUTE_CELLS_PER_WORKGROUP];
-
 void main() {
-	//uint cellIndex = gl_WorkGroupID.x;
 	uint cellIndex = gl_GlobalInvocationID.x;
-
-	ivec3 cellCoords = getCellCoords(data.positions[data.cells[cellIndex * MAX_PARTICLES_PER_CELL]].xyz);
-
-//	if(gl_LocalInvocationID.y == 0) {
-//		uint particleIndex = data.cells[cellIndex * MAX_PARTICLES_PER_CELL];
-//		cellCoords = getCellCoords(data.positions[particleIndex].xyz);
-//	}
-//	memoryBarrierShared();
-//	barrier();
-
 	uint entryIndex = gl_LocalInvocationID.y;
-
 	if(cellIndex >= data.usedCells || entryIndex >= data.cellEntries[cellIndex]) {
 		return;
 	}
+
+	ivec3 cellCoords = getCellCoords(data.positions[data.cells[cellIndex * MAX_PARTICLES_PER_CELL]].xyz);
 
 	uint cellEntryIndex = cellIndex * MAX_PARTICLES_PER_CELL + entryIndex;
 	uint particleIndex = data.cells[cellEntryIndex];
@@ -257,18 +246,17 @@ void main() {
 		}
 	}
 
-	data.pressureDisplacements[particleIndex].xyz = pressureDisplacementSum;
+	//data.pressureDisplacements[particleIndex].xyz = pressureDisplacementSum;
 
 	// Apply pressure displacements
+	data.positions[particleIndex].xyz += pressureDisplacementSum;
 	//data.positions[particleIndex].xyz += data.pressureDisplacements[particleIndex].xyz;
-	//data.positions[particleIndex].xyz += pressureDisplacementSum;
 	//memoryBarrierBuffer();
 
+	// Boundaries
+	applyBoundaryConstraints(particleIndex);
+	applyBoundaryPressure(particleIndex);
 
-//	// Boundaries
-//	applyBoundaryConstraints(particleIndex);
-//	applyBoundaryPressure(particleIndex);
-//
-//	// Compute implicit velocity
-//	data.velocities[particleIndex].xyz = (data.positions[particleIndex].xyz - data.previousPositions[particleIndex].xyz) / config.timeStep;
+	// Compute implicit velocity
+	data.velocities[particleIndex].xyz = (data.positions[particleIndex].xyz - data.previousPositions[particleIndex].xyz) / config.timeStep;
 }

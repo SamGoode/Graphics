@@ -63,11 +63,12 @@ private:
 		vec4 positions[MAX_PARTICLES];
 		vec4 previousPositions[MAX_PARTICLES];
 		vec4 velocities[MAX_PARTICLES];
-		vec4 pressureDisplacements[MAX_PARTICLES];
+		//vec4 pressureDisplacements[MAX_PARTICLES];
 		float densities[MAX_PARTICLES];
 		float nearDensities[MAX_PARTICLES];
 
 		unsigned int usedCells;
+		unsigned int hashes[MAX_PARTICLES];
 		unsigned int hashTable[MAX_PARTICLES];
 		unsigned int cellEntries[MAX_PARTICLES];
 		unsigned int cells[MAX_PARTICLES * MAX_PARTICLES_PER_CELL];
@@ -80,6 +81,7 @@ private:
 	DispatchIndirectBuffer dispatchIndirect;
 
 	ComputeShader particleComputeShader;
+	ComputeShader computeHashTableShader;
 	ComputeShader computeDensityShader;
 	ComputeShader computePressureShader;
 
@@ -107,11 +109,13 @@ public:
 		dispatchIndirect.init();
 
 		particleComputeShader.init("particleCompute.glsl");
+		computeHashTableShader.init("buildHashTable.glsl");
 		computeDensityShader.init("computeDensity.glsl");
 		computePressureShader.init("computePressure.glsl");
 
 
 		for (int i = 0; i < MAX_PARTICLES; i++) {
+			//particleSSBO.buffer.hashes[i] = 0xFFFFFFFF;
 			particleSSBO.buffer.hashTable[i] = 0xFFFFFFFF;
 			particleSSBO.buffer.cellEntries[i] = 0;
 		}
@@ -145,12 +149,12 @@ public:
 			particleSSBO.buffer.positions[i] = vec4(positions[i], 1);
 			particleSSBO.buffer.previousPositions[i] = vec4(positions[i], 1);
 			particleSSBO.buffer.velocities[i] = vec4(0, 0, 0, 1);
-			particleSSBO.buffer.pressureDisplacements[i] = vec4(0, 0, 0, 1);
+			//particleSSBO.buffer.pressureDisplacements[i] = vec4(0, 0, 0, 1);
 		}
 
-		std::memcpy(particleSSBO.buffer.hashTable, spatialHashGrid.getHashTable(), MAX_PARTICLES * sizeof(unsigned int));
-		std::memcpy(particleSSBO.buffer.cellEntries, spatialHashGrid.getCellEntries(), MAX_PARTICLES * sizeof(unsigned int));
-		std::memcpy(particleSSBO.buffer.cells, spatialHashGrid.getCells(), spatialHashGrid.getUsedCells() * MAX_PARTICLES_PER_CELL * sizeof(unsigned int));
+		//std::memcpy(particleSSBO.buffer.hashTable, spatialHashGrid.getHashTable(), MAX_PARTICLES * sizeof(unsigned int));
+		//std::memcpy(particleSSBO.buffer.cellEntries, spatialHashGrid.getCellEntries(), MAX_PARTICLES * sizeof(unsigned int));
+		//std::memcpy(particleSSBO.buffer.cells, spatialHashGrid.getCells(), spatialHashGrid.getUsedCells() * MAX_PARTICLES_PER_CELL * sizeof(unsigned int));
 
 		configUBO.subData();
 		particleSSBO.subData();
