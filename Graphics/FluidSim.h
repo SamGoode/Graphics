@@ -90,7 +90,7 @@ public:
 	FluidSimSPH() {}
 	~FluidSimSPH() {}
 
-	void init(vec3 _position, vec3 _bounds, vec3 _gravity, float _smoothingRadius = 0.1f,
+	void init(vec3 _position, vec3 _bounds, vec3 _gravity, float _smoothingRadius = 0.15f,
 		float _restDensity = 2.f, float _stiffness = 20.f, float _nearStiffness = 80.f) {
 		
 		position = _position;
@@ -152,9 +152,9 @@ public:
 			//particleSSBO.buffer.pressureDisplacements[i] = vec4(0, 0, 0, 1);
 		}
 
-		//std::memcpy(particleSSBO.buffer.hashTable, spatialHashGrid.getHashTable(), MAX_PARTICLES * sizeof(unsigned int));
-		//std::memcpy(particleSSBO.buffer.cellEntries, spatialHashGrid.getCellEntries(), MAX_PARTICLES * sizeof(unsigned int));
-		//std::memcpy(particleSSBO.buffer.cells, spatialHashGrid.getCells(), spatialHashGrid.getUsedCells() * MAX_PARTICLES_PER_CELL * sizeof(unsigned int));
+		std::memcpy(particleSSBO.buffer.hashTable, spatialHashGrid.getHashTable(), MAX_PARTICLES * sizeof(unsigned int));
+		std::memcpy(particleSSBO.buffer.cellEntries, spatialHashGrid.getCellEntries(), MAX_PARTICLES * sizeof(unsigned int));
+		std::memcpy(particleSSBO.buffer.cells, spatialHashGrid.getCells(), spatialHashGrid.getUsedCells() * MAX_PARTICLES_PER_CELL * sizeof(unsigned int));
 
 		configUBO.subData();
 		particleSSBO.subData();
@@ -188,8 +188,40 @@ private:
 		return pressure * weight + nearPressure * weight * weight * 0.5f;
 	}
 
+	// just for show, don't actually compute the kernel like this
+	static float polySixKernel(float radius, float dist) {
+		constexpr float a = 315/(glm::pi<float>() * 64);
+		float normalizationFactor = a * glm::pow(radius, -9);
+		
+		float value = radius * radius - dist * dist;
+		return value * value * value * normalizationFactor;
+	}
+
+	// just for show, don't actually compute the kernel like this
+	static float spikyKernel(float radius, float dist) {
+		constexpr float a = 15 / glm::pi<float>();
+		float normalizationFactor = a * glm::pow(radius, -6);
+
+		float value = radius - dist;
+		return value * value * value * normalizationFactor;
+	}
+
+	// just for show, don't actually compute the kernel like this
+	static float spikyKernelGradient(float radius, float dist) {
+		constexpr float a = 45 / glm::pi<float>();
+		float normalizationFactor = a * glm::pow(radius, -6);
+
+		float value = radius - dist;
+		return value * value * normalizationFactor;
+	}
+
+	// Clavet paper with double density kernel
 	void calculateDensity(unsigned int particleIndex);
 	void applyPressure(unsigned int particleIndex);
+
+	// Muller paper on enforcing incompressibility as a position constraint
+	void calculateLambda(unsigned int particleIndex);
+	void calculateDisplacement(unsigned int particleIndex);
 
 	void applyBoundaryConstraints(unsigned int particleIndex);
 	void applyBoundaryPressure(unsigned int particleIndex);

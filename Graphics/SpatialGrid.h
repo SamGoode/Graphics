@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <algorithm>
 
 #include <glm/ext.hpp>
@@ -46,6 +47,25 @@ public:
 		hashTable = new unsigned int[capacity] {};
 		cellEntries = new unsigned int[capacity] {};
 		cells = new unsigned int[capacity * cellCapacity] {};
+	}
+
+	
+	void iterate3x3x3(ivec3 cellCoords, std::function<void(unsigned int)> iteratedFunc) {
+		for (unsigned int i = 0; i < 27; i++) {
+			ivec3 offset = ivec3(i % 3, (i / 3) % 3, i / 9) - ivec3(1);
+			ivec3 offsetCellCoords = cellCoords + offset;
+
+			unsigned int cellHash = getCellHash(offsetCellCoords);
+			unsigned int cellIndex = hashTable[cellHash];
+
+			if (cellIndex == 0xFFFFFFFF) continue;
+
+			unsigned int entries = cellEntries[cellIndex];
+			for (unsigned int n = 0; n < entries; n++) {
+				unsigned int entryIndex = cells[cellIndex * cellCapacity + n];
+				iteratedFunc(entryIndex);
+			}
+		}
 	}
 
 	const unsigned int* getHashTable() { return hashTable; }

@@ -27,37 +27,37 @@ void FluidSimSPH::update(float deltaTime) {
 	accumulatedTime += deltaTime;
 
 	for (int step = 0; step < maxTicksPerUpdate && accumulatedTime > fixedTimeStep; step++) {
-		unsigned int usedCells = 0;
-		particleSSBO.subData(14 * MAX_PARTICLES * sizeof(float), sizeof(unsigned int), &usedCells);
-		particleSSBO.subData(((15 * MAX_PARTICLES) + 1) * sizeof(float), MAX_PARTICLES * sizeof(unsigned int), particleSSBO.buffer.hashTable);
-		particleSSBO.subData(((16 * MAX_PARTICLES) + 1) * sizeof(float), MAX_PARTICLES * sizeof(unsigned int), particleSSBO.buffer.cellEntries);
-		glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
+		//unsigned int usedCells = 0;
+		//particleSSBO.subData(14 * MAX_PARTICLES * sizeof(float), sizeof(unsigned int), &usedCells);
+		//particleSSBO.subData(((15 * MAX_PARTICLES) + 1) * sizeof(float), MAX_PARTICLES * sizeof(unsigned int), particleSSBO.buffer.hashTable);
+		//particleSSBO.subData(((16 * MAX_PARTICLES) + 1) * sizeof(float), MAX_PARTICLES * sizeof(unsigned int), particleSSBO.buffer.cellEntries);
+		//glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
 
-		dispatchIndirect.bindToIndex(3);
-		dispatchIndirect.clear();
+		//dispatchIndirect.bindToIndex(3);
+		//dispatchIndirect.clear();
 
-		particleComputeShader.use();
-		glDispatchCompute((particleCount / WORKGROUP_SIZE_X) + ((particleCount % WORKGROUP_SIZE_X) != 0), 1, 1);
-		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-		
-		computeHashTableShader.use();
-		glDispatchCompute((particleCount / WORKGROUP_SIZE_X) + ((particleCount % WORKGROUP_SIZE_X) != 0), 1, 1);
-		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-		
-		dispatchIndirect.bind();
-		glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
-		
-		computeDensityShader.use();
-		glDispatchComputeIndirect(0);
-		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+		//particleComputeShader.use();
+		//glDispatchCompute((particleCount / WORKGROUP_SIZE_X) + ((particleCount % WORKGROUP_SIZE_X) != 0), 1, 1);
+		//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+		//
+		//computeHashTableShader.use();
+		//glDispatchCompute((particleCount / WORKGROUP_SIZE_X) + ((particleCount % WORKGROUP_SIZE_X) != 0), 1, 1);
+		//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+		//
+		//dispatchIndirect.bind();
+		//glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
+		//
+		//computeDensityShader.use();
+		//glDispatchComputeIndirect(0);
+		//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
-		computePressureShader.use();
-		int time = std::time(0);
-		computePressureShader.bindUniform(time, "time");
-		glDispatchComputeIndirect(0);
-		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+		//computePressureShader.use();
+		//int time = std::time(0);
+		//computePressureShader.bindUniform(time, "time");
+		//glDispatchComputeIndirect(0);
+		//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
-		//tick();
+		tick();
 		accumulatedTime -= fixedTimeStep;
 	}
 }
@@ -103,50 +103,30 @@ void FluidSimSPH::tick() {
 }
 
 void FluidSimSPH::calculateDensity(unsigned int particleIndex) {
-	const unsigned int* hashTable = spatialHashGrid.getHashTable();
-	const unsigned int* cellEntries = spatialHashGrid.getCellEntries();
-	const unsigned int* cells = spatialHashGrid.getCells();
-
 	const vec3& particlePos = positions[particleIndex];
 	ivec3 cellCoords = spatialHashGrid.getCellCoords(particlePos);
 	
 	float density = 0.f;
 	float nearDensity = 0.f;
-	for (unsigned int i = 0; i < 27; i++) {
-		ivec3 offset = ivec3(i % 3, (i / 3) % 3, i / 9) - ivec3(1);
-		ivec3 offsetCellCoords = cellCoords + offset;
-		
-		unsigned int cellHash = spatialHashGrid.getCellHash(offsetCellCoords);
-		//unsigned int entries = cellEntries[cellHash];
-		unsigned int cellIndex = hashTable[cellHash];
 
-		if (cellIndex == 0xFFFFFFFF) continue;
-		
-		unsigned int entries = cellEntries[cellIndex];
+	auto func = [&](unsigned int otherParticleIndex) {
+		vec3 toParticle = positions[otherParticleIndex] - particlePos;
+		float sqrDist = dot(toParticle, toParticle);
 
-		for (unsigned int n = 0; n < entries; n++) {
-			// The particle's local density should include its own influence so it doesn't matter if 'otherParticle' is itself.
-			unsigned int otherParticle = cells[cellIndex * MAX_PARTICLES_PER_CELL + n];
-			vec3 toParticle = positions[otherParticle] - particlePos;
-			float sqrDist = dot(toParticle, toParticle);
+		if (sqrDist > smoothingRadius * smoothingRadius) return;
 
-			if (sqrDist > smoothingRadius * smoothingRadius) continue;
+		float dist = sqrt(sqrDist);
+		density += densityKernel(smoothingRadius, dist);
+		nearDensity += nearDensityKernel(smoothingRadius, dist);
+	};
 
-			float dist = sqrt(sqrDist);
-			density += densityKernel(smoothingRadius, dist);
-			nearDensity += nearDensityKernel(smoothingRadius, dist);
-		}
-	}
+	spatialHashGrid.iterate3x3x3(cellCoords, func);
 
 	densities[particleIndex] = density;
 	nearDensities[particleIndex] = nearDensity;
 }
 
 void FluidSimSPH::applyPressure(unsigned int particleIndex) {
-	const unsigned int* hashTable = spatialHashGrid.getHashTable();
-	const unsigned int* cellEntries = spatialHashGrid.getCellEntries();
-	const unsigned int* cells = spatialHashGrid.getCells();
-
 	vec3& particlePos = positions[particleIndex];
 	ivec3 cellCoords = spatialHashGrid.getCellCoords(particlePos);
 
@@ -154,41 +134,38 @@ void FluidSimSPH::applyPressure(unsigned int particleIndex) {
 	float nearPressure = calculatePressure(nearDensities[particleIndex], 0, nearStiffness);
 
 	vec3 pressureDisplacementSum = vec3(0);
-	for (unsigned int i = 0; i < 27; i++) {
-		ivec3 offset = ivec3(i % 3, (i / 3) % 3, i / 9) - ivec3(1);
-		ivec3 offsetCellCoords = cellCoords + offset;
 
-		unsigned int cellHash = spatialHashGrid.getCellHash(offsetCellCoords);
-		//unsigned int entries = cellEntries[cellHash];
-		unsigned int cellIndex = hashTable[cellHash];
+	auto func = [&](unsigned int otherParticleIndex) {
+		// The particle should not apply pressure to itself
+		if (otherParticleIndex == particleIndex) return;
 
-		if (cellIndex == 0xFFFFFFFF) continue;
+		vec3 toParticle = positions[otherParticleIndex] - particlePos;
+		float sqrDist = dot(toParticle, toParticle);
 
-		unsigned int entries = cellEntries[cellIndex];
+		if (sqrDist > smoothingRadius * smoothingRadius) return;
 
-		for (unsigned int n = 0; n < entries; n++) {
-			// The particle should not apply pressure to itself
-			unsigned int otherParticle = cells[cellIndex * MAX_PARTICLES_PER_CELL + n];
-			if (otherParticle == particleIndex) continue;
+		float dist = sqrt(sqrDist);
+		vec3 unitDirection = (dist > 0) ? toParticle / dist : glm::sphericalRand(1.f);
 
-			vec3 toParticle = positions[otherParticle] - particlePos;
-			float sqrDist = dot(toParticle, toParticle);
+		float pressureForce = calculatePressureForce(pressure, nearPressure, smoothingRadius, dist);
+		vec3 pressureDisplacement = unitDirection * pressureForce * fixedTimeStep * fixedTimeStep;
 
-			if (sqrDist > smoothingRadius * smoothingRadius) continue;
+		// assume mass = 1
+		positions[otherParticleIndex] += pressureDisplacement;
+		pressureDisplacementSum -= pressureDisplacement;
+	};
 
-			float dist = sqrt(sqrDist);
-			vec3 unitDirection = (dist > 0) ? toParticle / dist : glm::sphericalRand(1.f);
-
-			float pressureForce = calculatePressureForce(pressure, nearPressure, smoothingRadius, dist);
-			vec3 pressureDisplacement = unitDirection * pressureForce * fixedTimeStep * fixedTimeStep;
-
-			// assume mass = 1
-			positions[otherParticle] += pressureDisplacement;
-			pressureDisplacementSum -= pressureDisplacement;
-		}
-	}
+	spatialHashGrid.iterate3x3x3(cellCoords, func);
 
 	particlePos += pressureDisplacementSum;
+}
+
+void FluidSimSPH::calculateLambda(unsigned int particleIndex) {
+
+}
+
+void FluidSimSPH::calculateDisplacement(unsigned int particleIndex) {
+
 }
 
 void FluidSimSPH::applyBoundaryConstraints(unsigned int particleIndex) {

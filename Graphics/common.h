@@ -1,6 +1,7 @@
 // Common parameters
 
-#define MAX_PARTICLES 65536
+//#define MAX_PARTICLES 65536
+#define MAX_PARTICLES 262144
 #define MAX_PARTICLES_PER_CELL 32
 
 #define WORKGROUP_SIZE_X 1024
