@@ -45,6 +45,9 @@ private:
 	float densities[MAX_PARTICLES];
 	float nearDensities[MAX_PARTICLES];
 
+	float lambdas[MAX_PARTICLES];
+	vec3 displacements[MAX_PARTICLES];
+
 	struct uboData {
 		vec4 boundsMin;
 		vec4 boundsMax;
@@ -91,7 +94,7 @@ public:
 	~FluidSimSPH() {}
 
 	void init(vec3 _position, vec3 _bounds, vec3 _gravity, float _smoothingRadius = 0.15f,
-		float _restDensity = 2.f, float _stiffness = 20.f, float _nearStiffness = 80.f) {
+		float _restDensity = 1.2f, float _stiffness = 20.f, float _nearStiffness = 80.f) {
 		
 		position = _position;
 		bounds = _bounds;
