@@ -15,11 +15,11 @@ using glm::vec3;
 // Uses an actual hashing algorithm to allow for infinite bounds
 class SpatialHashGrid {
 private:
-	float cellSize;
+	float cellSize = 0.f;
 
 	unsigned int entries = 0;
-	unsigned int capacity;
-	unsigned int cellCapacity; // max positions per cell
+	unsigned int capacity = 0;
+	unsigned int cellCapacity = 0; // max entries per cell
 
 	unsigned int* hashTable = nullptr;
 	unsigned int* cellEntries = nullptr; // keeps track of amount of positions per used cell index
@@ -44,9 +44,11 @@ public:
 		capacity = _capacity;
 		cellCapacity = _cellCapacity;
 
-		hashTable = new unsigned int[capacity] {};
+		hashTable = new unsigned int[capacity];
 		cellEntries = new unsigned int[capacity] {};
 		cells = new unsigned int[capacity * cellCapacity] {};
+
+		resetHashTable();
 	}
 
 	
@@ -88,13 +90,13 @@ public:
 	}
 
 	void resetHashTable() {
-		for (int i = 0; i < capacity; i++) {
+		for (unsigned int i = 0; i < capacity; i++) {
 			hashTable[i] = 0xFFFFFFFF;
 		}
 	}
 
 	void clearCellEntries() {
-		for (int i = 0; i < capacity; i++) {
+		for (unsigned int i = 0; i < capacity; i++) {
 			cellEntries[i] = 0;
 		}
 	}
@@ -108,7 +110,7 @@ public:
 		clearCellEntries();
 
 		entries = count;
-		for (int i = 0; i < entries; i++) {
+		for (unsigned int i = 0; i < entries; i++) {
 			unsigned int cellHash = getCellHash(getCellCoords(positions[i]));
 			//assert(cellEntries[cellHash] <= cellCapacity && "Cell's allocated capacity reached");
 
@@ -127,14 +129,14 @@ public:
 
 class SpatialGrid {
 private:
-	vec3 bounds;
-	float cellSize;
+	vec3 bounds = vec3(0);
+	float cellSize = 0.f;
 
-	ivec3 gridBounds;
-	unsigned int cellCount;
+	ivec3 gridBounds = ivec3(0);
+	unsigned int cellCount = 0;
 
 	unsigned int entries = 0;
-	unsigned int capacity;
+	unsigned int capacity = 0;
 
 	// (position index, cell hash)
 	ivec2* hashList = nullptr;
@@ -160,7 +162,7 @@ public:
 		hashList = new ivec2[capacity];
 		lookupTable = new ivec2[cellCount]{ ivec2(-1) };
 
-		for (int i = 0; i < cellCount; i++) {
+		for (unsigned int i = 0; i < cellCount; i++) {
 			lookupTable[i] = ivec2(-1);
 		}
 	}
@@ -196,7 +198,7 @@ private:
 		assert(count <= capacity);
 
 		entries = count;
-		for (int i = 0; i < entries; i++) {
+		for (unsigned int i = 0; i < entries; i++) {
 			hashList[i] = ivec2(i, getCellHash(getCellCoords(positions[i])));
 		}
 	}
@@ -206,13 +208,13 @@ private:
 	void generateLookupTable() {
 		assert(entries > 0 && "Hashlist is empty");
 
-		for (int i = 0; i < cellCount; i++) {
+		for (unsigned int i = 0; i < cellCount; i++) {
 			lookupTable[i] = ivec2(-1);
 		}
 
 		int currentStartIndex = 0;
 		int previousCellHash = -1;
-		for (int i = 0; i < entries - 1; i++) {
+		for (unsigned int i = 0; i < entries - 1; i++) {
 			if (hashList[i].y == hashList[i + 1].y)
 				continue;
 

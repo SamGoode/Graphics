@@ -11,9 +11,9 @@ protected:
 	unsigned int gl_id = 0;
 
 public:
-	GLenum format;
-	int width;
-	int height;
+	GLenum format = NULL;
+	int width = 0;
+	int height = 0;
 	unsigned char* data = nullptr;
 
 	virtual ~ITexture() {

@@ -9,6 +9,7 @@ layout(local_size_x = COMPUTE_CELLS_PER_WORKGROUP, local_size_y = MAX_PARTICLES_
 layout(binding = FLUID_CONFIG_UBO, std140) uniform FluidConfig {
 	vec4 boundsMin;
 	vec4 boundsMax;
+
 	vec4 gravity;
 	float smoothingRadius;
 	float restDensity;
@@ -23,16 +24,20 @@ layout(binding = FLUID_DATA_SSBO, std430) restrict buffer FluidData {
 	readonly vec4 positions[MAX_PARTICLES];
 	readonly vec4 previousPositions[MAX_PARTICLES];
 	readonly vec4 velocities[MAX_PARTICLES];
-	//readonly vec4 pressureDisplacements[MAX_PARTICLES];
+
+	writeonly float lambdas[MAX_PARTICLES];
 	writeonly float densities[MAX_PARTICLES]; // These
 	writeonly float nearDensities[MAX_PARTICLES]; // Ones
 
 	readonly uint usedCells;
-	uint hashes[MAX_PARTICLES];
+	readonly uint hashes[MAX_PARTICLES];
 	readonly uint hashTable[MAX_PARTICLES];
 	readonly uint cellEntries[MAX_PARTICLES];
 	readonly uint cells[];
 } data;
+
+
+const float sqrSmoothingRadius = config.smoothingRadius * config.smoothingRadius;
 
 
 // Spatial hashing
@@ -50,6 +55,73 @@ uint getCellHash(ivec3 cellCoords) {
 }
 
 
+// Mullen.M
+// Kernel normalization factors
+const float normFactor_P6 = 315/((acos(-1) * 64) * pow(config.smoothingRadius, 9));
+const float normFactor_S = 45 / (acos(-1) * pow(config.smoothingRadius, 6));
+
+// Density kernels
+float polySixKernel(float sqrDist) {
+	float value = sqrSmoothingRadius - sqrDist;
+	return value * value * value * normFactor_P6;
+}
+
+float spikyKernelGradient(float dist) {
+	float value = config.smoothingRadius - dist;
+	return value * value * normFactor_S;
+}
+
+// Calculates lambda to solve density constraint
+void calculateLambda(uint particleIndex, out float lambda) {
+	ivec3 cellCoords = getCellCoords(data.positions[particleIndex].xyz);
+
+	float constraintGradient = 0.f;
+
+	float localDensity = 0.f;
+	float localDensityGradient = 0.f;
+	for (uint i = 0; i < 27; i++) {
+		ivec3 offset = ivec3(i % 3, (i / 3) % 3, i / 9) - ivec3(1);
+		ivec3 offsetCellCoords = cellCoords + offset;
+		
+		uint cellHash = getCellHash(offsetCellCoords);
+		uint cellIndex = data.hashTable[cellHash];
+		if(cellIndex == 0xFFFFFFFF) continue;
+
+		uint entries = data.cellEntries[cellIndex];
+
+		for (uint n = 0; n < entries; n++) {
+			uint cellEntryIndex = cellIndex * MAX_PARTICLES_PER_CELL + n;
+			uint otherParticleIndex = data.cells[cellEntryIndex];
+
+			vec3 toParticle = data.positions[otherParticleIndex].xyz - data.positions[particleIndex].xyz;
+			float sqrDist = dot(toParticle, toParticle);
+
+			if (sqrDist > sqrSmoothingRadius) continue;
+
+			localDensity += polySixKernel(sqrDist);
+			
+			float dist = sqrt(sqrDist);
+
+			float densityDerivative = spikyKernelGradient(dist);
+			localDensityGradient += densityDerivative;
+
+			if (particleIndex != otherParticleIndex)
+				constraintGradient += densityDerivative * densityDerivative;
+		}
+	}
+
+	constraintGradient += (localDensityGradient * localDensityGradient);
+	constraintGradient /= (config.restDensity * config.restDensity);
+
+	float densityConstraint = (localDensity / config.restDensity) - 1.f;
+
+	const float epsilon = 5.f; // Allowed error
+
+	lambda = -densityConstraint / (constraintGradient + epsilon);
+}
+
+
+// Clavet.S double-density
 // Density kernels
 float densityKernel(float radius, float dist) {
 	float value = 1 - (dist / radius);
@@ -61,26 +133,12 @@ float nearDensityKernel(float radius, float dist) {
 	return value * value * value;
 }
 
-
-// Pressure
-float calculatePressure(float density, float restDensity, float stiffness) {
-	return (density - restDensity) * stiffness;
-}
-
-float calculatePressureForce(float pressure, float nearPressure, float radius, float dist) {
-	float weight = 1 - (dist / radius);
-	return pressure * weight + nearPressure * weight * weight * 0.5f;
-}
-
-
 // Calculates density at specified particle position
-void calculateDensity(uint particleIndex) {
+void calculateDensity(uint particleIndex, out float density, out float nearDensity) {
 	ivec3 cellCoords = getCellCoords(data.positions[particleIndex].xyz);
-	
-	float sqrSmoothingRadius = config.smoothingRadius * config.smoothingRadius;
 
-	float density = 0.f;
-	float nearDensity = 0.f;
+	density = 0.f;
+	nearDensity = 0.f;
 	for (uint i = 0; i < 27; i++) {
 		ivec3 offset = ivec3(i % 3, (i / 3) % 3, i / 9) - ivec3(1);
 		ivec3 offsetCellCoords = cellCoords + offset;
@@ -90,7 +148,6 @@ void calculateDensity(uint particleIndex) {
 		if(cellIndex == 0xFFFFFFFF) continue;
 
 		uint entries = data.cellEntries[cellIndex];
-
 
 		for (uint n = 0; n < entries; n++) {
 			uint cellEntryIndex = cellIndex * MAX_PARTICLES_PER_CELL + n;
@@ -106,97 +163,33 @@ void calculateDensity(uint particleIndex) {
 			nearDensity += nearDensityKernel(config.smoothingRadius, dist);
 		}
 	}
-
-	data.densities[particleIndex] = density;
-	data.nearDensities[particleIndex] = nearDensity;
 }
-
-void applyBoundaryConstraints(uint particleIndex) {
-	vec3 particlePos = data.positions[particleIndex].xyz;
-	data.positions[particleIndex].xyz = clamp(particlePos, config.boundsMin.xyz, config.boundsMax.xyz);
-}
-
-
-//shared ivec3 cellCoords;
-
-//shared float densityCache[MAX_PARTICLES_PER_CELL];
-//shared float nearDensityCache[MAX_PARTICLES_PER_CELL];
 
 
 void main() {
-	//uint cellIndex = gl_WorkGroupID.x;
 	uint cellIndex = gl_GlobalInvocationID.x;
-
-	ivec3 cellCoords = getCellCoords(data.positions[data.cells[cellIndex * MAX_PARTICLES_PER_CELL]].xyz);
-
-//	densityCache[gl_LocalInvocationID.x] = 0;
-//	nearDensityCache[gl_LocalInvocationID.x] = 0;
-
-//	if(gl_LocalInvocationID.y == 0) {
-//		uint particleIndex = data.cells[cellIndex * MAX_PARTICLES_PER_CELL];
-//		cellCoords = getCellCoords(data.positions[particleIndex].xyz);
-//	}
-//	memoryBarrierShared();
-//	barrier();
-
 	uint entryIndex = gl_LocalInvocationID.y;
 
 	bool isValidThread = (cellIndex < data.usedCells && entryIndex < data.cellEntries[cellIndex]);
 	if (!isValidThread) return;
 
-
 	uint cellEntryIndex = cellIndex * MAX_PARTICLES_PER_CELL + entryIndex;
 	uint particleIndex = data.cells[cellEntryIndex];
 
-	float density = 0.f;
-	float nearDensity = 0.f;
-	for (uint i = 0; i < 27 && isValidThread; i++) {
-		ivec3 offset = ivec3(i % 3, (i / 3) % 3, i / 9) - ivec3(1);
-		ivec3 offsetCellCoords = cellCoords + offset;
-		
-		uint cellHash = getCellHash(offsetCellCoords);
 
-		uint offsetCellIndex = data.hashTable[cellHash];
-		if(offsetCellIndex == 0xFFFFFFFF) continue;
+	// Mullen.M
+	float lambda;
+	calculateLambda(particleIndex, lambda);
 
-		uint entries = data.cellEntries[offsetCellIndex];
-
-//		uint n = gl_LocalInvocationID.y;
-//		if(n >= entries) continue;
-
-		for (uint n = 0; n < entries; n++) {
-			uint offsetCellEntryIndex = offsetCellIndex * MAX_PARTICLES_PER_CELL + n;
-			uint otherParticleIndex = data.cells[offsetCellEntryIndex];
-
-			vec3 toParticle = data.positions[otherParticleIndex].xyz - data.positions[particleIndex].xyz;
-			float sqrDist = dot(toParticle, toParticle);
-
-			if (sqrDist > config.smoothingRadius * config.smoothingRadius) continue;
-
-			float dist = sqrt(sqrDist);
-			density += densityKernel(config.smoothingRadius, dist);
-			nearDensity += nearDensityKernel(config.smoothingRadius, dist);
-//			densityCache[n] += densityKernel(config.smoothingRadius, dist);
-//			nearDensityCache[n] += nearDensityKernel(config.smoothingRadius, dist);
-		}
-	}
-
-//	memoryBarrierShared();
-//	barrier();
+	data.lambdas[particleIndex] = lambda;
 
 
-	//if(!isValidThread || gl_LocalInvocationID.y != 0) return;
-
-	data.densities[particleIndex] = density;
-	data.nearDensities[particleIndex] = nearDensity;
-
-//	float total = 0.0;
-//	float nearTotal = 0.0;
-//	for(int i = 0; i < MAX_PARTICLES_PER_CELL; i++) {
-//		total += densityCache[i];
-//		nearTotal += nearDensityCache[i];
-//	}
+	// Clavet.S
+//	float density;
+//	float nearDensity;
 //
-//	data.densities[particleIndex] = total;
-//	data.nearDensities[particleIndex] = nearTotal;
+//	calculateDensity(particleIndex, density, nearDensity);
+//
+//	data.densities[particleIndex] = density;
+//	data.nearDensities[particleIndex] = nearDensity;
 }

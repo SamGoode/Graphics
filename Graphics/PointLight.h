@@ -16,9 +16,9 @@ using glm::vec4;
 class PointLight {
 private:
 	struct instanceData {
-		vec3 lightPosition;
-		float lightRadius;
-		vec3 lightColor;
+		vec3 lightPosition = vec3(0);
+		float lightRadius = 0.f;
+		vec3 lightColor = vec3(0);
 	};
 
 	unsigned int vao = 0;
@@ -28,7 +28,9 @@ private:
 	instanceData instanceBuffer[MAX_POINTLIGHTS];
 
 public:
-	PointLight() {}
+	PointLight() {
+		
+	}
 	~PointLight() {
 		glDeleteBuffers(1, &instanceVBO);
 		glDeleteVertexArrays(1, &vao);

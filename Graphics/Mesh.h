@@ -17,7 +17,7 @@ using glm::mat4;
 
 class Mesh {
 public:
-	int textureID;
+	int textureID = 0;
 
 private:
 	struct vert {
@@ -31,15 +31,15 @@ private:
 		MaterialProperties material;
 	};
 
-	unsigned int vao;
-	unsigned int vbo;
-	unsigned int ibo;
-	unsigned int instanceVBO;
+	unsigned int vao = 0;
+	unsigned int vbo = 0;
+	unsigned int ibo = 0;
+	unsigned int instanceVBO = 0;
 
-	int vertexCount = 0;
+	unsigned int vertexCount = 0;
 	vert* vertexBuffer = nullptr;
 
-	int indexCount = 0;
+	unsigned int indexCount = 0;
 	unsigned int* indexBuffer = nullptr;
 
 	int instanceCount = 0;

@@ -54,7 +54,7 @@ unsigned int Shader::loadShaderFromFile(GLenum type, const char* fileName) {
 				includeFile.open(name, std::ios::in | std::ios::binary);
 				
 				includeFile.seekg(0, includeFile.end);
-				int fileLength = includeFile.tellg();
+				int fileLength = (int)includeFile.tellg();
 				includeFile.seekg(0, includeFile.beg);
 
 				char* buffer = new char[fileLength + 1];

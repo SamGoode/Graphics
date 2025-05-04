@@ -23,22 +23,18 @@ layout(binding = FLUID_DATA_SSBO, std430) restrict buffer FluidData {
 	vec4 positions[MAX_PARTICLES];
 	vec4 previousPositions[MAX_PARTICLES];
 	vec4 velocities[MAX_PARTICLES];
-	//vec4 pressureDisplacements[MAX_PARTICLES];
-	float densities[MAX_PARTICLES];
-	float nearDensities[MAX_PARTICLES];
+
+	readonly float lambdas[MAX_PARTICLES];
+	readonly float densities[MAX_PARTICLES];
+	readonly float nearDensities[MAX_PARTICLES];
 
 	uint usedCells;
-	uint hashes[MAX_PARTICLES];
+	writeonly uint hashes[MAX_PARTICLES];
 	uint hashTable[MAX_PARTICLES];
-	uint cellEntries[MAX_PARTICLES];
-	uint cells[];
+	readonly uint cellEntries[MAX_PARTICLES];
+	readonly uint cells[];
 } data;
 
-// layout(binding = 3, std430) restrict buffer DispatchIndirectCommand {
-// 	uint num_groups_x;
-// 	uint num_groups_y;
-// 	uint num_groups_z;
-// } indirectCmd;
 
 
 // Spatial hashing
@@ -56,18 +52,7 @@ uint getCellHash(ivec3 cellCoords) {
 }
 
 
-// Density kernels
-float densityKernel(float radius, float dist) {
-	float value = 1 - (dist / radius);
-	return value * value;
-}
-
-float nearDensityKernel(float radius, float dist) {
-	float value = 1 - (dist / radius);
-	return value * value * value;
-}
-
-
+// Boundary
 void applyBoundaryConstraints(uint particleIndex) {
 	vec3 particlePos = data.positions[particleIndex].xyz;
 	data.positions[particleIndex].xyz = clamp(particlePos, config.boundsMin.xyz, config.boundsMax.xyz);
@@ -127,92 +112,48 @@ void applyBoundaryPressure(uint particleIndex) {
 
 void main() {
 	uint particleIndex = gl_GlobalInvocationID.x;
-	if(particleIndex >= config.particleCount) {
-		return;
-	}
+	if(particleIndex >= config.particleCount) return;
+
 
 	//---------(From previous timestep)--------------
 	// // Apply pressure displacements
 	// data.positions[particleIndex].xyz += data.pressureDisplacements[particleIndex].xyz;
 	// data.pressureDisplacements[particleIndex].xyz = vec3(0); // reset
-
-	// // Boundaries
-	// applyBoundaryConstraints(particleIndex);
-	// applyBoundaryPressure(particleIndex);
-
-	// // Compute implicit velocity
-	// data.velocities[particleIndex].xyz = (data.positions[particleIndex].xyz - data.previousPositions[particleIndex].xyz) / config.timeStep;
 	//------------------------------------------------
 
+	// Boundaries
+	applyBoundaryConstraints(particleIndex);
+	//applyBoundaryPressure(particleIndex);
 
-	// Apply gravity
+	// Compute implicit velocity
+	data.velocities[particleIndex].xyz = (data.positions[particleIndex].xyz - data.previousPositions[particleIndex].xyz) / config.timeStep;
+
+	// Update previous particle position
+	data.previousPositions[particleIndex].xyz = data.positions[particleIndex].xyz;
+
+	// Apply gravity and other external forces
 	data.velocities[particleIndex].xyz += config.gravity.xyz * config.timeStep;
 
-	// Project current and update previous particle positions
-	data.previousPositions[particleIndex].xyz = data.positions[particleIndex].xyz;
+	// Project current particle position
 	data.positions[particleIndex].xyz += data.velocities[particleIndex].xyz * config.timeStep;
 
+	
+
+	// Contiguously assign indexes to populated cells
 	uint cellHash = getCellHash(getCellCoords(data.positions[particleIndex].xyz));
 	data.hashes[particleIndex] = cellHash;
 
-	// if(cellHash == data.hashes[particleIndex]) {
-	// 	// early out
-	// 	return;
-	// }
-
-	// uint previousCellHash = data.hashes[particleIndex];
-	// data.hashes[particleIndex] = cellHash;
-
-	// if(previousCellHash != 0xFFFFFFFF) {
-	// 	uint previousCellIndex = data.hashTable[previousCellHash];
-	// 	uint entryCount = atomicAdd(data.cellEntries[previousCellIndex], -1);
-
-	// 	uint previousCellEntryIndex = 0xFFFFFFFF;
-	// 	for(uint i = 0; i < entryCount; i++) {
-	// 		previousCellEntryIndex = previousCellIndex * MAX_PARTICLES_PER_CELL + i;
-	// 		if(particleIndex == data.cells[previousCellEntryIndex]) {
-	// 			break;
-	// 		}
-	// 	}
-
-	// 	uint lastEntryIndex = entryCount - 1;
-	// 	uint lastEntryValue = data.cells[previousCellIndex * MAX_PARTICLES_PER_CELL + lastEntryIndex];
-
-	// 	data.cells[previousCellIndex * MAX_PARTICLES_PER_CELL + previousCellEntryIndex] = lastEntryValue;
-	// 	// 1 2 3 4
-	// 	// 1 2 4 4
-	// 	// 1 3 
-	// 	//atomic
-	// }
-
+	// this could probably be replaced with atomicExchange
 	uint hashStatus = atomicCompSwap(data.hashTable[cellHash], 0xFFFFFFFF, 0x8FFFFFFF);
+
+	// Cell Hash Status
+	// 0xFFFFFFFF : unassigned
+	// 0x8FFFFFFF : pending assignment
 
 	// Assign index to cell hash if new
 	bool shouldAssignNewCell = (hashStatus == 0xFFFFFFFF);
 	uint assignedCellIndex = atomicAdd(data.usedCells, uint(shouldAssignNewCell));
-	//if(!shouldAssignNewCell) assignedCellIndex = 0x8FFFFFFF;
 
-	//atomicCompSwap(data.hashTable[cellHash], 0x8FFFFFFF, assignedCellIndex);
-
-	if(shouldAssignNewCell) {
+	if(shouldAssignNewCell)
 		data.hashTable[cellHash] = assignedCellIndex;
-	}
-
-	//uint cellIndex = atomicCompSwap(data.hashTable[cellHash], 0x8FFFFFFF, assignedCellIndex);
-	// memoryBarrierBuffer();
-	// while(cellIndex == 0x8FFFFFFF) {
-	// 	cellIndex = data.hashTable[cellHash];
-	// }
-    
-
-	// uint cellEntryCount = atomicAdd(data.cellEntries[cellIndex], 1);
-	// uint cellEntryIndex = cellIndex * MAX_PARTICLES_PER_CELL + cellEntryCount;
-	
-	// data.cells[cellEntryIndex] = particleIndex;
-
-
-	//atomicMax(indirectCmd.num_groups_x, data.usedCells);
-	// atomicMax(indirectCmd.num_groups_x, (data.usedCells / COMPUTE_CELLS_PER_WORKGROUP) + uint((data.usedCells % COMPUTE_CELLS_PER_WORKGROUP) != 0));
-	// indirectCmd.num_groups_y = 1;
-	// indirectCmd.num_groups_z = 1;
 }

@@ -13,7 +13,7 @@ void FluidSimSPH::addParticle(vec3 localPosition) {
 void FluidSimSPH::spawnRandomParticles(unsigned int spawnCount) {
 	assert(particleCount + spawnCount <= MAX_PARTICLES);
 
-	for (int i = 0; i < spawnCount; i++) {
+	for (unsigned int i = 0; i < spawnCount; i++) {
 		vec3 randomPosition = glm::linearRand(position, position + bounds);
 
 		previousPositions[particleCount] = randomPosition;
@@ -26,43 +26,51 @@ void FluidSimSPH::spawnRandomParticles(unsigned int spawnCount) {
 void FluidSimSPH::update(float deltaTime) {
 	accumulatedTime += deltaTime;
 
-	for (int step = 0; step < maxTicksPerUpdate && accumulatedTime > fixedTimeStep; step++) {
-		unsigned int usedCells = 0;
-		particleSSBO.subData(14 * MAX_PARTICLES * sizeof(float), sizeof(unsigned int), &usedCells);
-		particleSSBO.subData(((15 * MAX_PARTICLES) + 1) * sizeof(float), MAX_PARTICLES * sizeof(unsigned int), particleSSBO.buffer.hashTable);
-		particleSSBO.subData(((16 * MAX_PARTICLES) + 1) * sizeof(float), MAX_PARTICLES * sizeof(unsigned int), particleSSBO.buffer.cellEntries);
-		glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
-
-		dispatchIndirect.bindToIndex(3);
-		dispatchIndirect.clear();
-
-		particleComputeShader.use();
-		glDispatchCompute((particleCount / WORKGROUP_SIZE_X) + ((particleCount % WORKGROUP_SIZE_X) != 0), 1, 1);
-		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-		
-		computeHashTableShader.use();
-		glDispatchCompute((particleCount / WORKGROUP_SIZE_X) + ((particleCount % WORKGROUP_SIZE_X) != 0), 1, 1);
-		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-		
-		dispatchIndirect.bind();
-		glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
-		
-		computeDensityShader.use();
-		glDispatchComputeIndirect(0);
-		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-
-		computePressureShader.use();
-		int time = std::time(0);
-		computePressureShader.bindUniform(time, "time");
-		glDispatchComputeIndirect(0);
-		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-
-		//tick();
+	for (unsigned int step = 0; step < maxTicksPerUpdate && accumulatedTime > fixedTimeStep; step++) {
 		accumulatedTime -= fixedTimeStep;
+
+		if (isSimGPU) {
+			tickSimGPU();
+		}
+		else {
+			tickSimCPU();
+		}
 	}
 }
 
-void FluidSimSPH::tick() {
+void FluidSimSPH::tickSimGPU() {
+	unsigned int usedCells = 0;
+	particleSSBO.subData(15 * MAX_PARTICLES * sizeof(float), sizeof(float), &usedCells);
+	particleSSBO.subData(((16 * MAX_PARTICLES) + 1) * sizeof(float), MAX_PARTICLES * sizeof(float), particleSSBO.buffer.hashTable);
+	particleSSBO.subData(((17 * MAX_PARTICLES) + 1) * sizeof(float), MAX_PARTICLES * sizeof(float), particleSSBO.buffer.cellEntries);
+	glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
+
+	dispatchIndirect.bindToIndex(3);
+	dispatchIndirect.clear();
+
+	particleComputeShader.use();
+	glDispatchCompute((particleCount / WORKGROUP_SIZE_X) + ((particleCount % WORKGROUP_SIZE_X) != 0), 1, 1);
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+	computeHashTableShader.use();
+	glDispatchCompute((particleCount / WORKGROUP_SIZE_X) + ((particleCount % WORKGROUP_SIZE_X) != 0), 1, 1);
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+	dispatchIndirect.bind();
+	glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
+
+	computeDensityShader.use();
+	glDispatchComputeIndirect(0);
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+	computePressureShader.use();
+	int time = (int)std::time(0);
+	computePressureShader.bindUniform(time, "time");
+	glDispatchComputeIndirect(0);
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+}
+
+void FluidSimSPH::tickSimCPU() {
 	// Apply gravity
 	for (unsigned int i = 0; i < particleCount; i++) {
 		velocities[i] += gravity * fixedTimeStep;
@@ -197,8 +205,6 @@ void FluidSimSPH::calculateLambda(unsigned int particleIndex) {
 
 	float constraintGradient = 0.f;
 
-	vec3 gradientSum = vec3(0);
-
 	auto func = [&](unsigned int otherParticleIndex) {
 		vec3 toParticle = positions[otherParticleIndex] - particlePos;
 		float sqrDist = dot(toParticle, toParticle);
@@ -206,19 +212,10 @@ void FluidSimSPH::calculateLambda(unsigned int particleIndex) {
 		if (sqrDist > smoothingRadius * smoothingRadius) return;
 
 		float dist = sqrt(sqrDist);
-		localDensity += particleMass * polySixKernel(smoothingRadius, dist);
+		localDensity += polySixKernel(smoothingRadius, dist);
 
-		//vec3 dir = (dist > 0) ? toParticle / dist : vec3(0);//glm::sphericalRand(1.f);
+		float value = spikyKernelGradient(smoothingRadius, dist);
 		
-		float value = particleMass * spikyKernelGradient(smoothingRadius, dist);
-		
-		//vec3 gradient = dir * value;// *(1 / restDensity);
-
-		//gradientSum += gradient;
-
-		//constraintGradient += (value * value);// / (restDensity / restDensity);//dot(gradient, gradient);// / (restDensity * restDensity);
-		//constraintGradient += dot(dir, dir);
-
 		localDensityGradient += value;
 
 		if (particleIndex == otherParticleIndex) return;
@@ -228,15 +225,13 @@ void FluidSimSPH::calculateLambda(unsigned int particleIndex) {
 
 	spatialHashGrid.iterate3x3x3(cellCoords, func);
 
-	//constraintGradient += dot(gradientSum, gradientSum);// / (restDensity * restDensity);
-
 	constraintGradient += (localDensityGradient * localDensityGradient);
 	constraintGradient /= (restDensity * restDensity);
-
-	float densityConstraint = (localDensity / restDensity) - 1.f;
 	//constraintGradient = (localDensityGradient * localDensityGradient) / (restDensity * restDensity);
 
-	constexpr float epsilon = 0.1f;
+	float densityConstraint = (localDensity / restDensity) - 1.f;
+
+	constexpr float epsilon = 5.f;
 
 	float lambda = -densityConstraint / (constraintGradient + epsilon);
 	lambdas[particleIndex] = lambda;
@@ -264,16 +259,16 @@ void FluidSimSPH::calculateDisplacement(unsigned int particleIndex) {
 
 		float otherLambda = lambdas[otherParticleIndex];
 
-		const float k = 0.f;
+		const float k = 0.0000005f;
 		int n = 4;
 		float deltaQ = 0.3f * smoothingRadius;
 
 		float a = polySixKernel(smoothingRadius, dist);
 		float b = polySixKernel(smoothingRadius, deltaQ);
 
-		float correction = -k * pow((a / b), n);
+		float correction = -k * (float)pow((a / b), n);
 
-		displacement += unitDir * (lambda + otherLambda + correction) * particleMass * spikyKernelGradient(smoothingRadius, dist);
+		displacement += unitDir * (lambda + otherLambda + correction) * spikyKernelGradient(smoothingRadius, dist);
 	};
 
 	spatialHashGrid.iterate3x3x3(cellCoords, func);

@@ -151,7 +151,7 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	fluidSim.bindConfigUBO(FLUID_CONFIG_UBO);
 	fluidSim.bindParticleSSBO(FLUID_DATA_SSBO);
 
-	fluidSim.spawnRandomParticles(8000);
+	fluidSim.spawnRandomParticles(200000);
 	fluidSim.sendDataToGPU();
 
 
@@ -187,7 +187,7 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 
 	fluidDepthFBO.setSize(windowWidth, windowHeight);
 	fluidDepthFBO.genRenderBuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
-	fluidDepthFBO.genTextureStorage(GL_RG32F); // Min and Max ray depth
+	fluidDepthFBO.genTextureStorage(GL_RGB32F); // Min depth/Max depth/Smoothed depth
 	fluidDepthFBO.init();
 
 	lightFBO.setSize(windowWidth, windowHeight);
@@ -242,7 +242,9 @@ void GameEngine::render() {
 	RenderSystem* renderSystem = ecs.getSystem<RenderSystem>();
 	renderSystem->addMeshInstances(ecs, meshes);
 
-	//fluidSim.sendDataToGPU();
+	if (!fluidSim.isRunningOnGPU()) {
+		fluidSim.sendDataToGPU();
+	}
 
 
 	// Shadow Pass

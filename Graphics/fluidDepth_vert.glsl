@@ -29,7 +29,8 @@ layout(binding = FLUID_DATA_SSBO, std430) readonly restrict buffer FluidData {
 	vec4 positions[MAX_PARTICLES];
 	vec4 previousPositions[MAX_PARTICLES];
 	vec4 velocities[MAX_PARTICLES];
-	//vec4 pressureDisplacements[MAX_PARTICLES];
+
+	float lambdas[MAX_PARTICLES];
 	float densities[MAX_PARTICLES];
 	float nearDensities[MAX_PARTICLES];
 
@@ -55,9 +56,6 @@ void main() {
 	vec4 center = View * vec4(data.positions[particleIndex].xyz, 1);
 
 	// Also offset towards camera by smoothing radius for depth testing reasons
-//	SmoothingRadius = cellSize;
-//	vPosition = center + vec4(vertexOffsets[gl_VertexID].xy * SmoothingRadius, SmoothingRadius, 0);
-
 	vPosition = center + vec4(vertexOffsets[gl_VertexID].xy * config.smoothingRadius, config.smoothingRadius, 0);
 	
 	//Depth = length(vPosition.xyz);

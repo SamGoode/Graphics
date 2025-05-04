@@ -15,8 +15,8 @@ private:
 	const int maxTextures = MAX_RENDER_TEXTURES;
 	ITexture* textures[MAX_RENDER_TEXTURES];
 
-	int width;
-	int height;
+	int width = 0;
+	int height = 0;
 
 public:
 	FrameBuffer() {}

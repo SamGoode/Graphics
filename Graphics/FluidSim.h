@@ -25,25 +25,26 @@ using glm::uvec4;
 // SPH Fluid simulation within a bounding box
 class FluidSimSPH {
 private:
-	vec3 position;
-	vec3 bounds;
+	vec3 position = vec3(0);
+	vec3 bounds = vec3(0);
 
-	const int maxTicksPerUpdate = 5;
+	const unsigned int maxTicksPerUpdate = 8;
 	const float fixedTimeStep = 0.01f;
 	float accumulatedTime = 0.f;
 
-	vec3 gravity;
-	float smoothingRadius; // density kernel radius
-	float restDensity;
-	float stiffness;
-	float nearStiffness;
-	float particleMass;
+	const bool isSimGPU = true;
+
+	vec3 gravity = vec3(0);
+	float smoothingRadius = 0.f; // density kernel radius
+	float restDensity = 0.f;
+	float stiffness = 0.f;
+	float nearStiffness = 0.f;
 
 	unsigned int particleCount = 0;
 	vec3 positions[MAX_PARTICLES];
 	vec3 previousPositions[MAX_PARTICLES];
 	vec3 velocities[MAX_PARTICLES];
-	float densities[MAX_PARTICLES];
+	float densities[MAX_PARTICLES] {};
 	float nearDensities[MAX_PARTICLES];
 
 	float lambdas[MAX_PARTICLES];
@@ -67,7 +68,8 @@ private:
 		vec4 positions[MAX_PARTICLES];
 		vec4 previousPositions[MAX_PARTICLES];
 		vec4 velocities[MAX_PARTICLES];
-		//vec4 pressureDisplacements[MAX_PARTICLES];
+
+		float lambdas[MAX_PARTICLES];
 		float densities[MAX_PARTICLES];
 		float nearDensities[MAX_PARTICLES];
 
@@ -95,7 +97,7 @@ public:
 	~FluidSimSPH() {}
 
 	void init(vec3 _position, vec3 _bounds, vec3 _gravity, float _smoothingRadius = 0.15f,
-		float _restDensity = 1.5f, float _stiffness = 20.f, float _nearStiffness = 80.f) {
+		float _restDensity = 2.f, float _stiffness = 20.f, float _nearStiffness = 80.f) {
 		
 		position = _position;
 		bounds = _bounds;
@@ -105,7 +107,6 @@ public:
 		restDensity = _restDensity;
 		stiffness = _stiffness;
 		nearStiffness = _nearStiffness;
-		particleMass = 4.189f; // water density for a sphere of 10 cm radius.
 
 		spatialHashGrid.init(smoothingRadius, MAX_PARTICLES, MAX_PARTICLES_PER_CELL);
 		
@@ -117,15 +118,9 @@ public:
 		computeHashTableShader.init("buildHashTable.glsl");
 		computeDensityShader.init("computeDensity.glsl");
 		computePressureShader.init("computePressure.glsl");
-
-
-		for (int i = 0; i < MAX_PARTICLES; i++) {
-			//particleSSBO.buffer.hashes[i] = 0xFFFFFFFF;
-			particleSSBO.buffer.hashTable[i] = 0xFFFFFFFF;
-			particleSSBO.buffer.cellEntries[i] = 0;
-		}
-
 	}
+
+	bool isRunningOnGPU() { return isSimGPU; }
 
 	unsigned int getParticleCount() { return particleCount; }
 	void clearParticles() { particleCount = 0; }
@@ -133,9 +128,13 @@ public:
 	void spawnRandomParticles(unsigned int spawnCount = 1);
 
 	void update(float deltaTime);
-	void tick();
+	void tickSimGPU();
+	void tickSimCPU();
 
 	void sendDataToGPU() {
+		// This whole current SSBO template buffer system is scuffed
+		// temporary for now, will change later
+
 		configUBO.buffer = {
 			.boundsMin = vec4(position, 1),
 			.boundsMax = vec4(position + bounds, 1),
@@ -150,11 +149,10 @@ public:
 			.particleCount = particleCount
 		};
 
-		for (int i = 0; i < particleCount; i++) {
+		for (unsigned int i = 0; i < particleCount; i++) {
 			particleSSBO.buffer.positions[i] = vec4(positions[i], 1);
 			particleSSBO.buffer.previousPositions[i] = vec4(positions[i], 1);
 			particleSSBO.buffer.velocities[i] = vec4(0, 0, 0, 1);
-			//particleSSBO.buffer.pressureDisplacements[i] = vec4(0, 0, 0, 1);
 		}
 
 		std::memcpy(particleSSBO.buffer.hashTable, spatialHashGrid.getHashTable(), MAX_PARTICLES * sizeof(unsigned int));
@@ -196,7 +194,7 @@ private:
 	// just for show, don't actually compute the kernel like this
 	static float polySixKernel(float radius, float dist) {
 		constexpr float a = 315/(glm::pi<float>() * 64);
-		float normalizationFactor = a * glm::pow(radius, -9);
+		float normalizationFactor = a * (float)glm::pow(radius, -9);
 		
 		float value = radius * radius - dist * dist;
 		return value * value * value * normalizationFactor;
@@ -205,7 +203,7 @@ private:
 	// just for show, don't actually compute the kernel like this
 	static float spikyKernel(float radius, float dist) {
 		constexpr float a = 15 / glm::pi<float>();
-		float normalizationFactor = a * glm::pow(radius, -6);
+		float normalizationFactor = a * (float)glm::pow(radius, -6);
 
 		float value = radius - dist;
 		return value * value * value * normalizationFactor;
@@ -214,7 +212,7 @@ private:
 	// just for show, don't actually compute the kernel like this
 	static float spikyKernelGradient(float radius, float dist) {
 		constexpr float a = 45 / glm::pi<float>();
-		float normalizationFactor = a * glm::pow(radius, -6);
+		float normalizationFactor = a * (float)glm::pow(radius, -6);
 
 		float value = radius - dist;
 		return value * value * normalizationFactor;

@@ -2,7 +2,6 @@
 
 #include "common.h"
 
-
 in vec2 vTexCoord;
 
 uniform sampler2D fluidDepthPass;
@@ -32,7 +31,8 @@ layout(binding = FLUID_DATA_SSBO, std430) readonly restrict buffer FluidData {
 	vec4 positions[MAX_PARTICLES];
 	vec4 previousPositions[MAX_PARTICLES];
 	vec4 velocities[MAX_PARTICLES];
-	//vec4 pressureDisplacements[MAX_PARTICLES];
+
+	float lambdas[MAX_PARTICLES];
 	float densities[MAX_PARTICLES];
 	float nearDensities[MAX_PARTICLES];
 
@@ -49,8 +49,12 @@ layout(location = 1) out vec3 gpassPosition;
 layout(location = 2) out vec3 gpassNormal;
 
 
+const float sqrSmoothingRadius = config.smoothingRadius * config.smoothingRadius;
+
+
 // All 'point' parameters are in world space
 
+// Spatial hashing
 ivec3 getCellCoords(vec3 point) {
 	return ivec3(floor(point / config.smoothingRadius));
 }
@@ -64,19 +68,23 @@ uint getCellHash(ivec3 cellCoords) {
 	return ((p1 * uint(cellCoords.x)) ^ (p2 * uint(cellCoords.y)) ^ (p3 * uint(cellCoords.z))) % MAX_PARTICLES;
 }
 
+
+// Mullet.M density kernel
+const float normalizationFactor = 315/((acos(-1) * 64) * pow(config.smoothingRadius, 9));
+float polySixKernel(float sqrDist) {
+	float value = sqrSmoothingRadius - sqrDist;
+	return value * value * value * normalizationFactor;
+}
+
+
+// Clavet.S density kernel
 float densityKernel(float radius, float dist) {
 	float value = 1 - (dist / radius);
 	return value * value;
 }
 
-//float polySixKernel(float radius, float dist) {
-//	float a = 315/(acos(-1) * 64);
-//	float normalizationFactor = a * pow(radius, -9);
-//		
-//	float value = radius * radius - dist * dist;
-//	return value * value * value * normalizationFactor;
-//}
 
+// Sample density with neighbourhood search
 float sampleDensity(vec3 point) {
 	ivec3 cellCoords = getCellCoords(point);
 
@@ -95,13 +103,14 @@ float sampleDensity(vec3 point) {
 		for(uint n = 0; n < entries; n++) {
 			uint particleIndex = data.cells[(cellIndex * MAX_PARTICLES_PER_CELL) + n];
 			vec3 toParticle = data.positions[particleIndex].xyz - point;
-			float sqrDist = dot(toParticle, toParticle);
 			
-			if(sqrDist > config.smoothingRadius * config.smoothingRadius) continue;
+			float sqrDist = dot(toParticle, toParticle);
+			if(sqrDist > sqrSmoothingRadius) continue;
 
-			float dist = sqrt(sqrDist);
-			density += densityKernel(config.smoothingRadius, dist);
-			//density += polySixKernel(config.smoothingRadius, dist);
+			density += polySixKernel(sqrDist);
+			
+			//float dist = sqrt(sqrDist);
+			//density += densityKernel(config.smoothingRadius, dist);
 		}
 	}
 	return density;
@@ -125,6 +134,7 @@ float raymarchDensity(vec3 rayOrigin, vec3 rayDir, int maxSteps, float stepLengt
 	return -1.0;
 }
 
+
 vec3 densityGradient(vec3 point) {
 	float dx = sampleDensity(point + vec3(0.001, 0, 0)) - sampleDensity(point + vec3(-0.001, 0, 0));
 	float dy = sampleDensity(point + vec3(0, 0.001, 0)) - sampleDensity(point + vec3(0, -0.001, 0));
@@ -134,8 +144,8 @@ vec3 densityGradient(vec3 point) {
 }
 
 
-// Raymarch settings
-const int maxSteps = 16;
+// Raymarch parameters
+const int maxSteps = 32;
 const float stepLength = 0.05;
 const float isoDensity = 1.0;
 
@@ -191,7 +201,7 @@ void main() {
 	vec3 rayDirection = (ViewInverse * vec4(vRayDirection, 0)).xyz;	
 
 	float minDepth = minMaxDepth.r;
-	float maxDepth = minMaxDepth.g;
+	//float maxDepth = minMaxDepth.g;
 
 	float rayDistance = raymarchDensity(CameraPos.xyz, rayDirection, maxSteps, stepLength, isoDensity, minDepth);
 	if(rayDistance == -1.0) discard;

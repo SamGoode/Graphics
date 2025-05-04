@@ -7,15 +7,15 @@
 struct IPhysicsEngine {
 	ECS::ECSManager* ecs;
 
-	glm::vec3 gravity;
+	glm::vec3 gravity = glm::vec3(0);
 
-	int iterations;
+	int iterations = 1;
 
-	float biasSlop;
-	float biasFactor;
+	float biasSlop = 0.f;
+	float biasFactor = 0.f;
 
-	float elasticity;
-	float friction;
+	float elasticity = 0.f;
+	float friction = 0.f;
 
 	virtual void addCollisionECS(struct CollisionECS collision) = 0;
 	virtual void clearCollisions() = 0;
