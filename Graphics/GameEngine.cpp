@@ -147,11 +147,11 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 
 	pointLights.init();
 
-	fluidSim.init(vec3(8, -4, 1), vec3(2, 2, 4), physicsEngine.gravity);
+	fluidSim.init(vec3(8, -4, 1), vec3(8, 8, 4), physicsEngine.gravity);
 	fluidSim.bindConfigUBO(FLUID_CONFIG_UBO);
 	fluidSim.bindParticleSSBO(FLUID_DATA_SSBO);
 
-	fluidSim.spawnRandomParticles(4000);
+	fluidSim.spawnRandomParticles(8000);
 	fluidSim.sendDataToGPU();
 
 
@@ -242,7 +242,7 @@ void GameEngine::render() {
 	RenderSystem* renderSystem = ecs.getSystem<RenderSystem>();
 	renderSystem->addMeshInstances(ecs, meshes);
 
-	fluidSim.sendDataToGPU();
+	//fluidSim.sendDataToGPU();
 
 
 	// Shadow Pass
@@ -311,6 +311,7 @@ void GameEngine::render() {
 	//glDrawArrays(GL_POINTS, 0, fluidSim.getParticleCount());
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	glDrawArraysInstanced(GL_QUADS, 0, 4, fluidSim.getParticleCount()); // change this later
+
 
 	// Raymarch Particles
 	fluidDepthFBO.sendStencilBuffer(gpassFBO);

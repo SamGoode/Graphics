@@ -37,6 +37,7 @@ private:
 	float restDensity;
 	float stiffness;
 	float nearStiffness;
+	float particleMass;
 
 	unsigned int particleCount = 0;
 	vec3 positions[MAX_PARTICLES];
@@ -94,7 +95,7 @@ public:
 	~FluidSimSPH() {}
 
 	void init(vec3 _position, vec3 _bounds, vec3 _gravity, float _smoothingRadius = 0.15f,
-		float _restDensity = 1.2f, float _stiffness = 20.f, float _nearStiffness = 80.f) {
+		float _restDensity = 1.5f, float _stiffness = 20.f, float _nearStiffness = 80.f) {
 		
 		position = _position;
 		bounds = _bounds;
@@ -104,6 +105,7 @@ public:
 		restDensity = _restDensity;
 		stiffness = _stiffness;
 		nearStiffness = _nearStiffness;
+		particleMass = 4.189f; // water density for a sphere of 10 cm radius.
 
 		spatialHashGrid.init(smoothingRadius, MAX_PARTICLES, MAX_PARTICLES_PER_CELL);
 		

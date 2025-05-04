@@ -27,37 +27,37 @@ void FluidSimSPH::update(float deltaTime) {
 	accumulatedTime += deltaTime;
 
 	for (int step = 0; step < maxTicksPerUpdate && accumulatedTime > fixedTimeStep; step++) {
-		//unsigned int usedCells = 0;
-		//particleSSBO.subData(14 * MAX_PARTICLES * sizeof(float), sizeof(unsigned int), &usedCells);
-		//particleSSBO.subData(((15 * MAX_PARTICLES) + 1) * sizeof(float), MAX_PARTICLES * sizeof(unsigned int), particleSSBO.buffer.hashTable);
-		//particleSSBO.subData(((16 * MAX_PARTICLES) + 1) * sizeof(float), MAX_PARTICLES * sizeof(unsigned int), particleSSBO.buffer.cellEntries);
-		//glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
+		unsigned int usedCells = 0;
+		particleSSBO.subData(14 * MAX_PARTICLES * sizeof(float), sizeof(unsigned int), &usedCells);
+		particleSSBO.subData(((15 * MAX_PARTICLES) + 1) * sizeof(float), MAX_PARTICLES * sizeof(unsigned int), particleSSBO.buffer.hashTable);
+		particleSSBO.subData(((16 * MAX_PARTICLES) + 1) * sizeof(float), MAX_PARTICLES * sizeof(unsigned int), particleSSBO.buffer.cellEntries);
+		glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
 
-		//dispatchIndirect.bindToIndex(3);
-		//dispatchIndirect.clear();
+		dispatchIndirect.bindToIndex(3);
+		dispatchIndirect.clear();
 
-		//particleComputeShader.use();
-		//glDispatchCompute((particleCount / WORKGROUP_SIZE_X) + ((particleCount % WORKGROUP_SIZE_X) != 0), 1, 1);
-		//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-		//
-		//computeHashTableShader.use();
-		//glDispatchCompute((particleCount / WORKGROUP_SIZE_X) + ((particleCount % WORKGROUP_SIZE_X) != 0), 1, 1);
-		//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-		//
-		//dispatchIndirect.bind();
-		//glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
-		//
-		//computeDensityShader.use();
-		//glDispatchComputeIndirect(0);
-		//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+		particleComputeShader.use();
+		glDispatchCompute((particleCount / WORKGROUP_SIZE_X) + ((particleCount % WORKGROUP_SIZE_X) != 0), 1, 1);
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+		
+		computeHashTableShader.use();
+		glDispatchCompute((particleCount / WORKGROUP_SIZE_X) + ((particleCount % WORKGROUP_SIZE_X) != 0), 1, 1);
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+		
+		dispatchIndirect.bind();
+		glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
+		
+		computeDensityShader.use();
+		glDispatchComputeIndirect(0);
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
-		//computePressureShader.use();
-		//int time = std::time(0);
-		//computePressureShader.bindUniform(time, "time");
-		//glDispatchComputeIndirect(0);
-		//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+		computePressureShader.use();
+		int time = std::time(0);
+		computePressureShader.bindUniform(time, "time");
+		glDispatchComputeIndirect(0);
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
-		tick();
+		//tick();
 		accumulatedTime -= fixedTimeStep;
 	}
 }
@@ -112,10 +112,10 @@ void FluidSimSPH::tick() {
 		calculateDisplacement(i);
 	}
 
-
 	for (unsigned int i = 0; i < particleCount; i++) {
 		positions[i] += displacements[i];
 	}
+
 
 	// Boundaries
 	for (unsigned int i = 0; i < particleCount; i++) {
@@ -197,6 +197,8 @@ void FluidSimSPH::calculateLambda(unsigned int particleIndex) {
 
 	float constraintGradient = 0.f;
 
+	vec3 gradientSum = vec3(0);
+
 	auto func = [&](unsigned int otherParticleIndex) {
 		vec3 toParticle = positions[otherParticleIndex] - particlePos;
 		float sqrDist = dot(toParticle, toParticle);
@@ -204,9 +206,19 @@ void FluidSimSPH::calculateLambda(unsigned int particleIndex) {
 		if (sqrDist > smoothingRadius * smoothingRadius) return;
 
 		float dist = sqrt(sqrDist);
-		localDensity += polySixKernel(smoothingRadius, dist);
+		localDensity += particleMass * polySixKernel(smoothingRadius, dist);
 
-		float value = spikyKernelGradient(smoothingRadius, dist);
+		//vec3 dir = (dist > 0) ? toParticle / dist : vec3(0);//glm::sphericalRand(1.f);
+		
+		float value = particleMass * spikyKernelGradient(smoothingRadius, dist);
+		
+		//vec3 gradient = dir * value;// *(1 / restDensity);
+
+		//gradientSum += gradient;
+
+		//constraintGradient += (value * value);// / (restDensity / restDensity);//dot(gradient, gradient);// / (restDensity * restDensity);
+		//constraintGradient += dot(dir, dir);
+
 		localDensityGradient += value;
 
 		if (particleIndex == otherParticleIndex) return;
@@ -216,11 +228,13 @@ void FluidSimSPH::calculateLambda(unsigned int particleIndex) {
 
 	spatialHashGrid.iterate3x3x3(cellCoords, func);
 
+	//constraintGradient += dot(gradientSum, gradientSum);// / (restDensity * restDensity);
+
 	constraintGradient += (localDensityGradient * localDensityGradient);
 	constraintGradient /= (restDensity * restDensity);
 
-	float densityConstraint = (localDensity / restDensity) - 1;
-	constraintGradient = (localDensityGradient * localDensityGradient) / (restDensity * restDensity);
+	float densityConstraint = (localDensity / restDensity) - 1.f;
+	//constraintGradient = (localDensityGradient * localDensityGradient) / (restDensity * restDensity);
 
 	constexpr float epsilon = 0.1f;
 
@@ -250,16 +264,16 @@ void FluidSimSPH::calculateDisplacement(unsigned int particleIndex) {
 
 		float otherLambda = lambdas[otherParticleIndex];
 
-		const float k = 0.1f;
+		const float k = 0.f;
 		int n = 4;
 		float deltaQ = 0.3f * smoothingRadius;
 
 		float a = polySixKernel(smoothingRadius, dist);
 		float b = polySixKernel(smoothingRadius, deltaQ);
 
-		float correction = -k * glm::pow((a / b), n);
+		float correction = -k * pow((a / b), n);
 
-		displacement += unitDir * (lambda + otherLambda + correction) * spikyKernelGradient(smoothingRadius, dist);
+		displacement += unitDir * (lambda + otherLambda + correction) * particleMass * spikyKernelGradient(smoothingRadius, dist);
 	};
 
 	spatialHashGrid.iterate3x3x3(cellCoords, func);
@@ -268,12 +282,12 @@ void FluidSimSPH::calculateDisplacement(unsigned int particleIndex) {
 }
 
 void FluidSimSPH::applyBoundaryConstraints(unsigned int particleIndex) {
-	vec3& particlePos = positions[particleIndex];
+	vec3 particlePos = positions[particleIndex];
 
 	vec3 boundsMin = position;
 	vec3 boundsMax = position + bounds;
 
-	particlePos = glm::clamp(particlePos, boundsMin, boundsMax);
+	positions[particleIndex] = glm::clamp(particlePos, boundsMin, boundsMax);
 }
 
 void FluidSimSPH::applyBoundaryPressure(unsigned int particleIndex) {
