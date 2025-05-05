@@ -6,6 +6,8 @@
 #include "CollisionSystem.h"
 #include "RenderSystem.h"
 
+//#include "imgui.h"
+
 
 GameEngine::GameEngine() {
 	worldUp = vec3(0, 0, 1);
@@ -151,7 +153,7 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	fluidSim.bindConfigUBO(FLUID_CONFIG_UBO);
 	fluidSim.bindParticleSSBO(FLUID_DATA_SSBO);
 
-	fluidSim.spawnRandomParticles(200000);
+	fluidSim.spawnRandomParticles(150000);
 	fluidSim.sendDataToGPU();
 
 
@@ -162,13 +164,13 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	pvmUBO.bind(PROJECTIONVIEW_UBO);
 
 	// Shaders
-	shadowShader.init("shadow.glsl", "empty.glsl");
-	gpassShader.init("gpass_vert.glsl", "gpass_frag.glsl");
-	fluidDepthShader.init("fluidDepth_vert.glsl", "fluidDepth_frag.glsl");
-	raymarchShader.init("fullscreen_quad.glsl", "raymarch.glsl");
-	lightShader.init("fullscreen_quad.glsl", "directional_light.glsl");
-	pointLightShader.init("pointLight_vert.glsl", "pointLight_frag.glsl");
-	compositeShader.init("fullscreen_quad.glsl", "composite.glsl");
+	shadowShader.init("shaders/shadow.glsl", "shaders/empty.glsl");
+	gpassShader.init("shaders/gpass_vert.glsl", "shaders/gpass_frag.glsl");
+	fluidDepthShader.init("shaders/fluidDepth_vert.glsl", "shaders/fluidDepth_frag.glsl");
+	raymarchShader.init("shaders/fullscreen_quad.glsl", "shaders/raymarch.glsl");
+	lightShader.init("shaders/fullscreen_quad.glsl", "shaders/directional_light.glsl");
+	pointLightShader.init("shaders/pointLight_vert.glsl", "shaders/pointLight_frag.glsl");
+	compositeShader.init("shaders/fullscreen_quad.glsl", "shaders/composite.glsl");
 
 	// Compute Shaders
 
@@ -195,6 +197,8 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	lightFBO.genTextureStorage(GL_RGB8); // Diffuse Light
 	lightFBO.genTextureStorage(GL_RGB8); // Specular Light
 	lightFBO.init();
+
+	//ImGui::Begin("testing");
 
 	//fluidSim.update(0.011f);
 	return true;
@@ -246,6 +250,8 @@ void GameEngine::render() {
 		fluidSim.sendDataToGPU();
 	}
 
+	
+	
 
 	// Shadow Pass
 	shadowFBO.bind();

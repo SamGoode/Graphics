@@ -44,7 +44,7 @@ private:
 	vec3 positions[MAX_PARTICLES];
 	vec3 previousPositions[MAX_PARTICLES];
 	vec3 velocities[MAX_PARTICLES];
-	float densities[MAX_PARTICLES] {};
+	float densities[MAX_PARTICLES];
 	float nearDensities[MAX_PARTICLES];
 
 	float lambdas[MAX_PARTICLES];
@@ -114,10 +114,10 @@ public:
 		particleSSBO.init();
 		dispatchIndirect.init();
 
-		particleComputeShader.init("particleCompute.glsl");
-		computeHashTableShader.init("buildHashTable.glsl");
-		computeDensityShader.init("computeDensity.glsl");
-		computePressureShader.init("computePressure.glsl");
+		particleComputeShader.init("shaders/particleCompute.glsl");
+		computeHashTableShader.init("shaders/buildHashTable.glsl");
+		computeDensityShader.init("shaders/computeDensity.glsl");
+		computePressureShader.init("shaders/computePressure.glsl");
 	}
 
 	bool isRunningOnGPU() { return isSimGPU; }

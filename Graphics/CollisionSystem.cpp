@@ -240,9 +240,9 @@ void CollisionSystem::checkCollisionBoxSphere(IPhysicsEngine* physicsEngine, ECS
 	}
 
 	vec3 undoAbs; //= localToSphere / absOffset;
-	undoAbs.x = localToSphere.x < 0 ? -1 : 1;
-	undoAbs.y = localToSphere.y < 0 ? -1 : 1;
-	undoAbs.z = localToSphere.z < 0 ? -1 : 1;
+	undoAbs.x = localToSphere.x < 0 ? -1.f : 1.f;
+	undoAbs.y = localToSphere.y < 0 ? -1.f : 1.f;
+	undoAbs.z = localToSphere.z < 0 ? -1.f : 1.f;
 
 	vec3 worldNorm = box.rotation * (norm * undoAbs);
 
