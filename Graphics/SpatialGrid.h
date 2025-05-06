@@ -10,6 +10,7 @@ using glm::ivec3;
 using glm::uvec2;
 using glm::uvec3;
 using glm::vec3;
+using glm::vec4;
 
 
 // Uses an actual hashing algorithm to allow for infinite bounds
@@ -101,13 +102,16 @@ public:
 		}
 	}
 
-	void generateHashTable(unsigned int count, const vec3* positions) {
-		assert(count <= capacity);
-
-		// these need to be reset
+	void clearData() {
 		usedCells = 0;
 		resetHashTable();
 		clearCellEntries();
+	}
+
+	void generateHashTable(unsigned int count, const vec3* positions) {
+		assert(count <= capacity);
+
+		clearData();
 
 		entries = count;
 		for (unsigned int i = 0; i < entries; i++) {
@@ -121,8 +125,29 @@ public:
 			unsigned int cellIndex = hashTable[cellHash];
 			cells[cellIndex * cellCapacity + cellEntries[cellIndex]] = i;
 			cellEntries[cellIndex]++;
-			//cells[cellIndex * cellCapacity + cellEntries[cellHash]] = i;
-			//cellEntries[cellHash]++;
+		}
+	}
+
+	void generateHashTable(unsigned int count, const vec4* positions) {
+		assert(count <= capacity);
+
+		// these need to be reset
+		usedCells = 0;
+		resetHashTable();
+		clearCellEntries();
+
+		entries = count;
+		for (unsigned int i = 0; i < entries; i++) {
+			unsigned int cellHash = getCellHash(getCellCoords(vec3(positions[i])));
+			//assert(cellEntries[cellHash] <= cellCapacity && "Cell's allocated capacity reached");
+
+			if (hashTable[cellHash] == 0xFFFFFFFF) {
+				hashTable[cellHash] = usedCells++; // Allocates new 'memory'
+			}
+
+			unsigned int cellIndex = hashTable[cellHash];
+			cells[cellIndex * cellCapacity + cellEntries[cellIndex]] = i;
+			cellEntries[cellIndex]++;
 		}
 	}
 };

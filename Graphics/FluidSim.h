@@ -32,7 +32,7 @@ private:
 	const float fixedTimeStep = 0.01f;
 	float accumulatedTime = 0.f;
 
-	const bool isSimGPU = true;
+	bool isSimGPU = false;
 
 	vec3 gravity = vec3(0);
 	float smoothingRadius = 0.f; // density kernel radius
@@ -41,14 +41,16 @@ private:
 	float nearStiffness = 0.f;
 
 	unsigned int particleCount = 0;
-	vec3 positions[MAX_PARTICLES];
-	vec3 previousPositions[MAX_PARTICLES];
-	vec3 velocities[MAX_PARTICLES];
-	float densities[MAX_PARTICLES];
-	float nearDensities[MAX_PARTICLES];
+	//vec3 positions[MAX_PARTICLES];
+	//vec3 previousPositions[MAX_PARTICLES];
+	//vec3 velocities[MAX_PARTICLES];
 
 	float lambdas[MAX_PARTICLES];
 	vec3 displacements[MAX_PARTICLES];
+	
+	float densities[MAX_PARTICLES];
+	float nearDensities[MAX_PARTICLES];
+
 
 	struct uboData {
 		vec4 boundsMin;
@@ -86,6 +88,11 @@ private:
 	ShaderStorageBuffer<ssboData> particleSSBO;
 	DispatchIndirectBuffer dispatchIndirect;
 
+	vec4* positions = particleSSBO.buffer.positions;
+	vec4* previousPositions = particleSSBO.buffer.previousPositions;
+	vec4* velocities = particleSSBO.buffer.velocities;
+
+
 	ComputeShader particleComputeShader;
 	ComputeShader computeHashTableShader;
 	ComputeShader computeDensityShader;
@@ -121,11 +128,15 @@ public:
 	}
 
 	bool isRunningOnGPU() { return isSimGPU; }
+	bool* shouldRunOnGPU() { return &isSimGPU; }
 
 	unsigned int getParticleCount() { return particleCount; }
 	void clearParticles() { particleCount = 0; }
 	void addParticle(vec3 localPosition);
 	void spawnRandomParticles(unsigned int spawnCount = 1);
+
+	void updateSpatialGrid() { spatialHashGrid.generateHashTable(particleCount, positions); }
+	void resetSpatialGrid() { spatialHashGrid.resetHashTable(); }
 
 	void update(float deltaTime);
 	void tickSimGPU();
@@ -136,10 +147,10 @@ public:
 		// temporary for now, will change later
 
 		configUBO.buffer = {
-			.boundsMin = vec4(position, 1),
-			.boundsMax = vec4(position + bounds, 1),
+			.boundsMin = vec4(position, 0),
+			.boundsMax = vec4(position + bounds, 0),
 
-			.gravity = vec4(gravity, 1),
+			.gravity = vec4(gravity, 0),
 			.smoothingRadius = smoothingRadius,
 			.restDensity = restDensity,
 			.stiffness = stiffness,
@@ -149,18 +160,17 @@ public:
 			.particleCount = particleCount
 		};
 
-		for (unsigned int i = 0; i < particleCount; i++) {
-			particleSSBO.buffer.positions[i] = vec4(positions[i], 1);
-			particleSSBO.buffer.previousPositions[i] = vec4(positions[i], 1);
-			particleSSBO.buffer.velocities[i] = vec4(0, 0, 0, 1);
-		}
-
 		std::memcpy(particleSSBO.buffer.hashTable, spatialHashGrid.getHashTable(), MAX_PARTICLES * sizeof(unsigned int));
 		std::memcpy(particleSSBO.buffer.cellEntries, spatialHashGrid.getCellEntries(), MAX_PARTICLES * sizeof(unsigned int));
 		std::memcpy(particleSSBO.buffer.cells, spatialHashGrid.getCells(), spatialHashGrid.getUsedCells() * MAX_PARTICLES_PER_CELL * sizeof(unsigned int));
 
 		configUBO.subData();
 		particleSSBO.subData();
+	}
+
+	void pullDataFromGPU() {
+		particleSSBO.subData(0, particleCount * sizeof(vec4), particleSSBO.buffer.positions);
+		particleSSBO.subData(MAX_PARTICLES * sizeof(vec4), particleCount * sizeof(vec4), particleSSBO.buffer.previousPositions);
 	}
 
 	void bindConfigUBO(GLuint bindingIndex) {

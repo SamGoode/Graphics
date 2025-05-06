@@ -4,8 +4,9 @@
 void FluidSimSPH::addParticle(vec3 localPosition) {
 	assert(particleCount < MAX_PARTICLES);
 
-	previousPositions[particleCount] = localPosition + position;
-	positions[particleCount] = localPosition + position;
+	vec4 pos = vec4(localPosition + position, 1);
+	previousPositions[particleCount] = pos;
+	positions[particleCount] = pos;
 	particleCount++;
 }
 
@@ -16,10 +17,20 @@ void FluidSimSPH::spawnRandomParticles(unsigned int spawnCount) {
 	for (unsigned int i = 0; i < spawnCount; i++) {
 		vec3 randomPosition = glm::linearRand(position, position + bounds);
 
-		previousPositions[particleCount] = randomPosition;
-		positions[particleCount] = randomPosition;
-		particleCount++;
+		positions[particleCount + i] = vec4(randomPosition, 0);
+		previousPositions[particleCount + i] = vec4(randomPosition, 0);
 	}
+
+	if (isSimGPU) {
+		particleSSBO.subData(particleCount * sizeof(vec4), spawnCount * sizeof(vec4), &particleSSBO.buffer.positions[particleCount]);
+		particleSSBO.subData((MAX_PARTICLES + particleCount) * sizeof(vec4), spawnCount * sizeof(vec4), &particleSSBO.buffer.previousPositions[particleCount]);
+	}
+
+	particleCount += spawnCount;
+
+
+	configUBO.buffer.particleCount = particleCount;
+	configUBO.subData();
 }
 
 
@@ -71,16 +82,32 @@ void FluidSimSPH::tickSimGPU() {
 }
 
 void FluidSimSPH::tickSimCPU() {
-	// Apply gravity
+	// Boundaries
 	for (unsigned int i = 0; i < particleCount; i++) {
-		velocities[i] += gravity * fixedTimeStep;
+		applyBoundaryConstraints(i);
+		//applyBoundaryPressure(i);
 	}
 
-	// Project current and update previous particle positions
+	// Compute implicit velocity
+	for (unsigned int i = 0; i < particleCount; i++) {
+		velocities[i] = (positions[i] - previousPositions[i]) / fixedTimeStep;
+	}
+
+	// Update previous particle positions
 	for (unsigned int i = 0; i < particleCount; i++) {
 		previousPositions[i] = positions[i];
+	}
+
+	// Apply gravity
+	for (unsigned int i = 0; i < particleCount; i++) {
+		velocities[i] += vec4(gravity * fixedTimeStep, 0);
+	}
+
+	// Project current particle positions
+	for (unsigned int i = 0; i < particleCount; i++) {
 		positions[i] += velocities[i] * fixedTimeStep;
 	}
+
 
 	// Build spatial hash grid with projected positions
 	spatialHashGrid.generateHashTable(particleCount, positions);
@@ -121,32 +148,19 @@ void FluidSimSPH::tickSimCPU() {
 	}
 
 	for (unsigned int i = 0; i < particleCount; i++) {
-		positions[i] += displacements[i];
-	}
-
-
-	// Boundaries
-	for (unsigned int i = 0; i < particleCount; i++) {
-		applyBoundaryConstraints(i);
-		//applyBoundaryPressure(i);
-	}
-
-
-	// Compute implicit velocity
-	for (unsigned int i = 0; i < particleCount; i++) {
-		velocities[i] = (positions[i] - previousPositions[i]) / fixedTimeStep;
+		positions[i] += vec4(displacements[i], 0);
 	}
 }
 
 void FluidSimSPH::calculateDensity(unsigned int particleIndex) {
-	const vec3& particlePos = positions[particleIndex];
+	const vec3 particlePos = positions[particleIndex];
 	ivec3 cellCoords = spatialHashGrid.getCellCoords(particlePos);
 	
 	float density = 0.f;
 	float nearDensity = 0.f;
 
 	auto func = [&](unsigned int otherParticleIndex) {
-		vec3 toParticle = positions[otherParticleIndex] - particlePos;
+		vec3 toParticle = vec3(positions[otherParticleIndex]) - particlePos;
 		float sqrDist = dot(toParticle, toParticle);
 
 		if (sqrDist > smoothingRadius * smoothingRadius) return;
@@ -163,7 +177,7 @@ void FluidSimSPH::calculateDensity(unsigned int particleIndex) {
 }
 
 void FluidSimSPH::applyPressure(unsigned int particleIndex) {
-	vec3& particlePos = positions[particleIndex];
+	vec3 particlePos = positions[particleIndex];
 	ivec3 cellCoords = spatialHashGrid.getCellCoords(particlePos);
 
 	float pressure = calculatePressure(densities[particleIndex], restDensity, stiffness);
@@ -175,7 +189,7 @@ void FluidSimSPH::applyPressure(unsigned int particleIndex) {
 		// The particle should not apply pressure to itself
 		if (otherParticleIndex == particleIndex) return;
 
-		vec3 toParticle = positions[otherParticleIndex] - particlePos;
+		vec3 toParticle = vec3(positions[otherParticleIndex]) - particlePos;
 		float sqrDist = dot(toParticle, toParticle);
 
 		if (sqrDist > smoothingRadius * smoothingRadius) return;
@@ -187,13 +201,14 @@ void FluidSimSPH::applyPressure(unsigned int particleIndex) {
 		vec3 pressureDisplacement = unitDirection * pressureForce * fixedTimeStep * fixedTimeStep;
 
 		// assume mass = 1
-		positions[otherParticleIndex] += pressureDisplacement;
+		positions[otherParticleIndex] += vec4(pressureDisplacement, 0);
 		pressureDisplacementSum -= pressureDisplacement;
 	};
 
 	spatialHashGrid.iterate3x3x3(cellCoords, func);
 
-	particlePos += pressureDisplacementSum;
+	//particlePos += pressureDisplacementSum;
+	positions[particleIndex] += vec4(pressureDisplacementSum, 0);
 }
 
 void FluidSimSPH::calculateLambda(unsigned int particleIndex) {
@@ -206,7 +221,7 @@ void FluidSimSPH::calculateLambda(unsigned int particleIndex) {
 	float constraintGradient = 0.f;
 
 	auto func = [&](unsigned int otherParticleIndex) {
-		vec3 toParticle = positions[otherParticleIndex] - particlePos;
+		vec3 toParticle = vec3(positions[otherParticleIndex]) - particlePos;
 		float sqrDist = dot(toParticle, toParticle);
 
 		if (sqrDist > smoothingRadius * smoothingRadius) return;
@@ -249,7 +264,7 @@ void FluidSimSPH::calculateDisplacement(unsigned int particleIndex) {
 	auto func = [&](unsigned int otherParticleIndex) {
 		if (particleIndex == otherParticleIndex) return;
 
-		vec3 toParticle = positions[otherParticleIndex] - particlePos;
+		vec3 toParticle = vec3(positions[otherParticleIndex]) - particlePos;
 		float sqrDist = dot(toParticle, toParticle);
 
 		if (sqrDist > smoothingRadius * smoothingRadius) return;
@@ -282,14 +297,14 @@ void FluidSimSPH::applyBoundaryConstraints(unsigned int particleIndex) {
 	vec3 boundsMin = position;
 	vec3 boundsMax = position + bounds;
 
-	positions[particleIndex] = glm::clamp(particlePos, boundsMin, boundsMax);
+	positions[particleIndex] = vec4(glm::clamp(particlePos, boundsMin, boundsMax), 1);
 }
 
 void FluidSimSPH::applyBoundaryPressure(unsigned int particleIndex) {
 	float artificialDensity = restDensity * 1.f;
 	float pressure = artificialDensity * nearStiffness;
 
-	vec3& particlePos = positions[particleIndex];
+	vec3 particlePos = positions[particleIndex];
 
 	vec3 boundsMin = position;
 	vec3 boundsMax = position + bounds;
@@ -332,6 +347,8 @@ void FluidSimSPH::applyBoundaryPressure(unsigned int particleIndex) {
 
 		particlePos.z += pressure * value * value * fixedTimeStep * fixedTimeStep;
 	}
+
+	positions[particleIndex] = vec4(particlePos, 1);
 }
 
 

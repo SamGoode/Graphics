@@ -109,8 +109,8 @@ float sampleDensity(vec3 point) {
 
 			density += polySixKernel(sqrDist);
 			
-			//float dist = sqrt(sqrDist);
-			//density += densityKernel(config.smoothingRadius, dist);
+			// float dist = sqrt(sqrDist);
+			// density += densityKernel(config.smoothingRadius, dist);
 		}
 	}
 	return density;
@@ -156,6 +156,9 @@ const vec4 water = vec4(vec3(0.1, 0.5, 0.8), 0.3);
 
 
 void main() {
+	float minDepth = texture(fluidDepthPass, vTexCoord).r;
+	gpassAlbedoSpec = vec4(vec3(minDepth/10.0), 1.0);
+	return;
 //	float sqrDist = dot(CenterOffset, CenterOffset);
 //	if(sqrDist > 1) discard;
 //
@@ -192,28 +195,28 @@ void main() {
 //	 gl_FragDepth = ndcZ * 0.5 + 0.5;
 
 
-	vec2 screenUVs = vTexCoord;
-	vec2 ndc = screenUVs * 2 - 1;
+	// vec2 screenUVs = vTexCoord;
+	// vec2 ndc = screenUVs * 2 - 1;
 
-	vec2 minMaxDepth = texture(fluidDepthPass, vTexCoord).rg;
+	// vec2 minMaxDepth = texture(fluidDepthPass, vTexCoord).rg;
 
-	vec3 vRayDirection = normalize((ProjectionInverse * vec4(ndc, 1, 1)).xyz);
-	vec3 rayDirection = (ViewInverse * vec4(vRayDirection, 0)).xyz;	
+	// vec3 vRayDirection = normalize((ProjectionInverse * vec4(ndc, 1, 1)).xyz);
+	// vec3 rayDirection = (ViewInverse * vec4(vRayDirection, 0)).xyz;	
 
-	float minDepth = minMaxDepth.r;
-	//float maxDepth = minMaxDepth.g;
+	// //float minDepth = minMaxDepth.r;
+	// //float maxDepth = minMaxDepth.g;
 
-	float rayDistance = raymarchDensity(CameraPos.xyz, rayDirection, maxSteps, stepLength, isoDensity, minDepth);
-	if(rayDistance == -1.0) discard;
+	// float rayDistance = raymarchDensity(CameraPos.xyz, rayDirection, maxSteps, stepLength, isoDensity, minDepth);
+	// if(rayDistance == -1.0) discard;
 
-	vec3 iso_vPos = vRayDirection * rayDistance;
-	vec3 iso_pos = CameraPos.xyz + rayDirection * rayDistance;
+	// vec3 iso_vPos = vRayDirection * rayDistance;
+	// vec3 iso_pos = CameraPos.xyz + rayDirection * rayDistance;
 
-	gpassAlbedoSpec = water;
-	gpassPosition = iso_vPos;
-	gpassNormal = (View * vec4(normalize(densityGradient(iso_pos)), 0)).xyz;
+	// gpassAlbedoSpec = water;
+	// gpassPosition = iso_vPos;
+	// gpassNormal = (View * vec4(normalize(densityGradient(iso_pos)), 0)).xyz;
 
-	float clipZ = iso_vPos.z * Projection[2].z + Projection[3].z;
-	float ndcZ = clipZ / -iso_vPos.z;
-	gl_FragDepth = ndcZ * 0.5 + 0.5;
+	// float clipZ = iso_vPos.z * Projection[2].z + Projection[3].z;
+	// float ndcZ = clipZ / -iso_vPos.z;
+	// gl_FragDepth = ndcZ * 0.5 + 0.5;
 }

@@ -6,12 +6,11 @@
 #include "CollisionSystem.h"
 #include "RenderSystem.h"
 
-//#include "imgui.h"
-
+#include <string>
 
 GameEngine::GameEngine() {
 	worldUp = vec3(0, 0, 1);
-	camera = Camera(vec3(15, 0, 15), vec3(0.f, 45.f, 180.f), 20.f);
+	camera = Camera(vec3(25, 0, 15), vec3(0.f, 45.f, 180.f), 20.f);
 
 	ambientLighting = vec3(0.4f);
 	lightColor = vec3(0.8f);
@@ -120,7 +119,8 @@ GameEngine::GameEngine() {
 bool GameEngine::init(int windowWidth, int windowHeight) {
 	if (!App3D::init(windowWidth, windowHeight)) return false;
 
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	if(cameraEnabled) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
 
 	PhysicsSystem* physicsSystem = ecs.getSystem<PhysicsSystem>();
 	physicsSystem->generateInertiaTensors(&ecs);
@@ -153,8 +153,8 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	fluidSim.bindConfigUBO(FLUID_CONFIG_UBO);
 	fluidSim.bindParticleSSBO(FLUID_DATA_SSBO);
 
-	fluidSim.spawnRandomParticles(150000);
 	fluidSim.sendDataToGPU();
+	fluidSim.spawnRandomParticles(500);
 
 
 	// Uniform Buffer Objects
@@ -198,7 +198,6 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	lightFBO.genTextureStorage(GL_RGB8); // Specular Light
 	lightFBO.init();
 
-	//ImGui::Begin("testing");
 
 	//fluidSim.update(0.011f);
 	return true;
@@ -208,7 +207,92 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 bool GameEngine::update()  {
 	if (!App3D::update()) return false;
 	if (keyPressed(GLFW_KEY_ESCAPE)) return false;
-	
+
+	// Imgui
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+
+	if (showDebug) {
+		ImGui::Begin("Debug", &showDebug);
+		ImGui::Text("FPS: %.01f", (ImGui::GetIO().Framerate));
+		ImGui::Text("%.01f ms", (1000.f / ImGui::GetIO().Framerate));
+
+		ImGui::Dummy({ 0.f, 20.f }); // Spacing
+
+		ImGui::BeginChild("Physics Engine", {0.f, 130.f}, ImGuiChildFlags_Border);
+		ImGui::TextColored({ 0.2f, 0.5f, 0.9f, 1.f }, "Physics Engine");
+		ImGui::Checkbox("Is Active", &physicsEngineActive);
+		ImGui::InputFloat3("Gravity", (float*)&physicsEngine.gravity);
+		ImGui::InputFloat("Elasticity", &physicsEngine.elasticity);
+		ImGui::InputFloat("Friction", &physicsEngine.friction);
+		ImGui::EndChild();
+
+		ImGui::Dummy({ 0.f, 20.f }); // Spacing
+		
+		ImGui::BeginChild("Fluid Engine", { 0.f, 170.f }, ImGuiChildFlags_Border);
+		ImGui::TextColored({ 0.2f, 0.5f, 0.9f, 1.f }, "Fluid Engine");
+		bool toggledActive = ImGui::Checkbox("Is Fluid Active", &fluidEngineActive);
+		bool toggledGPU = ImGui::Checkbox("Run on GPU", fluidSim.shouldRunOnGPU());
+		ImGui::Text("Particle count: %i", fluidSim.getParticleCount());
+
+		ImGui::Text("Spawn particles");
+		ImGui::InputInt(" ", &spawnParticleCount);
+		ImGui::SameLine();
+		bool spawnParticles = ImGui::Button("Spawn");
+		bool clearParticles = ImGui::Button("Clear Particles");
+		ImGui::EndChild();
+
+		ImGui::End();
+
+		if (toggledGPU) {
+			if (fluidSim.isRunningOnGPU()) {
+				fluidSim.resetSpatialGrid();
+				fluidSim.sendDataToGPU();
+			}
+			else {
+				fluidSim.pullDataFromGPU();
+			}
+		}
+
+		if (spawnParticles) {
+			fluidSim.spawnRandomParticles(spawnParticleCount);
+			if (!fluidEngineActive) {
+				fluidSim.updateSpatialGrid();
+				if (fluidSim.isRunningOnGPU())
+					fluidSim.sendDataToGPU();
+			}
+		}
+
+		if (clearParticles) {
+			fluidSim.clearParticles();
+			fluidSim.sendDataToGPU();
+		}
+	}
+
+	// Left alt key toggles mouse
+	if (canToggleCamera && keyPressed(GLFW_KEY_LEFT_ALT)) {
+		canToggleCamera = false;
+
+		// This works cos disabled flag is normal flag + 2
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL | ((short)!cameraEnabled << 1));
+		cameraEnabled = !cameraEnabled;
+
+		//if (cameraEnabled) {
+		//	//cameraEnabled = false;
+		//	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		//}
+		//else {
+		//	//cameraEnabled = true;
+		//	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		//}
+	}
+
+	if (keyReleased(GLFW_KEY_LEFT_ALT)) {
+		canToggleCamera = true;
+	}
+
+
 	float deltaTime = (float)getFrameTime();
 
 	// Avoid taking absurd time steps
@@ -223,9 +307,10 @@ bool GameEngine::update()  {
 	auto& transform = ecs.getComponent<TransformComponent>(vanEntity);
 	transform.rotation = eulerToQuat(vec3(0, 0, 10.f) * deltaTime) * transform.rotation;
 
+
 	// Physics engine has inbuilt fixed update system
-	physicsEngine.update(deltaTime);
-	fluidSim.update(deltaTime);
+	if (physicsEngineActive) physicsEngine.update(deltaTime);
+	if (fluidEngineActive) fluidSim.update(deltaTime);
 
 	return true;
 }
@@ -249,9 +334,6 @@ void GameEngine::render() {
 	if (!fluidSim.isRunningOnGPU()) {
 		fluidSim.sendDataToGPU();
 	}
-
-	
-	
 
 	// Shadow Pass
 	shadowFBO.bind();
@@ -420,6 +502,10 @@ void GameEngine::render() {
 
 	glDisable(GL_STENCIL_TEST);
 
+	// Render imgui
+	ImGui::Render();
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
 
 	glfwSwapBuffers(window);
 	glfwPollEvents();
@@ -427,11 +513,16 @@ void GameEngine::render() {
 
 void GameEngine::shutdown() {
 	// Can add shutdown code here
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
 
 	App3D::shutdown();
 }
 
 void GameEngine::onMouseMoved(MouseInfo mouse) {
+	if (!cameraEnabled) return;
+
 	vec2 input = mouse.pos - mouse.prevPos;
 	input *= -0.0006f;
 

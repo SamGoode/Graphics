@@ -22,9 +22,11 @@ bool App3D::init(int windowWidth, int windowHeight) {
 
 	printf("GL: %i.%i\n", GLVersion.major, GLVersion.minor);
 
-	lineShader.init("line_vert.glsl", "line_frag.glsl");
-	meshShader.init("mesh_vert.glsl", "mesh_frag.glsl");
-	
+
+
+
+	//lineShader.init("line_vert.glsl", "line_frag.glsl");
+	//meshShader.init("mesh_vert.glsl", "mesh_frag.glsl");
 
 	// Grid
 	line lines[42];
@@ -62,6 +64,15 @@ bool App3D::init(int windowWidth, int windowHeight) {
 	mouse.pos = vec2((float)xpos, (float)ypos);
 	mouse.prevPos = mouse.pos;
 
+	// Imgui setup
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	io.ConfigWindowsMoveFromTitleBarOnly = true;
+	
+	ImGui::StyleColorsDark();
+	ImGui_ImplGlfw_InitForOpenGL(window, true);
+	ImGui_ImplOpenGL3_Init("#version 460");
 
 	return true;
 }

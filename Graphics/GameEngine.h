@@ -20,6 +20,15 @@ class GameEngine : public App3D {
 protected:
 	vec3 worldUp;
 	Camera camera;
+	bool cameraEnabled = false;
+	bool canToggleCamera = true;
+
+	// Imgui debug variables
+	bool showDebug = true;
+	bool physicsEngineActive = true;
+	bool fluidEngineActive = true;
+	int spawnParticleCount = 500;
+
 
 	ECS::ECSManager ecs;
 

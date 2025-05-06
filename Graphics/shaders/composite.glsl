@@ -23,6 +23,7 @@ void main() {
 	vec3 diffuse = albedoSpec.rgb * diffuseLight;
 	vec3 specular = specularLight;
 
-	FragColor = vec4(ambient + diffuse + specular, 1);
+	FragColor = vec4(ambient, 1);
+	//FragColor = vec4(ambient + diffuse + specular, 1);
 	//FragColor = vec4(vec3(depth), 1.f);
 }

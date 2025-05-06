@@ -1,5 +1,10 @@
 #pragma once
 
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+//#include "imgui_impl_opengl3_loader.h"
+
 #include "glad.h"
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -48,8 +53,8 @@ protected:
 	double timeLastFrame = 0;
 	double runtime = 0;
 
-	Shader lineShader;
-	Shader meshShader;
+	//Shader lineShader;
+	//Shader meshShader;
 
 	unsigned int lineVBO = 0;
 	unsigned int lineVAO = 0;
@@ -74,7 +79,8 @@ public:
 
 	double getFrameTime() { return runtime - timeLastFrame; }
 
-	bool keyPressed(int key) { return glfwGetKey(window, key) == GLFW_PRESS; }
+	bool keyPressed(int key) { return glfwGetKey(window, key) == (GLFW_PRESS | !GLFW_REPEAT); }
+	bool keyReleased(int key) { return glfwGetKey(window, key) == GLFW_RELEASE; }
 	void mouseCursorCallback(GLFWwindow* window, double xpos, double ypos) { mouse.prevPos = mouse.pos; mouse.pos = vec2((float)xpos, (float)ypos); onMouseMoved(mouse); }
 	
 	virtual void onMouseMoved(MouseInfo mouse) = 0;
