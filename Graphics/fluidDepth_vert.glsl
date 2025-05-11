@@ -42,10 +42,8 @@ layout(binding = FLUID_DATA_SSBO, std430) readonly restrict buffer FluidData {
 } data;
 
 
-out vec4 vPosition;
-//out float Depth;
+flat out float vDepth;
 out vec2 CenterOffset;
-
 flat out float SmoothingRadius;
 
 
@@ -56,11 +54,17 @@ void main() {
 	vec4 center = View * vec4(data.positions[particleIndex].xyz, 1);
 
 	// Also offset towards camera by smoothing radius for depth testing reasons
-	vPosition = center + vec4(vertexOffsets[gl_VertexID].xy * config.smoothingRadius, config.smoothingRadius, 0);
-	
+	//vec4 vPosition = center + vec4(vertexOffsets[gl_VertexID].xy * config.smoothingRadius, config.smoothingRadius, 0);
+	// ^^^ The offset towards camera ends up screwing up the projection values ^^^
+
 	//Depth = length(vPosition.xyz);
+
+	vec4 vPosition = center + vec4(vertexOffsets[gl_VertexID].xy * config.smoothingRadius, 0, 0);
+
+	vDepth = vPosition.z;
 	CenterOffset = vertexOffsets[gl_VertexID].xy;
 	SmoothingRadius = config.smoothingRadius;
+
 
 	gl_Position = Projection * vPosition;
 }

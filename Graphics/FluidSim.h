@@ -32,7 +32,7 @@ private:
 	const float fixedTimeStep = 0.01f;
 	float accumulatedTime = 0.f;
 
-	bool isSimGPU = false;
+	bool isSimGPU = true;
 
 	vec3 gravity = vec3(0);
 	float smoothingRadius = 0.f; // density kernel radius
@@ -121,10 +121,10 @@ public:
 		particleSSBO.init();
 		dispatchIndirect.init();
 
-		particleComputeShader.init("shaders/particleCompute.glsl");
-		computeHashTableShader.init("shaders/buildHashTable.glsl");
-		computeDensityShader.init("shaders/computeDensity.glsl");
-		computePressureShader.init("shaders/computePressure.glsl");
+		particleComputeShader.init("particleCompute.glsl");
+		computeHashTableShader.init("buildHashTable.glsl");
+		computeDensityShader.init("computeDensity.glsl");
+		computePressureShader.init("computePressure.glsl");
 	}
 
 	bool isRunningOnGPU() { return isSimGPU; }

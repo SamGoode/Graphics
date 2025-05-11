@@ -10,13 +10,19 @@
 
 GameEngine::GameEngine() {
 	worldUp = vec3(0, 0, 1);
-	camera = Camera(vec3(25, 0, 15), vec3(0.f, 45.f, 180.f), 20.f);
+	camera = Camera(vec3(25, 0, 15), vec3(0.f, 45.f, 180.f), 10.f);
 
 	ambientLighting = vec3(0.4f);
 	lightColor = vec3(0.8f);
 	lightDirection = normalize(vec3(-1, 1, -1));
 
-	projection = glm::perspective(glm::pi<float>() * 0.25f, 16 / 9.f, 0.1f, 1000.f);
+	projection = glm::perspective(glm::pi<float>() * 0.25f, 16 / 9.f, 0.1f, 100.f);
+
+	vec4 test = projection * vec4(736.379683f, 414.213628f, -1000.f, 1.f);
+	vec4 ndcTest = test / test.w;
+	vec4 test2 = glm::inverse(projection) * vec4(1, 1, 0.1, 1);
+	vec4 ndcTest2 = test2 / test2.w;
+
 
 	// Initialize EntityComponentSystem
 	ecs.init();
@@ -149,12 +155,12 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 
 	pointLights.init();
 
-	fluidSim.init(vec3(8, -4, 1), vec3(8, 8, 4), physicsEngine.gravity);
+	fluidSim.init(vec3(8, -4, 0), vec3(8, 8, 4), physicsEngine.gravity);
 	fluidSim.bindConfigUBO(FLUID_CONFIG_UBO);
 	fluidSim.bindParticleSSBO(FLUID_DATA_SSBO);
 
+	fluidSim.spawnRandomParticles(16000);
 	fluidSim.sendDataToGPU();
-	fluidSim.spawnRandomParticles(500);
 
 
 	// Uniform Buffer Objects
@@ -164,13 +170,16 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	pvmUBO.bind(PROJECTIONVIEW_UBO);
 
 	// Shaders
-	shadowShader.init("shaders/shadow.glsl", "shaders/empty.glsl");
-	gpassShader.init("shaders/gpass_vert.glsl", "shaders/gpass_frag.glsl");
-	fluidDepthShader.init("shaders/fluidDepth_vert.glsl", "shaders/fluidDepth_frag.glsl");
-	raymarchShader.init("shaders/fullscreen_quad.glsl", "shaders/raymarch.glsl");
-	lightShader.init("shaders/fullscreen_quad.glsl", "shaders/directional_light.glsl");
-	pointLightShader.init("shaders/pointLight_vert.glsl", "shaders/pointLight_frag.glsl");
-	compositeShader.init("shaders/fullscreen_quad.glsl", "shaders/composite.glsl");
+	shadowShader.init("shadow.glsl", "empty.glsl");
+	gpassShader.init("gpass_vert.glsl", "gpass_frag.glsl");
+	
+	fluidDepthShader.init("fluidDepth_vert.glsl", "fluidDepth_frag.glsl");
+	gaussBlurShader.init("fullscreen_quad.glsl", "gauss_blur.glsl");
+	raymarchShader.init("fullscreen_quad.glsl", "raymarch.glsl");
+	
+	lightShader.init("fullscreen_quad.glsl", "directional_light.glsl");
+	pointLightShader.init("pointLight_vert.glsl", "pointLight_frag.glsl");
+	compositeShader.init("fullscreen_quad.glsl", "composite.glsl");
 
 	// Compute Shaders
 
@@ -188,9 +197,15 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	gpassFBO.init();
 
 	fluidDepthFBO.setSize(windowWidth, windowHeight);
+	//fluidDepthFBO.genTextureImage(GL_DEPTH_COMPONENT);
 	fluidDepthFBO.genRenderBuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
-	fluidDepthFBO.genTextureStorage(GL_RGB32F); // Min depth/Max depth/Smoothed depth
+	fluidDepthFBO.genTextureStorage(GL_R32F); // Min depth
 	fluidDepthFBO.init();
+
+	smoothDepthFBO.setSize(windowWidth, windowHeight);
+	smoothDepthFBO.shareRenderBuffer(fluidDepthFBO);
+	smoothDepthFBO.genTextureStorage(GL_R32F); // Smoothed depth
+	smoothDepthFBO.init();
 
 	lightFBO.setSize(windowWidth, windowHeight);
 	lightFBO.shareRenderBuffer(gpassFBO);
@@ -199,12 +214,11 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	lightFBO.init();
 
 
-	//fluidSim.update(0.011f);
 	return true;
 }
 
 
-bool GameEngine::update()  {
+bool GameEngine::update() {
 	if (!App3D::update()) return false;
 	if (keyPressed(GLFW_KEY_ESCAPE)) return false;
 
@@ -370,7 +384,7 @@ void GameEngine::render() {
 	glStencilMask(0xFF);
 
 	glClearStencil(0);
-	glClearColor(0.f, 0.f, 0.f, 0);
+	glClearColor(0, 0, 0, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 	// Rasterize Meshes
@@ -394,7 +408,8 @@ void GameEngine::render() {
 	glStencilFunc(GL_ALWAYS, 2, 0xFF);
 	glStencilMask(0x02);
 
-	glClear(GL_DEPTH_BUFFER_BIT);
+	glClearColor(1, 0, 0, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	fluidDepthShader.use();
 	//glEnable(GL_PROGRAM_POINT_SIZE);
@@ -402,12 +417,30 @@ void GameEngine::render() {
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	glDrawArraysInstanced(GL_QUADS, 0, 4, fluidSim.getParticleCount()); // change this later
 
+	// Generate smoothed fluid depth texture
+	smoothDepthFBO.bind();
+	glDisable(GL_DEPTH_TEST);
+
+	glStencilFunc(GL_EQUAL, 2, 0x02);
+	glStencilMask(0x00);
+
+	glClearColor(1, 0, 0, 0);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	gaussBlurShader.use();
+	gaussBlurShader.bindUniform(0, "fluidDepthPass");
+	fluidDepthFBO.getRenderTexture(0)->bind(GL_TEXTURE0);
+
+	glDrawArrays(GL_TRIANGLES, 0, 3);
+
+	glEnable(GL_DEPTH_TEST);
+
 
 	// Raymarch Particles
 	fluidDepthFBO.sendStencilBuffer(gpassFBO);
 	gpassFBO.bind();
 	glDepthFunc(GL_LESS);
-	glDepthMask(GL_FALSE);
+	glDepthMask(GL_TRUE);
 
 	glStencilFunc(GL_EQUAL, 2 | 1, 0x02);
 	glStencilMask(0x01);
@@ -416,6 +449,8 @@ void GameEngine::render() {
 
 	raymarchShader.bindUniform(0, "fluidDepthPass");
 	fluidDepthFBO.getRenderTexture(0)->bind(GL_TEXTURE0);
+	raymarchShader.bindUniform(1, "smoothDepthPass");
+	smoothDepthFBO.getRenderTexture(0)->bind(GL_TEXTURE1);
 
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
@@ -497,6 +532,10 @@ void GameEngine::render() {
 	lightFBO.getRenderTexture(1)->bind(GL_TEXTURE2);
 	compositeShader.bindUniform(3, "shadowPass");
 	shadowFBO.getRenderTexture(0)->bind(GL_TEXTURE3);
+	compositeShader.bindUniform(4, "fluidDepthPass");
+	fluidDepthFBO.getRenderTexture(0)->bind(GL_TEXTURE4);
+	compositeShader.bindUniform(5, "smoothDepthPass");
+	smoothDepthFBO.getRenderTexture(0)->bind(GL_TEXTURE5);
 	
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 

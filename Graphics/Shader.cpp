@@ -26,7 +26,7 @@ void Shader::init(const char* vertFileName, const char* fragFileName) {
 		char* infoLog = new char[infoLogLength + 1];
 
 		glGetProgramInfoLog(gl_id, infoLogLength, 0, infoLog);
-		printf("Error: Failed to link shader program!\n%s\n", infoLog);
+		printf("Error: Failed to link shader program!\nVertex Shader: %s\nFragment Shader: %s\n%s\n", vertFileName, fragFileName, infoLog);
 		delete[] infoLog;
 	}
 

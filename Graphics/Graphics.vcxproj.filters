@@ -13,14 +13,14 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Resource Files\Shaders">
-      <UniqueIdentifier>{5396b7b6-bf68-4221-8994-281e0537aee4}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\imgui">
       <UniqueIdentifier>{2f751aae-ba11-4407-926a-4789d2f18b69}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\imgui">
       <UniqueIdentifier>{d4ee0887-3033-4b46-ad3b-162907bdc233}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\Shaders">
+      <UniqueIdentifier>{2a3864bd-48c2-460a-a703-6313f2cfdbbd}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -181,70 +181,73 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\buildHashTable.glsl">
+    <None Include="shadow.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="shaders\composite.glsl">
+    <None Include="raymarch_bounds.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="shaders\computeDensity.glsl">
+    <None Include="raymarch.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="shaders\computePressure.glsl">
+    <None Include="pointLight_vert.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="shaders\directional_light.glsl">
+    <None Include="pointLight_frag.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="shaders\empty.glsl">
+    <None Include="particleCompute.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="shaders\fluidDepth_frag.glsl">
+    <None Include="mesh_vert.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="shaders\fluidDepth_vert.glsl">
+    <None Include="mesh_frag.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="shaders\fullscreen_quad.glsl">
+    <None Include="line_vert.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="shaders\gpass_frag.glsl">
+    <None Include="line_frag.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="shaders\gpass_vert.glsl">
+    <None Include="laplacian.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="shaders\laplacian.glsl">
+    <None Include="gpass_vert.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="shaders\line_frag.glsl">
+    <None Include="gpass_frag.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="shaders\line_vert.glsl">
+    <None Include="fullscreen_quad.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="shaders\mesh_frag.glsl">
+    <None Include="fluidDepth_vert.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="shaders\mesh_vert.glsl">
+    <None Include="fluidDepth_frag.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="shaders\particleCompute.glsl">
+    <None Include="empty.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="shaders\pointLight_frag.glsl">
+    <None Include="directional_light.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="shaders\pointLight_vert.glsl">
+    <None Include="computePressure.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="shaders\raymarch.glsl">
+    <None Include="computeDensity.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="shaders\raymarch_bounds.glsl">
+    <None Include="composite.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="shaders\shadow.glsl">
+    <None Include="buildHashTable.glsl">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="gauss_blur.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
   </ItemGroup>

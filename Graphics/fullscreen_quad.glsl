@@ -1,4 +1,4 @@
-#version 410
+#version 430 core
 
 out vec2 vTexCoord;
 

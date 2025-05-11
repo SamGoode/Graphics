@@ -20,14 +20,14 @@ class GameEngine : public App3D {
 protected:
 	vec3 worldUp;
 	Camera camera;
-	bool cameraEnabled = false;
+	bool cameraEnabled = true;
 	bool canToggleCamera = true;
 
 	// Imgui debug variables
 	bool showDebug = true;
 	bool physicsEngineActive = true;
 	bool fluidEngineActive = true;
-	int spawnParticleCount = 500;
+	int spawnParticleCount = 1000;
 
 
 	ECS::ECSManager ecs;
@@ -60,12 +60,16 @@ protected:
 	FrameBuffer shadowFBO;
 	FrameBuffer gpassFBO;
 	FrameBuffer fluidDepthFBO;
+	FrameBuffer smoothDepthFBO;
 	FrameBuffer lightFBO;
 
 	Shader shadowShader;
 	Shader gpassShader;
+
 	Shader fluidDepthShader;
+	Shader gaussBlurShader;
 	Shader raymarchShader;
+
 	Shader lightShader;
 	Shader pointLightShader;
 	Shader compositeShader;

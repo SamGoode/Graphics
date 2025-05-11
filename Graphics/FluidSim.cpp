@@ -4,7 +4,7 @@
 void FluidSimSPH::addParticle(vec3 localPosition) {
 	assert(particleCount < MAX_PARTICLES);
 
-	vec4 pos = vec4(localPosition + position, 1);
+	vec4 pos = vec4(localPosition + position, 0);
 	previousPositions[particleCount] = pos;
 	positions[particleCount] = pos;
 	particleCount++;
