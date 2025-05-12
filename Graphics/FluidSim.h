@@ -37,6 +37,14 @@ private:
 	vec3 gravity = vec3(0);
 	float smoothingRadius = 0.f; // density kernel radius
 	float restDensity = 0.f;
+
+	// Mullen.M parameters
+	float epsilon = 0.f;
+	float k = 0.f;
+	int N = 0;
+	float densityDeltaQ = 0.f;
+
+	// Clavet.S parameters
 	float stiffness = 0.f;
 	float nearStiffness = 0.f;
 
@@ -59,6 +67,8 @@ private:
 		vec4 gravity;
 		float smoothingRadius;
 		float restDensity;
+
+
 		float stiffness;
 		float nearStiffness;
 
@@ -103,8 +113,8 @@ public:
 	FluidSimSPH() {}
 	~FluidSimSPH() {}
 
-	void init(vec3 _position, vec3 _bounds, vec3 _gravity, float _smoothingRadius = 0.2f,
-		float _restDensity = 3.f, float _stiffness = 20.f, float _nearStiffness = 80.f) {
+	void init(vec3 _position, vec3 _bounds, vec3 _gravity, float _smoothingRadius = 0.15f,
+		float _restDensity = 2.5f, float _stiffness = 20.f, float _nearStiffness = 80.f) {
 		
 		position = _position;
 		bounds = _bounds;
@@ -112,6 +122,16 @@ public:
 		gravity = _gravity;
 		smoothingRadius = _smoothingRadius;
 		restDensity = _restDensity;
+
+		// Mullen.M parameters
+		epsilon = 0.8f;
+		k = 0.1f * smoothingRadius;
+		N = 4;
+		float deltaQ = 0.1f * smoothingRadius;
+		densityDeltaQ = polySixKernel(smoothingRadius, deltaQ);
+
+
+		// Clavet.S parameters
 		stiffness = _stiffness;
 		nearStiffness = _nearStiffness;
 
@@ -153,6 +173,7 @@ public:
 			.gravity = vec4(gravity, 0),
 			.smoothingRadius = smoothingRadius,
 			.restDensity = restDensity,
+
 			.stiffness = stiffness,
 			.nearStiffness = nearStiffness,
 
@@ -205,10 +226,10 @@ private:
 	static float polySixKernel(float radius, float dist) {
 		constexpr float normalizationFactor = 315/(glm::pi<float>() * 64);
 		//float normalizationFactor = a * (float)glm::pow(radius, -9);
+		//float value = radius * radius - dist * dist;
 		
 		float scaledDist = dist / radius;
 		float value = 1.f - (scaledDist * scaledDist);
-		//float value = radius * radius - dist * dist;
 		return value * value * value * normalizationFactor;
 	}
 
@@ -216,10 +237,10 @@ private:
 	static float spikyKernel(float radius, float dist) {
 		constexpr float normalizationFactor = 15 / glm::pi<float>();
 		//float normalizationFactor = a * (float)glm::pow(radius, -6);
+		//float value = radius - dist;
 
 		float scaledDist = dist / radius;
 		float value = 1.f - scaledDist;
-		//float value = radius - dist;
 		return value * value * value * normalizationFactor;
 	}
 
@@ -227,10 +248,10 @@ private:
 	static float spikyKernelGradient(float radius, float dist) {
 		constexpr float normalizationFactor = 45 / glm::pi<float>();
 		//float normalizationFactor = a * (float)glm::pow(radius, -6);
+		//float value = radius - dist;
 
 		float scaledDist = dist / radius;
 		float value = 1.f - scaledDist;
-		//float value = radius - dist;
 		return value * value * normalizationFactor;
 	}
 

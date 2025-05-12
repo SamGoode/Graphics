@@ -13,6 +13,7 @@ layout(binding = FLUID_CONFIG_UBO, std140) uniform FluidConfig {
 	vec4 gravity;
 	float smoothingRadius;
 	float restDensity;
+
 	float stiffness;
 	float nearStiffness;
 	
@@ -37,6 +38,7 @@ layout(binding = FLUID_DATA_SSBO, std430) restrict buffer FluidData {
 } data;
 
 
+const float PI = acos(-1.f);
 const float sqrSmoothingRadius = config.smoothingRadius * config.smoothingRadius;
 
 
@@ -57,20 +59,20 @@ uint getCellHash(ivec3 cellCoords) {
 
 // Mullen.M
 // Kernel normalization factors
-const float normFactor_P6 = 315.0 / (64.0 * acos(-1));// * pow(config.smoothingRadius, 9));
-const float normFactor_S = 45.0 / (acos(-1));// * pow(config.smoothingRadius, 6));
+const float normFactor_P6 = 315.f / (64.f * PI);// * pow(config.smoothingRadius, 9));
+const float normFactor_S = 45.f / (PI);// * pow(config.smoothingRadius, 6));
 
 // Density kernels
 // scaled smoothing radius so kernel has curve of radius=1.
 float polySixKernel(float sqrDist) {
-	float scaledSqrDist = sqrDist/sqrSmoothingRadius;
-	float value = 1.0 - scaledSqrDist;
+	float scaledSqrDist = sqrDist / sqrSmoothingRadius;
+	float value = 1.f - scaledSqrDist;
 	return value * value * value * normFactor_P6;
 }
 
 float spikyKernelGradient(float dist) {
-	float scaledDist = dist/config.smoothingRadius;
-	float value = 1.0 - scaledDist;
+	float scaledDist = dist / config.smoothingRadius;
+	float value = 1.f - scaledDist;
 	return value * value * normFactor_S;
 }
 
@@ -99,7 +101,7 @@ void calculateLambda(uint particleIndex, out float lambda) {
 			vec3 toParticle = data.positions[otherParticleIndex].xyz - data.positions[particleIndex].xyz;
 			float sqrDist = dot(toParticle, toParticle);
 
-			if (sqrDist > sqrSmoothingRadius) continue;
+			if (sqrDist >= sqrSmoothingRadius) continue;
 
 			localDensity += polySixKernel(sqrDist);
 			
@@ -108,17 +110,18 @@ void calculateLambda(uint particleIndex, out float lambda) {
 			float densityDerivative = spikyKernelGradient(dist);
 			localDensityGradient += densityDerivative;
 
-			if (particleIndex != otherParticleIndex)
-				constraintGradient += densityDerivative * densityDerivative;
+			if (particleIndex == otherParticleIndex) continue;
+			
+			constraintGradient -= densityDerivative * densityDerivative;
 		}
 	}
 
 	constraintGradient += (localDensityGradient * localDensityGradient);
 	constraintGradient /= (config.restDensity * config.restDensity);
 
-	float densityConstraint = (localDensity / config.restDensity) - 1.0;
+	float densityConstraint = (localDensity / config.restDensity) - 1.f;
 
-	const float epsilon = 1.5; // Allowed error
+	const float epsilon = 0.8f; // Allowed error
 
 	lambda = -densityConstraint / (constraintGradient + epsilon);
 }
@@ -127,12 +130,12 @@ void calculateLambda(uint particleIndex, out float lambda) {
 // Clavet.S double-density
 // Density kernels
 float densityKernel(float radius, float dist) {
-	float value = 1 - (dist / radius);
+	float value = 1.f - (dist / radius);
 	return value * value;
 }
 
 float nearDensityKernel(float radius, float dist) {
-	float value = 1 - (dist / radius);
+	float value = 1.f - (dist / radius);
 	return value * value * value;
 }
 

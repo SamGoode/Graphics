@@ -13,6 +13,7 @@ layout(binding = FLUID_CONFIG_UBO, std140) uniform FluidConfig {
 	vec4 gravity;
 	float smoothingRadius;
 	float restDensity;
+
 	float stiffness;
 	float nearStiffness;
 	
@@ -37,8 +38,9 @@ layout(binding = FLUID_DATA_SSBO, std430) restrict buffer FluidData {
 } data;
 
 
-uniform uint time;
+uniform int time;
 
+const float PI = acos(-1.f);
 const float sqrSmoothingRadius = config.smoothingRadius * config.smoothingRadius;
 
 
@@ -72,28 +74,28 @@ uint getCellHash(ivec3 cellCoords) {
 
 // Mullen.M
 // Kernel normalization factors
-const float normFactor_P6 = 315.0 / (64.0 * acos(-1));// * pow(config.smoothingRadius, 9));
-const float normFactor_S = 45.0 / (acos(-1));// * pow(config.smoothingRadius, 6));
+const float normFactor_P6 = 315.f / (64.f * PI);// * pow(config.smoothingRadius, 9));
+const float normFactor_S = 45.f / (PI);// * pow(config.smoothingRadius, 6));
 
 // Density kernels
 // scaled smoothing radius so kernel has curve of radius=1.
 float polySixKernel(float sqrDist) {
 	float scaledSqrDist = sqrDist / sqrSmoothingRadius;
-	float value = 1.0 - scaledSqrDist;
+	float value = 1.f - scaledSqrDist;
 	return value * value * value * normFactor_P6;
 }
 
 float spikyKernelGradient(float dist) {
 	float scaledDist = dist / config.smoothingRadius;
-	float value = 1.0 - scaledDist;
+	float value = 1.f - scaledDist;
 	return value * value * normFactor_S;
 }
 
 // Correction term parameters
-const float k = 0.1 * config.smoothingRadius;
+const float k = 0.1f * config.smoothingRadius;
 const int N = 4;
-const float deltaQ = 0.1 * config.smoothingRadius;
-const float densityAtDeltaQ = polySixKernel(deltaQ * deltaQ);
+const float deltaQ = 0.2f * config.smoothingRadius;
+const float densityDeltaQ = polySixKernel(deltaQ * deltaQ);
 
 // Calculates displacement (∆p) to solve density constraint
 void calculateDisplacement(uint particleIndex, out vec3 displacement) {
@@ -120,12 +122,13 @@ void calculateDisplacement(uint particleIndex, out vec3 displacement) {
  			vec3 toParticle = data.positions[otherParticleIndex].xyz - data.positions[particleIndex].xyz;
  			float sqrDist = dot(toParticle, toParticle);
 
- 			if (sqrDist > sqrSmoothingRadius) continue;
-
-			float density = polySixKernel(sqrDist);
-			float correctionTerm = -k * pow((density / densityAtDeltaQ), N);
+ 			if (sqrDist >= sqrSmoothingRadius) continue;
 
 			float otherLambda = data.lambdas[otherParticleIndex];
+
+			float density = polySixKernel(sqrDist);
+			float correctionTerm = -k * float(pow((density / densityDeltaQ), N));
+
 
  			float dist = sqrt(sqrDist);
  			vec3 unitDir = (dist > 0) ? toParticle / dist : normalize(randVec(particleIndex * gl_GlobalInvocationID.x));
@@ -215,5 +218,5 @@ void main() {
 	// Clavet.S
 	//calculatePressureDisplacement(particleIndex, displacement);
 
-	data.positions[particleIndex].xyz += displacement;
+	data.positions[particleIndex] += vec4(displacement, 0);
 }

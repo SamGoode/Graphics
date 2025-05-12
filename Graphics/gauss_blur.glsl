@@ -30,9 +30,9 @@ void main() {
 	);
 
 	// 5x5 Gauss Kernel
-	const int kernelRadius = 3;
-	const float sigmoidSpatial = 9.0;
-	const float sigmoidRange = 3.0;
+	const int kernelRadius = 4;
+	const float sigmoidSpatial = 18.0;
+	const float sigmoidRange = 12.0;
 
 	// Precomputed terms
 	const float stdDevSpatial = 2.0 * sigmoidSpatial * sigmoidSpatial;

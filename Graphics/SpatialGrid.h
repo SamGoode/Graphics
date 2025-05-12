@@ -46,8 +46,8 @@ public:
 		cellCapacity = _cellCapacity;
 
 		hashTable = new unsigned int[capacity];
-		cellEntries = new unsigned int[capacity] {};
-		cells = new unsigned int[capacity * cellCapacity] {};
+		cellEntries = new unsigned int[capacity] {0};
+		cells = new unsigned int[capacity * cellCapacity] {0};
 
 		resetHashTable();
 	}

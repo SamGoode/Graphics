@@ -22,6 +22,7 @@ layout(binding = FLUID_CONFIG_UBO, std140) uniform FluidConfig {
 	vec4 gravity;
 	float smoothingRadius;
 	float restDensity;
+
 	float stiffness;
 	float nearStiffness;
 	
@@ -50,7 +51,7 @@ layout(location = 0) out vec4 gpassAlbedoSpec;
 layout(location = 1) out vec3 gpassPosition;
 layout(location = 2) out vec3 gpassNormal;
 
-
+const float PI = acos(-1.f);
 const float sqrSmoothingRadius = config.smoothingRadius * config.smoothingRadius;
 
 
@@ -73,20 +74,20 @@ uint getCellHash(ivec3 cellCoords) {
 
 // Mullen.M
 // Kernel normalization factors
-const float normFactor_P6 = 315.0 / (64.0 * acos(-1));// * pow(config.smoothingRadius, 9));
-const float normFactor_S = 45.0 / (acos(-1));// * pow(config.smoothingRadius, 6));
+const float normFactor_P6 = 315.f / (64.f * PI);// * pow(config.smoothingRadius, 9));
+const float normFactor_S = 45.f / (PI);// * pow(config.smoothingRadius, 6));
 
 // Density kernels
 // scaled smoothing radius so kernel has curve of radius=1.
 float polySixKernel(float sqrDist) {
 	float scaledSqrDist = sqrDist/sqrSmoothingRadius;
-	float value = 1.0 - scaledSqrDist;
+	float value = 1.f - scaledSqrDist;
 	return value * value * value * normFactor_P6;
 }
 
 float spikyKernelGradient(float dist) {
 	float scaledDist = dist/config.smoothingRadius;
-	float value = 1.0 - scaledDist;
+	float value = 1.f - scaledDist;
 	return value * value * normFactor_S;
 }
 
@@ -181,14 +182,6 @@ float raymarchDensity(vec3 rayOrigin, vec3 rayDir, int maxSteps, float stepLengt
 }
 
 
-//vec3 densityGradient(vec3 point) {
-//	float dx = sampleDensity(point + vec3(0.001, 0, 0)) - sampleDensity(point + vec3(-0.001, 0, 0));
-//	float dy = sampleDensity(point + vec3(0, 0.001, 0)) - sampleDensity(point + vec3(0, -0.001, 0));
-//	float dz = sampleDensity(point + vec3(0, 0, 0.001)) - sampleDensity(point + vec3(0, 0, -0.001));
-//	
-//	return -vec3(dx, dy, dz);
-//}
-
 vec3 getViewPos(vec2 uv, float depth) {
 	vec4 projectedCoords = ProjectionInverse * vec4(uv * 2.0 - 1.0, depth * 2.0 - 1.0, 1);
 	projectedCoords = projectedCoords / projectedCoords.w;
@@ -211,8 +204,8 @@ vec3 getScreenNormal(sampler2D depthTex, vec2 UVs) {
 
 // Raymarch parameters
 const int maxSteps = 32;
-const float stepLength = 0.02;
-const float isoDensity = 1.0;
+const float stepLength = 0.02f;
+const float isoDensity = 1.0f;
 
 
 // crappy color parameters for testing
@@ -256,11 +249,11 @@ void main() {
 	vec3 screenNormal = getScreenNormal(smoothDepthPass, vTexCoord);
 
 	// Formula to calculate particle screen space size at given depth
-	float R = (900.f * config.smoothingRadius) / (2.f * abs(rayDistance) * tan(acos(-1) * 0.25f));
+	float R = (900.f * config.smoothingRadius) / (2.f * abs(rayDistance) * tan(PI * 0.25f));
 	
 	// Arbitrary parameters to adjust the blending normal weights
-	const float A = 0.5f;
-	const float B = 0.5f;
+	const float A = 0.8f;
+	const float B = 0.6f;
 
 	float weight1 = A * length(iso_vPos - vRayOrigin);
 	float weight2 = exp(B * R);

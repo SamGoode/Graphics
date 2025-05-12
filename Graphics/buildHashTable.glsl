@@ -9,9 +9,11 @@ layout(local_size_x = WORKGROUP_SIZE_X, local_size_y = 1, local_size_z = 1) in;
 layout(binding = FLUID_CONFIG_UBO, std140) uniform FluidConfig {
 	vec4 boundsMin;
 	vec4 boundsMax;
+
 	vec4 gravity;
 	float smoothingRadius;
 	float restDensity;
+	
 	float stiffness;
 	float nearStiffness;
 	
@@ -40,6 +42,7 @@ layout(binding = 3, std430) writeonly restrict buffer DispatchIndirectCommand {
 	uint num_groups_y;
 	uint num_groups_z;
 } indirectCmd;
+
 
 
 void main() {

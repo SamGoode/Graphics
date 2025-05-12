@@ -12,6 +12,7 @@ layout(binding = FLUID_CONFIG_UBO, std140) uniform FluidConfig {
 	vec4 gravity;
 	float smoothingRadius;
 	float restDensity;
+
 	float stiffness;
 	float nearStiffness;
 	
@@ -39,7 +40,7 @@ layout(binding = FLUID_DATA_SSBO, std430) restrict buffer FluidData {
 
 // Spatial hashing
 ivec3 getCellCoords(vec3 point) {
-	return ivec3(floor(point / config.smoothingRadius));
+	return ivec3(floor(point.xyz / config.smoothingRadius));
 }
 
 uint getCellHash(ivec3 cellCoords) {
@@ -55,7 +56,11 @@ uint getCellHash(ivec3 cellCoords) {
 // Boundary
 void applyBoundaryConstraints(uint particleIndex) {
 	vec3 particlePos = data.positions[particleIndex].xyz;
-	data.positions[particleIndex].xyz = clamp(particlePos, config.boundsMin.xyz, config.boundsMax.xyz);
+	data.positions[particleIndex].xyz = clamp(particlePos, config.boundsMin.xyz + config.smoothingRadius, config.boundsMax.xyz - config.smoothingRadius);
+	
+//	data.positions[particleIndex].x = clamp(particlePos.x, config.boundsMin.x, config.boundsMax.x);
+//	data.positions[particleIndex].y = clamp(particlePos.y, config.boundsMin.y, config.boundsMax.y);
+//	data.positions[particleIndex].z = clamp(particlePos.z, config.boundsMin.z, config.boundsMax.z);
 }
 
 void applyBoundaryPressure(uint particleIndex) {
@@ -121,23 +126,23 @@ void main() {
 	// data.pressureDisplacements[particleIndex].xyz = vec3(0); // reset
 	//------------------------------------------------
 
+	// Compute implicit velocity
+	data.velocities[particleIndex] = (data.positions[particleIndex] - data.previousPositions[particleIndex]) / config.timeStep;
+
+	// Update previous particle position
+	data.previousPositions[particleIndex] = data.positions[particleIndex];
+
+	// Apply gravity and other external forces
+	data.velocities[particleIndex] += vec4(config.gravity.xyz * config.timeStep, 0);
+
+	// Project current particle position
+	data.positions[particleIndex] += data.velocities[particleIndex] * config.timeStep;
+
 	// Boundaries
 	applyBoundaryConstraints(particleIndex);
 	//applyBoundaryPressure(particleIndex);
 
-	// Compute implicit velocity
-	data.velocities[particleIndex].xyz = (data.positions[particleIndex].xyz - data.previousPositions[particleIndex].xyz) / config.timeStep;
 
-	// Update previous particle position
-	data.previousPositions[particleIndex].xyz = data.positions[particleIndex].xyz;
-
-	// Apply gravity and other external forces
-	data.velocities[particleIndex].xyz += config.gravity.xyz * config.timeStep;
-
-	// Project current particle position
-	data.positions[particleIndex].xyz += data.velocities[particleIndex].xyz * config.timeStep;
-
-	
 
 	// Contiguously assign indexes to populated cells
 	uint cellHash = getCellHash(getCellCoords(data.positions[particleIndex].xyz));

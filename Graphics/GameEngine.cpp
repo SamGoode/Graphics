@@ -18,10 +18,10 @@ GameEngine::GameEngine() {
 
 	projection = glm::perspective(glm::pi<float>() * 0.25f, 16 / 9.f, 0.1f, 100.f);
 
-	vec4 test = projection * vec4(736.379683f, 414.213628f, -1000.f, 1.f);
-	vec4 ndcTest = test / test.w;
-	vec4 test2 = glm::inverse(projection) * vec4(1, 1, 0.1, 1);
-	vec4 ndcTest2 = test2 / test2.w;
+	//vec4 test = projection * vec4(736.379683f, 414.213628f, -1000.f, 1.f);
+	//vec4 ndcTest = test / test.w;
+	//vec4 test2 = glm::inverse(projection) * vec4(1, 1, 0.1, 1);
+	//vec4 ndcTest2 = test2 / test2.w;
 
 
 	// Initialize EntityComponentSystem
@@ -159,7 +159,7 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	fluidSim.bindConfigUBO(FLUID_CONFIG_UBO);
 	fluidSim.bindParticleSSBO(FLUID_DATA_SSBO);
 
-	fluidSim.spawnRandomParticles(80000);
+	fluidSim.spawnRandomParticles(120000);
 	fluidSim.sendDataToGPU();
 
 
@@ -197,7 +197,6 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	gpassFBO.init();
 
 	fluidDepthFBO.setSize(windowWidth, windowHeight);
-	//fluidDepthFBO.genTextureImage(GL_DEPTH_COMPONENT);
 	fluidDepthFBO.genRenderBuffer(GL_DEPTH_STENCIL_ATTACHMENT, GL_DEPTH24_STENCIL8);
 	fluidDepthFBO.genTextureStorage(GL_R32F); // Min depth
 	fluidDepthFBO.init();
@@ -291,15 +290,6 @@ bool GameEngine::update() {
 		// This works cos disabled flag is normal flag + 2
 		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL | ((short)!cameraEnabled << 1));
 		cameraEnabled = !cameraEnabled;
-
-		//if (cameraEnabled) {
-		//	//cameraEnabled = false;
-		//	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-		//}
-		//else {
-		//	//cameraEnabled = true;
-		//	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-		//}
 	}
 
 	if (keyReleased(GLFW_KEY_LEFT_ALT)) {
