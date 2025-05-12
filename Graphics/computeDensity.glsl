@@ -57,17 +57,20 @@ uint getCellHash(ivec3 cellCoords) {
 
 // Mullen.M
 // Kernel normalization factors
-const float normFactor_P6 = 315/((acos(-1) * 64) * pow(config.smoothingRadius, 9));
-const float normFactor_S = 45 / (acos(-1) * pow(config.smoothingRadius, 6));
+const float normFactor_P6 = 315.0 / (64.0 * acos(-1));// * pow(config.smoothingRadius, 9));
+const float normFactor_S = 45.0 / (acos(-1));// * pow(config.smoothingRadius, 6));
 
 // Density kernels
+// scaled smoothing radius so kernel has curve of radius=1.
 float polySixKernel(float sqrDist) {
-	float value = sqrSmoothingRadius - sqrDist;
+	float scaledSqrDist = sqrDist/sqrSmoothingRadius;
+	float value = 1.0 - scaledSqrDist;
 	return value * value * value * normFactor_P6;
 }
 
 float spikyKernelGradient(float dist) {
-	float value = config.smoothingRadius - dist;
+	float scaledDist = dist/config.smoothingRadius;
+	float value = 1.0 - scaledDist;
 	return value * value * normFactor_S;
 }
 
@@ -113,9 +116,9 @@ void calculateLambda(uint particleIndex, out float lambda) {
 	constraintGradient += (localDensityGradient * localDensityGradient);
 	constraintGradient /= (config.restDensity * config.restDensity);
 
-	float densityConstraint = (localDensity / config.restDensity) - 1.f;
+	float densityConstraint = (localDensity / config.restDensity) - 1.0;
 
-	const float epsilon = 5.f; // Allowed error
+	const float epsilon = 1.5; // Allowed error
 
 	lambda = -densityConstraint / (constraintGradient + epsilon);
 }

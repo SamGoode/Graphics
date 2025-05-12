@@ -235,7 +235,7 @@ void FluidSimSPH::calculateLambda(unsigned int particleIndex) {
 
 		if (particleIndex == otherParticleIndex) return;
 
-		constraintGradient += value * value;
+		constraintGradient -= value * value;
 	};
 
 	spatialHashGrid.iterate3x3x3(cellCoords, func);
@@ -246,7 +246,7 @@ void FluidSimSPH::calculateLambda(unsigned int particleIndex) {
 
 	float densityConstraint = (localDensity / restDensity) - 1.f;
 
-	constexpr float epsilon = 5.f;
+	constexpr float epsilon = 0.5f;
 
 	float lambda = -densityConstraint / (constraintGradient + epsilon);
 	lambdas[particleIndex] = lambda;
@@ -274,16 +274,16 @@ void FluidSimSPH::calculateDisplacement(unsigned int particleIndex) {
 
 		float otherLambda = lambdas[otherParticleIndex];
 
-		const float k = 0.0000005f;
+		const float k = 0.1f * smoothingRadius;
 		int n = 4;
-		float deltaQ = 0.3f * smoothingRadius;
+		float deltaQ = 0.1f * smoothingRadius;
 
 		float a = polySixKernel(smoothingRadius, dist);
 		float b = polySixKernel(smoothingRadius, deltaQ);
 
 		float correction = -k * (float)pow((a / b), n);
 
-		displacement += unitDir * (lambda + otherLambda + correction) * spikyKernelGradient(smoothingRadius, dist);
+		displacement += unitDir * (lambda + otherLambda + correction) * smoothingRadius * spikyKernelGradient(smoothingRadius, dist);
 	};
 
 	spatialHashGrid.iterate3x3x3(cellCoords, func);
@@ -297,7 +297,7 @@ void FluidSimSPH::applyBoundaryConstraints(unsigned int particleIndex) {
 	vec3 boundsMin = position;
 	vec3 boundsMax = position + bounds;
 
-	positions[particleIndex] = vec4(glm::clamp(particlePos, boundsMin, boundsMax), 1);
+	positions[particleIndex] = vec4(glm::clamp(particlePos, boundsMin, boundsMax), 0);
 }
 
 void FluidSimSPH::applyBoundaryPressure(unsigned int particleIndex) {

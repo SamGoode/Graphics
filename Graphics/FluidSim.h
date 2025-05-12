@@ -103,8 +103,8 @@ public:
 	FluidSimSPH() {}
 	~FluidSimSPH() {}
 
-	void init(vec3 _position, vec3 _bounds, vec3 _gravity, float _smoothingRadius = 0.15f,
-		float _restDensity = 2.f, float _stiffness = 20.f, float _nearStiffness = 80.f) {
+	void init(vec3 _position, vec3 _bounds, vec3 _gravity, float _smoothingRadius = 0.2f,
+		float _restDensity = 3.f, float _stiffness = 20.f, float _nearStiffness = 80.f) {
 		
 		position = _position;
 		bounds = _bounds;
@@ -203,28 +203,34 @@ private:
 
 	// just for show, don't actually compute the kernel like this
 	static float polySixKernel(float radius, float dist) {
-		constexpr float a = 315/(glm::pi<float>() * 64);
-		float normalizationFactor = a * (float)glm::pow(radius, -9);
+		constexpr float normalizationFactor = 315/(glm::pi<float>() * 64);
+		//float normalizationFactor = a * (float)glm::pow(radius, -9);
 		
-		float value = radius * radius - dist * dist;
+		float scaledDist = dist / radius;
+		float value = 1.f - (scaledDist * scaledDist);
+		//float value = radius * radius - dist * dist;
 		return value * value * value * normalizationFactor;
 	}
 
 	// just for show, don't actually compute the kernel like this
 	static float spikyKernel(float radius, float dist) {
-		constexpr float a = 15 / glm::pi<float>();
-		float normalizationFactor = a * (float)glm::pow(radius, -6);
+		constexpr float normalizationFactor = 15 / glm::pi<float>();
+		//float normalizationFactor = a * (float)glm::pow(radius, -6);
 
-		float value = radius - dist;
+		float scaledDist = dist / radius;
+		float value = 1.f - scaledDist;
+		//float value = radius - dist;
 		return value * value * value * normalizationFactor;
 	}
 
 	// just for show, don't actually compute the kernel like this
 	static float spikyKernelGradient(float radius, float dist) {
-		constexpr float a = 45 / glm::pi<float>();
-		float normalizationFactor = a * (float)glm::pow(radius, -6);
+		constexpr float normalizationFactor = 45 / glm::pi<float>();
+		//float normalizationFactor = a * (float)glm::pow(radius, -6);
 
-		float value = radius - dist;
+		float scaledDist = dist / radius;
+		float value = 1.f - scaledDist;
+		//float value = radius - dist;
 		return value * value * normalizationFactor;
 	}
 

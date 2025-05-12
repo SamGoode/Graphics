@@ -1,4 +1,4 @@
-#version 460 core
+#version 430 core
 
 #include "common.h"
 
@@ -73,17 +73,20 @@ uint getCellHash(ivec3 cellCoords) {
 
 // Mullen.M
 // Kernel normalization factors
-const float normFactor_P6 = 315/(64 * acos(-1) * pow(config.smoothingRadius, 9));
-const float normFactor_S = 45 / (acos(-1) * pow(config.smoothingRadius, 6));
+const float normFactor_P6 = 315.0 / (64.0 * acos(-1));// * pow(config.smoothingRadius, 9));
+const float normFactor_S = 45.0 / (acos(-1));// * pow(config.smoothingRadius, 6));
 
 // Density kernels
+// scaled smoothing radius so kernel has curve of radius=1.
 float polySixKernel(float sqrDist) {
-	float value = sqrSmoothingRadius - sqrDist;
+	float scaledSqrDist = sqrDist/sqrSmoothingRadius;
+	float value = 1.0 - scaledSqrDist;
 	return value * value * value * normFactor_P6;
 }
 
 float spikyKernelGradient(float dist) {
-	float value = config.smoothingRadius - dist;
+	float scaledDist = dist/config.smoothingRadius;
+	float value = 1.0 - scaledDist;
 	return value * value * normFactor_S;
 }
 
@@ -253,11 +256,11 @@ void main() {
 	vec3 screenNormal = getScreenNormal(smoothDepthPass, vTexCoord);
 
 	// Formula to calculate particle screen space size at given depth
-	float R = (900.f * config.smoothingRadius) / (2.f * abs(rayDistance) * tan(acos(-1) * 0.125f));
+	float R = (900.f * config.smoothingRadius) / (2.f * abs(rayDistance) * tan(acos(-1) * 0.25f));
 	
 	// Arbitrary parameters to adjust the blending normal weights
-	const float A = 0.8f;
-	const float B = 1.f;
+	const float A = 0.5f;
+	const float B = 0.5f;
 
 	float weight1 = A * length(iso_vPos - vRayOrigin);
 	float weight2 = exp(B * R);
@@ -267,6 +270,7 @@ void main() {
 	gpassPosition = iso_vPos;
 	gpassNormal = (gradientNormal * weight) + screenNormal * (1 - weight);
 	//gpassNormal = gradientNormal;
+	//gpassNormal = screenNormal;
 
 	gl_FragDepth = convertToNdcDepth(-rayDistance);
 }

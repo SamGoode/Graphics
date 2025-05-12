@@ -72,24 +72,27 @@ uint getCellHash(ivec3 cellCoords) {
 
 // Mullen.M
 // Kernel normalization factors
-const float normFactor_P6 = 315/(64 * acos(-1) * pow(config.smoothingRadius, 9));
-const float normFactor_S = 45 / (acos(-1) * pow(config.smoothingRadius, 6));
+const float normFactor_P6 = 315.0 / (64.0 * acos(-1));// * pow(config.smoothingRadius, 9));
+const float normFactor_S = 45.0 / (acos(-1));// * pow(config.smoothingRadius, 6));
 
 // Density kernels
+// scaled smoothing radius so kernel has curve of radius=1.
 float polySixKernel(float sqrDist) {
-	float value = sqrSmoothingRadius - sqrDist;
+	float scaledSqrDist = sqrDist / sqrSmoothingRadius;
+	float value = 1.0 - scaledSqrDist;
 	return value * value * value * normFactor_P6;
 }
 
 float spikyKernelGradient(float dist) {
-	float value = config.smoothingRadius - dist;
+	float scaledDist = dist / config.smoothingRadius;
+	float value = 1.0 - scaledDist;
 	return value * value * normFactor_S;
 }
 
 // Correction term parameters
-const float k = 0.0000005f;
+const float k = 0.1 * config.smoothingRadius;
 const int N = 4;
-const float deltaQ = 0.3f * config.smoothingRadius;
+const float deltaQ = 0.1 * config.smoothingRadius;
 const float densityAtDeltaQ = polySixKernel(deltaQ * deltaQ);
 
 // Calculates displacement (∆p) to solve density constraint
@@ -131,7 +134,8 @@ void calculateDisplacement(uint particleIndex, out vec3 displacement) {
  		}
 	}
 
-	displacement /= config.restDensity;
+	displacement *= config.smoothingRadius;
+	displacement /= (config.restDensity);
 }
 
 
