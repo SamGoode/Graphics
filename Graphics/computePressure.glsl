@@ -13,6 +13,7 @@ layout(binding = FLUID_CONFIG_UBO, std140) uniform FluidConfig {
 	vec4 gravity;
 	float smoothingRadius;
 	float restDensity;
+	float particleMass;
 
 	float stiffness;
 	float nearStiffness;
@@ -74,28 +75,26 @@ uint getCellHash(ivec3 cellCoords) {
 
 // Mullen.M
 // Kernel normalization factors
-const float normFactor_P6 = 315.f / (64.f * PI);// * pow(config.smoothingRadius, 9));
-const float normFactor_S = 45.f / (PI);// * pow(config.smoothingRadius, 6));
+const float normFactor_P6 = 315.f / (64.f * PI * pow(config.smoothingRadius, 9));
+const float normFactor_S = 45.f / (PI * pow(config.smoothingRadius, 6));
 
 // Density kernels
 // scaled smoothing radius so kernel has curve of radius=1.
 float polySixKernel(float sqrDist) {
-	float scaledSqrDist = sqrDist / sqrSmoothingRadius;
-	float value = 1.f - scaledSqrDist;
+	float value = sqrSmoothingRadius - sqrDist;
 	return value * value * value * normFactor_P6;
 }
 
 float spikyKernelGradient(float dist) {
-	float scaledDist = dist / config.smoothingRadius;
-	float value = 1.f - scaledDist;
+	float value = config.smoothingRadius - dist;
 	return value * value * normFactor_S;
 }
 
 // Correction term parameters
-const float k = 0.1f * config.smoothingRadius;
+const float k = 0.f;
 const int N = 4;
-const float deltaQ = 0.2f * config.smoothingRadius;
-const float densityDeltaQ = polySixKernel(deltaQ * deltaQ);
+const float deltaQ = 0.1f * config.smoothingRadius;
+const float densityDeltaQ = config.particleMass * polySixKernel(deltaQ * deltaQ);
 
 // Calculates displacement (∆p) to solve density constraint
 void calculateDisplacement(uint particleIndex, out vec3 displacement) {
@@ -126,18 +125,18 @@ void calculateDisplacement(uint particleIndex, out vec3 displacement) {
 
 			float otherLambda = data.lambdas[otherParticleIndex];
 
-			float density = polySixKernel(sqrDist);
+			float density = config.particleMass * polySixKernel(sqrDist);
 			float correctionTerm = -k * float(pow((density / densityDeltaQ), N));
 
 
  			float dist = sqrt(sqrDist);
  			vec3 unitDir = (dist > 0) ? toParticle / dist : normalize(randVec(particleIndex * gl_GlobalInvocationID.x));
 
-			displacement += unitDir * (lambda + otherLambda + correctionTerm) * spikyKernelGradient(dist);
+			displacement += unitDir * (lambda + otherLambda + correctionTerm) * config.particleMass * spikyKernelGradient(dist);
  		}
 	}
 
-	displacement *= config.smoothingRadius;
+	//displacement *= config.smoothingRadius;
 	displacement /= (config.restDensity);
 }
 

@@ -13,6 +13,7 @@ layout(binding = FLUID_CONFIG_UBO, std140) uniform FluidConfig {
 	vec4 gravity;
 	float smoothingRadius;
 	float restDensity;
+	float particleMass;
 	
 	float stiffness;
 	float nearStiffness;

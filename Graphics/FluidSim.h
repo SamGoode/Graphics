@@ -32,11 +32,27 @@ private:
 	const float fixedTimeStep = 0.01f;
 	float accumulatedTime = 0.f;
 
-	bool isSimGPU = true;
+	bool isSimGPU = false;
+
+	// units in metres and kgs
+	// particle spherical volume would be pi*4*r^3/3
+	// 0.004*pi/3 metres cubed
+	// water density is 1000 kg per cube metre
+	// with water density, 0.1 m radius sphere would have mass PI*4/3 kgs.
+	// approx. 4.18879 kilograms
+	// divide this evenly among estimated number of neighbouring particles (30-40) n = 30 for now.
 
 	vec3 gravity = vec3(0);
+	float particleRadius = 0.f;
 	float smoothingRadius = 0.f; // density kernel radius
 	float restDensity = 0.f;
+	float particleMass = 0.f;
+
+	// Precomputed values
+	float sqrSmoothingRadius = 0.f;
+	float normFactor_P6 = 0.f;
+	float normFactor_S = 0.f;
+
 
 	// Mullen.M parameters
 	float epsilon = 0.f;
@@ -67,7 +83,7 @@ private:
 		vec4 gravity;
 		float smoothingRadius;
 		float restDensity;
-
+		float particleMass;
 
 		float stiffness;
 		float nearStiffness;
@@ -113,22 +129,35 @@ public:
 	FluidSimSPH() {}
 	~FluidSimSPH() {}
 
-	void init(vec3 _position, vec3 _bounds, vec3 _gravity, float _smoothingRadius = 0.15f,
-		float _restDensity = 2.5f, float _stiffness = 20.f, float _nearStiffness = 80.f) {
+	void init(vec3 _position, vec3 _bounds, vec3 _gravity, float _particleRadius = 0.8f,
+		float _restDensity = 1000.f, float _stiffness = 20.f, float _nearStiffness = 80.f) {
 		
 		position = _position;
 		bounds = _bounds;
 
 		gravity = _gravity;
-		smoothingRadius = _smoothingRadius;
+
+		particleRadius = _particleRadius;
+		smoothingRadius = particleRadius / 4.f; // (recommended on compsci stack exchange)
 		restDensity = _restDensity;
+		
+		// particle mass calculation based on radius and rest density
+		float particleVolume = (particleRadius * particleRadius * particleRadius * 4.f * glm::pi<float>()) / 3.f; // metres^3
+		constexpr unsigned int estimatedNeighbours = 20;
+		particleMass = (particleVolume * restDensity) / (float)estimatedNeighbours; // kgs
+
+		// Precomputed values
+		sqrSmoothingRadius = smoothingRadius * smoothingRadius;
+		normFactor_P6 = 315.f / (64.f * glm::pi<float>() * glm::pow(smoothingRadius, 9));
+		normFactor_S = 45.f / (glm::pi<float>() * glm::pow(smoothingRadius, 6));
+
 
 		// Mullen.M parameters
-		epsilon = 0.8f;
-		k = 0.1f * smoothingRadius;
+		epsilon = 0.5f;
+		k = 0.1f;
 		N = 4;
-		float deltaQ = 0.1f * smoothingRadius;
-		densityDeltaQ = polySixKernel(smoothingRadius, deltaQ);
+		float deltaQ = 0.3f * smoothingRadius;
+		densityDeltaQ = particleMass * polySixKernel(deltaQ, smoothingRadius, normFactor_P6);
 
 
 		// Clavet.S parameters
@@ -173,6 +202,7 @@ public:
 			.gravity = vec4(gravity, 0),
 			.smoothingRadius = smoothingRadius,
 			.restDensity = restDensity,
+			.particleMass = particleMass,
 
 			.stiffness = stiffness,
 			.nearStiffness = nearStiffness,
@@ -203,12 +233,39 @@ public:
 	}
 
 private:
-	static float densityKernel(float radius, float dist) {
+	// Muller.M kernels
+	static float polySixKernel(float dist, float radius, float normFactor) {
+		float value = radius * radius - dist * dist;
+		return value * value * value * normFactor;
+	}
+
+	static float polySixKernelSqr(float sqrDist, float sqrRadius, float normFactor) {
+		float value = sqrRadius - sqrDist;
+		return value * value * value * normFactor;
+	}
+
+	// just for show, this never gets used
+	static float spikyKernel(float dist, float radius) {
+		constexpr float a = 15 / glm::pi<float>();
+		float normalizationFactor = a * (float)glm::pow(radius, -6);
+
+		float value = radius - dist;
+		return value * value * value * normalizationFactor;
+	}
+
+	static float spikyKernelGradient(float dist, float radius, float normFactor) {
+		float value = radius - dist;
+		return value * value * normFactor;
+	}
+
+
+	// Clavet.S kernels
+	static float densityKernel(float dist, float radius) {
 		float value = 1 - (dist / radius);
 		return value * value;
 	}
 
-	static float nearDensityKernel(float radius, float dist) {
+	static float nearDensityKernel(float dist, float radius) {
 		float value = 1 - (dist / radius);
 		return value * value * value;
 	}
@@ -217,51 +274,19 @@ private:
 		return (density - restDensity) * stiffness;
 	}
 
-	static float calculatePressureForce(float pressure, float nearPressure, float radius, float dist) {
+	static float calculatePressureForce(float dist, float radius, float pressure, float nearPressure) {
 		float weight = 1 - (dist / radius);
 		return pressure * weight + nearPressure * weight * weight * 0.5f;
 	}
 
-	// just for show, don't actually compute the kernel like this
-	static float polySixKernel(float radius, float dist) {
-		constexpr float normalizationFactor = 315/(glm::pi<float>() * 64);
-		//float normalizationFactor = a * (float)glm::pow(radius, -9);
-		//float value = radius * radius - dist * dist;
-		
-		float scaledDist = dist / radius;
-		float value = 1.f - (scaledDist * scaledDist);
-		return value * value * value * normalizationFactor;
-	}
-
-	// just for show, don't actually compute the kernel like this
-	static float spikyKernel(float radius, float dist) {
-		constexpr float normalizationFactor = 15 / glm::pi<float>();
-		//float normalizationFactor = a * (float)glm::pow(radius, -6);
-		//float value = radius - dist;
-
-		float scaledDist = dist / radius;
-		float value = 1.f - scaledDist;
-		return value * value * value * normalizationFactor;
-	}
-
-	// just for show, don't actually compute the kernel like this
-	static float spikyKernelGradient(float radius, float dist) {
-		constexpr float normalizationFactor = 45 / glm::pi<float>();
-		//float normalizationFactor = a * (float)glm::pow(radius, -6);
-		//float value = radius - dist;
-
-		float scaledDist = dist / radius;
-		float value = 1.f - scaledDist;
-		return value * value * normalizationFactor;
-	}
-
-	// Clavet paper with double density kernel
-	void calculateDensity(unsigned int particleIndex);
-	void applyPressure(unsigned int particleIndex);
 
 	// Muller paper on enforcing incompressibility as a position constraint
 	void calculateLambda(unsigned int particleIndex);
 	void calculateDisplacement(unsigned int particleIndex);
+
+	// Clavet paper with double density kernel
+	void calculateDensity(unsigned int particleIndex);
+	void applyPressure(unsigned int particleIndex);
 
 	void applyBoundaryConstraints(unsigned int particleIndex);
 	void applyBoundaryPressure(unsigned int particleIndex);

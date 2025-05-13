@@ -13,6 +13,7 @@ layout(binding = FLUID_CONFIG_UBO, std140) uniform FluidConfig {
 	vec4 gravity;
 	float smoothingRadius;
 	float restDensity;
+	float particleMass;
 
 	float stiffness;
 	float nearStiffness;
@@ -59,22 +60,27 @@ uint getCellHash(ivec3 cellCoords) {
 
 // Mullen.M
 // Kernel normalization factors
-const float normFactor_P6 = 315.f / (64.f * PI);// * pow(config.smoothingRadius, 9));
-const float normFactor_S = 45.f / (PI);// * pow(config.smoothingRadius, 6));
+const float normFactor_P6 = 315.f / (64.f * PI * pow(config.smoothingRadius, 9));
+const float normFactor_S = 45.f / (PI * pow(config.smoothingRadius, 6));
 
 // Density kernels
 // scaled smoothing radius so kernel has curve of radius=1.
 float polySixKernel(float sqrDist) {
-	float scaledSqrDist = sqrDist / sqrSmoothingRadius;
-	float value = 1.f - scaledSqrDist;
+	//float scaledSqrDist = sqrDist/sqrSmoothingRadius;
+	//float value = 1.f - scaledSqrDist;
+	float value = sqrSmoothingRadius - sqrDist;
 	return value * value * value * normFactor_P6;
 }
 
 float spikyKernelGradient(float dist) {
-	float scaledDist = dist / config.smoothingRadius;
-	float value = 1.f - scaledDist;
+	//float scaledDist = dist/config.smoothingRadius;
+	//float value = 1.f - scaledDist;
+	float value = config.smoothingRadius - dist;
 	return value * value * normFactor_S;
 }
+
+
+const float epsilon = 0.8f;
 
 // Calculates lambda to solve density constraint
 void calculateLambda(uint particleIndex, out float lambda) {
@@ -103,11 +109,11 @@ void calculateLambda(uint particleIndex, out float lambda) {
 
 			if (sqrDist >= sqrSmoothingRadius) continue;
 
-			localDensity += polySixKernel(sqrDist);
+			localDensity += config.particleMass * polySixKernel(sqrDist);
 			
 			float dist = sqrt(sqrDist);
 
-			float densityDerivative = spikyKernelGradient(dist);
+			float densityDerivative = config.particleMass * spikyKernelGradient(dist);
 			localDensityGradient += densityDerivative;
 
 			if (particleIndex == otherParticleIndex) continue;
@@ -120,8 +126,6 @@ void calculateLambda(uint particleIndex, out float lambda) {
 	constraintGradient /= (config.restDensity * config.restDensity);
 
 	float densityConstraint = (localDensity / config.restDensity) - 1.f;
-
-	const float epsilon = 0.8f; // Allowed error
 
 	lambda = -densityConstraint / (constraintGradient + epsilon);
 }

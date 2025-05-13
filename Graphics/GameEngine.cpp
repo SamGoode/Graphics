@@ -155,11 +155,11 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 
 	pointLights.init();
 
-	fluidSim.init(vec3(8, -4, 0), vec3(8, 8, 4), physicsEngine.gravity);
+	fluidSim.init(vec3(8, -4, 0), vec3(8, 8, 8), physicsEngine.gravity);
 	fluidSim.bindConfigUBO(FLUID_CONFIG_UBO);
 	fluidSim.bindParticleSSBO(FLUID_DATA_SSBO);
 
-	fluidSim.spawnRandomParticles(120000);
+	fluidSim.spawnRandomParticles(4000);
 	fluidSim.sendDataToGPU();
 
 

@@ -22,6 +22,7 @@ layout(binding = FLUID_CONFIG_UBO, std140) uniform FluidConfig {
 	vec4 gravity;
 	float smoothingRadius;
 	float restDensity;
+	float particleMass;
 
 	float stiffness;
 	float nearStiffness;
@@ -74,20 +75,22 @@ uint getCellHash(ivec3 cellCoords) {
 
 // Mullen.M
 // Kernel normalization factors
-const float normFactor_P6 = 315.f / (64.f * PI);// * pow(config.smoothingRadius, 9));
-const float normFactor_S = 45.f / (PI);// * pow(config.smoothingRadius, 6));
+const float normFactor_P6 = 315.f / ((64.f * PI) * pow(config.smoothingRadius, 9));
+const float normFactor_S = 45.f / ((PI) * pow(config.smoothingRadius, 6));
 
 // Density kernels
 // scaled smoothing radius so kernel has curve of radius=1.
 float polySixKernel(float sqrDist) {
-	float scaledSqrDist = sqrDist/sqrSmoothingRadius;
-	float value = 1.f - scaledSqrDist;
+	//float scaledSqrDist = sqrDist/sqrSmoothingRadius;
+	//float value = 1.f - scaledSqrDist;
+	float value = sqrSmoothingRadius - sqrDist;
 	return value * value * value * normFactor_P6;
 }
 
 float spikyKernelGradient(float dist) {
-	float scaledDist = dist/config.smoothingRadius;
-	float value = 1.f - scaledDist;
+	//float scaledDist = dist/config.smoothingRadius;
+	//float value = 1.f - scaledDist;
+	float value = config.smoothingRadius - dist;
 	return value * value * normFactor_S;
 }
 
@@ -122,10 +125,10 @@ float sampleDensity(vec3 point) {
 			float sqrDist = dot(toParticle, toParticle);
 			if(sqrDist > sqrSmoothingRadius) continue;
 
-			density += polySixKernel(sqrDist);
+			density += config.particleMass * polySixKernel(sqrDist);
 			
 			// float dist = sqrt(sqrDist);
-			// density += densityKernel(config.smoothingRadius, dist);
+			// density += config.particleMass * densityKernel(config.smoothingRadius, dist);
 		}
 	}
 	return density;
@@ -157,7 +160,7 @@ vec3 sampleDensityGradient(vec3 point) {
 			float dist = sqrt(sqrDist);
 			vec3 dir = dist > 0 ? toParticle / dist : vec3(0);
 
-			gradientSum -= dir * spikyKernelGradient(dist);
+			gradientSum -= dir * config.particleMass * spikyKernelGradient(dist);
 		}
 	}
 	return gradientSum;
@@ -204,8 +207,8 @@ vec3 getScreenNormal(sampler2D depthTex, vec2 UVs) {
 
 // Raymarch parameters
 const int maxSteps = 32;
-const float stepLength = 0.02f;
-const float isoDensity = 1.0f;
+const float stepLength = 0.01f;
+const float isoDensity = 1.f;
 
 
 // crappy color parameters for testing
@@ -214,19 +217,19 @@ const vec4 water = vec4(vec3(0.1, 0.5, 0.8), 0.3);
 
 
 void main() {
-//	// Rasterized spheres
-//	float minDepth = texture(fluidDepthPass, vTexCoord).r;
-//	float smoothedDepth = texture(smoothDepthPass, vTexCoord).r;
-//
-//	vec3 viewPos = getViewPos(vTexCoord, minDepth);
-//	vec3 smoothedPos = getViewPos(vTexCoord, smoothedDepth);
-//
-//	gpassAlbedoSpec = water;
-//	gpassPosition = viewPos;
-//	//gpassNormal = vec3(dFdx(smoothedDepth), dFdy(smoothedDepth), 0);
-//	gpassNormal = cross(dFdx(smoothedPos), dFdy(smoothedPos));
-//
-//	gl_FragDepth = convertToNdcDepth(viewPos.z);
+	// // Rasterized spheres
+	// float minDepth = texture(fluidDepthPass, vTexCoord).r;
+	// float smoothedDepth = texture(smoothDepthPass, vTexCoord).r;
+
+	// vec3 viewPos = getViewPos(vTexCoord, minDepth);
+	// vec3 smoothedPos = getViewPos(vTexCoord, smoothedDepth);
+
+	// gpassAlbedoSpec = water;
+	// gpassPosition = viewPos;
+	// //gpassNormal = vec3(dFdx(smoothedDepth), dFdy(smoothedDepth), 0);
+	// gpassNormal = getScreenNormal(smoothDepthPass, vTexCoord);
+
+	// gl_FragDepth = convertToNdcDepth(viewPos.z);
 
 
 	// Raymarching SPH density field
@@ -252,7 +255,7 @@ void main() {
 	float R = (900.f * config.smoothingRadius) / (2.f * abs(rayDistance) * tan(PI * 0.25f));
 	
 	// Arbitrary parameters to adjust the blending normal weights
-	const float A = 0.8f;
+	const float A = 0.9f;
 	const float B = 0.6f;
 
 	float weight1 = A * length(iso_vPos - vRayOrigin);
