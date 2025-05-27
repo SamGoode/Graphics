@@ -32,7 +32,9 @@ private:
 	const float fixedTimeStep = 0.01f;
 	float accumulatedTime = 0.f;
 
-	bool isSimGPU = false;
+	bool isSimGPU = true;
+	const unsigned int solverIterations = 6;
+
 
 	// units in metres and kgs
 	// particle spherical volume would be pi*4*r^3/3

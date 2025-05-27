@@ -141,7 +141,7 @@ void main() {
 	data.positions[particleIndex] += data.velocities[particleIndex] * config.timeStep;
 
 	// Boundaries
-	applyBoundaryConstraints(particleIndex);
+	//applyBoundaryConstraints(particleIndex);
 	//applyBoundaryPressure(particleIndex);
 
 

@@ -126,7 +126,7 @@ void calculateDisplacement(uint particleIndex, out vec3 displacement) {
 			float otherLambda = data.lambdas[otherParticleIndex];
 
 			float density = config.particleMass * polySixKernel(sqrDist);
-			float correctionTerm = -k * float(pow((density / densityDeltaQ), N));
+			float correctionTerm = 0.f;//-k * float(pow((density / densityDeltaQ), N));
 
 
  			float dist = sqrt(sqrDist);
@@ -198,6 +198,13 @@ void calculatePressureDisplacement(uint particleIndex, out vec3 pressureDisplace
 }
 
 
+// Boundary
+void applyBoundaryConstraints(uint particleIndex) {
+	vec3 particlePos = data.positions[particleIndex].xyz;
+	data.positions[particleIndex].xyz = clamp(particlePos, config.boundsMin.xyz + config.smoothingRadius, config.boundsMax.xyz - config.smoothingRadius);
+}
+
+
 void main() {
 	uint cellIndex = gl_GlobalInvocationID.x;
 	uint entryIndex = gl_LocalInvocationID.y;
@@ -218,4 +225,7 @@ void main() {
 	//calculatePressureDisplacement(particleIndex, displacement);
 
 	data.positions[particleIndex] += vec4(displacement, 0);
+
+
+	applyBoundaryConstraints(particleIndex);
 }
