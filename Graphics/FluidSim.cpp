@@ -117,18 +117,6 @@ void FluidSimSPH::tickSimCPU() {
 	// Build spatial hash grid with projected positions
 	spatialHashGrid.generateHashTable(particleCount, positions);
 
-	//// Calculate and cache densities
-	//for (unsigned int i = 0; i < particleCount; i++) {
-	//	calculateDensity(i);
-	//}
-
-	//// Apply pressure as displacement
-	//for (unsigned int i = 0; i < particleCount; i++) {
-	//	// Issue: displacements do not occur in parallel and each iteration affects subsequent iterations
-	//	// since there's a final radial distance check between particles
-	//	applyPressure(i);
-	//}
-
 
 	for (unsigned int iteration = 0; iteration < solverIterations; iteration++) {
 		for (unsigned int particleIndex = 0; particleIndex < particleCount; particleIndex++) {
