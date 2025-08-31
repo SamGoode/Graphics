@@ -13,7 +13,7 @@
 #include <glm/ext.hpp>
 #include <glm/fwd.hpp>
 
-#define MAX_PARTICLES 65536
+#define MAX_PARTICLES 2048
 //#define MAX_PARTICLES 262144
 
 //#define MAX_PARTICLES_PER_CELL 16 // Only viable when using Mullet.M position based fluid technique
@@ -240,10 +240,10 @@ public:
 
 	void resetHashDataSSBO() {
 		unsigned int usedCells = 0;
-		unsigned int defaultHash = 0x8FFFFFFF;
-		particleSSBO.subData(15 * MAX_PARTICLES * sizeof(float), sizeof(float), &usedCells);
-		particleSSBO.clearNamedSubData(GL_RGBA32UI, ((0 * MAX_PARTICLES) + 1) * sizeof(float), MAX_PARTICLES * sizeof(float), GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, &defaultHash);
-		particleSSBO.clearNamedSubData(GL_R32UI, ((1 * MAX_PARTICLES) + 1) * sizeof(float), MAX_PARTICLES * sizeof(float), GL_UNSIGNED_INT, GL_UNSIGNED_INT, &usedCells);
+		unsigned int defaultHash = 0xFFFFFFFF;
+		particleSSBO.clearNamedSubData(GL_R32UI, 15 * MAX_PARTICLES * sizeof(float), sizeof(float), GL_RED_INTEGER, GL_UNSIGNED_INT, &usedCells);
+		particleSSBO.clearNamedSubData(GL_R32UI, ((16 * MAX_PARTICLES) + 1) * sizeof(float), MAX_PARTICLES * sizeof(float), GL_RED_INTEGER, GL_UNSIGNED_INT, &defaultHash);
+		particleSSBO.clearNamedSubData(GL_R32UI, ((17 * MAX_PARTICLES) + 1) * sizeof(float), MAX_PARTICLES * sizeof(float), GL_RED_INTEGER, GL_UNSIGNED_INT, &usedCells);
 		//glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
 	}
 
@@ -267,13 +267,13 @@ public:
 			}
 
 			// Fill position and previous position memory chunk.
-			//particleSSBO.subData((particleCount) * sizeof(vec4), batchCount * sizeof(vec4), positionBuffer);
-			//particleSSBO.subData((MAX_PARTICLES + particleCount) * sizeof(vec4), batchCount * sizeof(vec4), positionBuffer);
+			particleSSBO.subData((particleCount) * sizeof(vec4), batchCount * sizeof(vec4), positionBuffer);
+			particleSSBO.subData((MAX_PARTICLES + particleCount) * sizeof(vec4), batchCount * sizeof(vec4), positionBuffer);
 
 			particleCount += batchCount;
 		}
 
-
+		syncUBO();
 	}
 
 

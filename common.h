@@ -1,6 +1,6 @@
 // Common parameters
 
-#define MAX_PARTICLES 65536
+#define MAX_PARTICLES 2048
 //#define MAX_PARTICLES 262144
 
 //#define MAX_PARTICLES_PER_CELL 16 // Only viable when using Mullet.M position based fluid technique
