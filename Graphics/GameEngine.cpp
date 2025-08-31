@@ -159,7 +159,7 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	fluidSim.bindConfigUBO(FLUID_CONFIG_UBO);
 	fluidSim.bindParticleSSBO(FLUID_DATA_SSBO);
 
-	fluidSim.spawnRandomParticles(4000);
+	fluidSim.spawnRandomParticles(80000);
 	fluidSim.sendDataToGPU();
 
 

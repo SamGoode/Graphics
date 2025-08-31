@@ -8,6 +8,8 @@
 
 #include "Mesh.h"
 
+#include <string>
+
 
 using glm::vec2;
 using glm::vec3;
@@ -19,6 +21,8 @@ using glm::quat;
 class Shader {
 protected:
 	unsigned int gl_id = 0;
+
+	std::string path = "shaders/";
 
 public:
 	Shader() {}

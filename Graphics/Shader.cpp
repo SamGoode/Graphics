@@ -38,7 +38,7 @@ unsigned int Shader::loadShaderFromFile(GLenum type, const char* fileName) {
 	unsigned int shader = glCreateShader(type);
 
 	std::ifstream fileStream;
-	fileStream.open(fileName, std::ios::in | std::ios::binary);
+	fileStream.open(path + fileName, std::ios::in | std::ios::binary);
 
 	std::string fileString;
 	

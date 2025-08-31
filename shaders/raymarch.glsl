@@ -217,56 +217,55 @@ const vec4 water = vec4(vec3(0.1, 0.5, 0.8), 0.3);
 
 
 void main() {
-	// // Rasterized spheres
-	// float minDepth = texture(fluidDepthPass, vTexCoord).r;
-	// float smoothedDepth = texture(smoothDepthPass, vTexCoord).r;
+	 // Rasterized spheres
+	 float minDepth = texture(fluidDepthPass, vTexCoord).r;
+	 float smoothedDepth = texture(smoothDepthPass, vTexCoord).r;
 
-	// vec3 viewPos = getViewPos(vTexCoord, minDepth);
-	// vec3 smoothedPos = getViewPos(vTexCoord, smoothedDepth);
+	 vec3 viewPos = getViewPos(vTexCoord, minDepth);
+	 vec3 smoothedPos = getViewPos(vTexCoord, smoothedDepth);
 
-	// gpassAlbedoSpec = water;
-	// gpassPosition = viewPos;
-	// //gpassNormal = vec3(dFdx(smoothedDepth), dFdy(smoothedDepth), 0);
-	// gpassNormal = getScreenNormal(smoothDepthPass, vTexCoord);
+	 gpassAlbedoSpec = water;
+	 gpassPosition = viewPos;
+	 gpassNormal = getScreenNormal(smoothDepthPass, vTexCoord);
 
-	// gl_FragDepth = convertToNdcDepth(viewPos.z);
+	 gl_FragDepth = convertToNdcDepth(viewPos.z);
 
 
-	// Raymarching SPH density field
-	float minDepth = texture(fluidDepthPass, vTexCoord).r;
-
-	vec3 vRayOrigin = getViewPos(vTexCoord, minDepth);
-	vec3 vRayDirection = vec3(vRayOrigin.xy / -vRayOrigin.z, -1);
-	vec3 rayDirection = (ViewInverse * vec4(vRayDirection, 0)).xyz;
-
-	float startDepth = abs(vRayOrigin.z);
-
-	float rayDistance = raymarchDensity(CameraPos.xyz, rayDirection, maxSteps, stepLength, isoDensity, startDepth);
-	if(rayDistance == -1.0) discard;
-
-	vec3 iso_vPos = vRayDirection * rayDistance;
-	vec3 iso_pos = CameraPos.xyz + rayDirection * rayDistance;
-
-	// Blend density gradient and screen normal to estimate normal at iso-surface.
-	vec3 gradientNormal = (View * vec4(normalize(sampleDensityGradient(iso_pos)), 0)).xyz;
-	vec3 screenNormal = getScreenNormal(smoothDepthPass, vTexCoord);
-
-	// Formula to calculate particle screen space size at given depth
-	float R = (900.f * config.smoothingRadius) / (2.f * abs(rayDistance) * tan(PI * 0.25f));
-	
-	// Arbitrary parameters to adjust the blending normal weights
-	const float A = 0.9f;
-	const float B = 0.6f;
-
-	float weight1 = A * length(iso_vPos - vRayOrigin);
-	float weight2 = exp(B * R);
-	float weight = min(weight1 * weight2, 1);
-
-	gpassAlbedoSpec = water;
-	gpassPosition = iso_vPos;
-	gpassNormal = (gradientNormal * weight) + screenNormal * (1 - weight);
-	//gpassNormal = gradientNormal;
-	//gpassNormal = screenNormal;
-
-	gl_FragDepth = convertToNdcDepth(-rayDistance);
+//	// Raymarching SPH density field
+//	float minDepth = texture(fluidDepthPass, vTexCoord).r;
+//
+//	vec3 vRayOrigin = getViewPos(vTexCoord, minDepth);
+//	vec3 vRayDirection = vec3(vRayOrigin.xy / -vRayOrigin.z, -1);
+//	vec3 rayDirection = (ViewInverse * vec4(vRayDirection, 0)).xyz;
+//
+//	float startDepth = abs(vRayOrigin.z);
+//
+//	float rayDistance = raymarchDensity(CameraPos.xyz, rayDirection, maxSteps, stepLength, isoDensity, startDepth);
+//	if(rayDistance == -1.0) discard;
+//
+//	vec3 iso_vPos = vRayDirection * rayDistance;
+//	vec3 iso_pos = CameraPos.xyz + rayDirection * rayDistance;
+//
+//	// Blend density gradient and screen normal to estimate normal at iso-surface.
+//	vec3 gradientNormal = (View * vec4(normalize(sampleDensityGradient(iso_pos)), 0)).xyz;
+//	vec3 screenNormal = getScreenNormal(smoothDepthPass, vTexCoord);
+//
+//	// Formula to calculate particle screen space size at given depth
+//	float R = (900.f * config.smoothingRadius) / (2.f * abs(rayDistance) * tan(PI * 0.25f));
+//	
+//	// Arbitrary parameters to adjust the blending normal weights
+//	const float A = 0.9f;
+//	const float B = 0.6f;
+//
+//	float weight1 = A * length(iso_vPos - vRayOrigin);
+//	float weight2 = exp(B * R);
+//	float weight = min(weight1 * weight2, 1);
+//
+//	gpassAlbedoSpec = water;
+//	gpassPosition = iso_vPos;
+//	gpassNormal = (gradientNormal * weight) + screenNormal * (1 - weight);
+//	//gpassNormal = gradientNormal;
+//	//gpassNormal = screenNormal;
+//
+//	gl_FragDepth = convertToNdcDepth(-rayDistance);
 }

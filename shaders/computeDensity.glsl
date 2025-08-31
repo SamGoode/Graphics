@@ -80,7 +80,7 @@ float spikyKernelGradient(float dist) {
 }
 
 
-const float epsilon = 0.8f;
+const float epsilon = 0.4f;
 
 // Calculates lambda to solve density constraint
 void calculateLambda(uint particleIndex, out float lambda) {

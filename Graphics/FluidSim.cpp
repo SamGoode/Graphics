@@ -70,15 +70,18 @@ void FluidSimSPH::tickSimGPU() {
 	dispatchIndirect.bind();
 	glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
 
-	computeDensityShader.use();
-	glDispatchComputeIndirect(0);
-	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
-	computePressureShader.use();
-	int time = (int)std::time(0);
-	computePressureShader.bindUniform(time, "time");
-	glDispatchComputeIndirect(0);
-	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	for (unsigned int iteration = 0; iteration < 2; iteration++) {
+		computeDensityShader.use();
+		glDispatchComputeIndirect(0);
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+		computePressureShader.use();
+		int time = (int)std::time(0);
+		computePressureShader.bindUniform(time, "time");
+		glDispatchComputeIndirect(0);
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	}
 }
 
 void FluidSimSPH::tickSimCPU() {
@@ -205,7 +208,7 @@ void FluidSimSPH::calculateDisplacement(unsigned int particleIndex) {
 		float otherLambda = lambdas[otherParticleIndex];
 		
 		float density = particleMass * polySixKernelSqr(sqrDist, sqrSmoothingRadius, normFactor_P6);
-		float correction = -k * (float)glm::pow((density / densityDeltaQ), N);
+		float correction = 0.f;//-k * (float)glm::pow((density / densityDeltaQ), N);
 
 		float dist = sqrt(sqrDist);
 		vec3 unitDir = dist > 0 ? toParticle / dist : glm::sphericalRand(1.f);

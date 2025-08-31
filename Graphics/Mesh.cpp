@@ -71,7 +71,7 @@ void Mesh::loadFromFile(const char* name) {
 	assert(vertexBuffer == nullptr && indexBuffer == nullptr);
 
 	const aiScene* scene = aiImportFile(name, 0);
-
+	
 	assert(scene != nullptr && "File does not exist");
 
 	std::vector<unsigned int> indices;

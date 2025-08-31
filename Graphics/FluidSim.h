@@ -32,7 +32,7 @@ private:
 	const float fixedTimeStep = 0.01f;
 	float accumulatedTime = 0.f;
 
-	bool isSimGPU = false;
+	bool isSimGPU = true;
 
 	// units in metres and kgs
 	// particle spherical volume would be pi*4*r^3/3
@@ -129,7 +129,7 @@ public:
 	FluidSimSPH() {}
 	~FluidSimSPH() {}
 
-	void init(vec3 _position, vec3 _bounds, vec3 _gravity, float _particleRadius = 0.8f,
+	void init(vec3 _position, vec3 _bounds, vec3 _gravity, float _particleRadius = 0.4f,
 		float _restDensity = 1000.f, float _stiffness = 20.f, float _nearStiffness = 80.f) {
 		
 		position = _position;
@@ -148,8 +148,8 @@ public:
 
 		// Precomputed values
 		sqrSmoothingRadius = smoothingRadius * smoothingRadius;
-		normFactor_P6 = 315.f / (64.f * glm::pi<float>() * glm::pow(smoothingRadius, 9));
-		normFactor_S = 45.f / (glm::pi<float>() * glm::pow(smoothingRadius, 6));
+		normFactor_P6 = 315.f / (64.f * glm::pi<float>() * glm::pow<float>(smoothingRadius, 9));
+		normFactor_S = 45.f / (glm::pi<float>() * glm::pow<float>(smoothingRadius, 6));
 
 
 		// Mullen.M parameters

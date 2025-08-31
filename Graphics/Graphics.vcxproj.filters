@@ -181,73 +181,73 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shadow.glsl">
+    <None Include="..\shaders\buildHashTable.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="raymarch_bounds.glsl">
+    <None Include="..\shaders\composite.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="raymarch.glsl">
+    <None Include="..\shaders\computeDensity.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="pointLight_vert.glsl">
+    <None Include="..\shaders\computePressure.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="pointLight_frag.glsl">
+    <None Include="..\shaders\directional_light.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="particleCompute.glsl">
+    <None Include="..\shaders\empty.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="mesh_vert.glsl">
+    <None Include="..\shaders\fluidDepth_frag.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="mesh_frag.glsl">
+    <None Include="..\shaders\fluidDepth_vert.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="line_vert.glsl">
+    <None Include="..\shaders\fullscreen_quad.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="line_frag.glsl">
+    <None Include="..\shaders\gauss_blur.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="laplacian.glsl">
+    <None Include="..\shaders\gpass_frag.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="gpass_vert.glsl">
+    <None Include="..\shaders\gpass_vert.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="gpass_frag.glsl">
+    <None Include="..\shaders\laplacian.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="fullscreen_quad.glsl">
+    <None Include="..\shaders\line_frag.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="fluidDepth_vert.glsl">
+    <None Include="..\shaders\line_vert.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="fluidDepth_frag.glsl">
+    <None Include="..\shaders\mesh_frag.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="empty.glsl">
+    <None Include="..\shaders\mesh_vert.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="directional_light.glsl">
+    <None Include="..\shaders\particleCompute.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="computePressure.glsl">
+    <None Include="..\shaders\pointLight_frag.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="computeDensity.glsl">
+    <None Include="..\shaders\pointLight_vert.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="composite.glsl">
+    <None Include="..\shaders\raymarch.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="buildHashTable.glsl">
+    <None Include="..\shaders\raymarch_bounds.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="gauss_blur.glsl">
+    <None Include="..\shaders\shadow.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
   </ItemGroup>
