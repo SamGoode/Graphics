@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{57ab825c-c5d8-4284-a907-19692187aa56}</ProjectGuid>
-    <RootNamespace>Graphics</RootNamespace>
+    <ProjectGuid>{c74eb4a9-5b0c-4c55-9073-0f6f2b2dfffe}</ProjectGuid>
+    <RootNamespace>ModularFluid</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -70,14 +70,6 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(SolutionDir)dep\assimp\include;$(SolutionDir)dep\assimp\out\build\x64-$(Configuration)\include;$(SolutionDir);$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)dep\assimp\out\build\x64-$(Configuration)\lib;$(LibraryPath)</LibraryPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(SolutionDir)dep\assimp\include;$(SolutionDir)dep\assimp\out\build\x64-$(Configuration)\include;$(SolutionDir);$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)dep\assimp\out\build\x64-$(Configuration)\lib;$(LibraryPath)</LibraryPath>
-  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -112,19 +104,11 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)dep\glfw\include;$(SolutionDir)dep\glm;$(SolutionDir)dep\imgui;$(SolutionDir)ModularFluids;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)dep\glfw\lib-vc2022;$(SolutionDir)ModularFluids\$(IntDir)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;glfw3.lib;ModularFluids.lib;assimp-vc143-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <PostBuildEvent>
-      <Command>
-</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -134,101 +118,16 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)dep\glfw\include;$(SolutionDir)dep\glm;$(SolutionDir)dep\imgui;$(SolutionDir)ModularFluids;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)dep\glfw\lib-vc2022;$(SolutionDir)ModularFluids\$(IntDir)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;glfw3.lib;ModularFluids.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <PostBuildEvent>
-      <Command>
-</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\dep\imgui\imgui.cpp" />
-    <ClCompile Include="..\dep\imgui\imgui_demo.cpp" />
-    <ClCompile Include="..\dep\imgui\imgui_draw.cpp" />
-    <ClCompile Include="..\dep\imgui\imgui_impl_glfw.cpp" />
-    <ClCompile Include="..\dep\imgui\imgui_impl_opengl3.cpp" />
-    <ClCompile Include="..\dep\imgui\imgui_tables.cpp" />
-    <ClCompile Include="..\dep\imgui\imgui_widgets.cpp" />
-    <ClCompile Include="CollisionSystem.cpp" />
-    <ClCompile Include="FluidSim.cpp" />
-    <ClCompile Include="GameEngine.cpp" />
-    <ClCompile Include="BaseAppClasses.cpp" />
-    <ClCompile Include="glad.c" />
-    <ClCompile Include="Shader.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="Mesh.cpp" />
-    <ClCompile Include="PhysicsEngine.cpp" />
-    <ClCompile Include="PhysicsSolver.cpp" />
-    <ClCompile Include="stb_image.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\common.h" />
-    <ClInclude Include="..\dep\imgui\imconfig.h" />
-    <ClInclude Include="..\dep\imgui\imgui.h" />
-    <ClInclude Include="..\dep\imgui\imgui_impl_glfw.h" />
-    <ClInclude Include="..\dep\imgui\imgui_impl_opengl3.h" />
-    <ClInclude Include="..\dep\imgui\imgui_internal.h" />
-    <ClInclude Include="..\dep\imgui\imstb_rectpack.h" />
-    <ClInclude Include="..\dep\imgui\imstb_textedit.h" />
-    <ClInclude Include="..\dep\imgui\imstb_truetype.h" />
-    <ClInclude Include="CollisionSystem.h" />
-    <ClInclude Include="ECS.h" />
-    <ClInclude Include="ECSComponents.h" />
-    <ClInclude Include="FluidSim.h" />
-    <ClInclude Include="FrameBuffer.h" />
-    <ClInclude Include="GameEngine.h" />
-    <ClInclude Include="BaseAppClasses.h" />
-    <ClInclude Include="Camera.h" />
-    <ClInclude Include="Collision.h" />
-    <ClInclude Include="glmAddon.h" />
-    <ClInclude Include="MaterialProperties.h" />
-    <ClInclude Include="PhysicsSystem.h" />
-    <ClInclude Include="PointLight.h" />
-    <ClInclude Include="RenderSystem.h" />
-    <ClInclude Include="Shader.h" />
-    <ClInclude Include="IPhysicsEngine.h" />
-    <ClInclude Include="Mesh.h" />
-    <ClInclude Include="PhysicsEngine.h" />
-    <ClInclude Include="PhysicsSolver.h" />
-    <ClInclude Include="ShaderStorageBuffer.h" />
-    <ClInclude Include="SpatialGrid.h" />
-    <ClInclude Include="stb_image.h" />
-    <ClInclude Include="Texture.h" />
-    <ClInclude Include="UniformBuffer.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\shaders\buildHashTable.glsl" />
-    <None Include="..\shaders\composite.glsl" />
-    <None Include="..\shaders\computeDensity.glsl" />
-    <None Include="..\shaders\computePressure.glsl" />
-    <None Include="..\shaders\directional_light.glsl" />
-    <None Include="..\shaders\empty.glsl" />
-    <None Include="..\shaders\fluidDepth_frag.glsl" />
-    <None Include="..\shaders\fluidDepth_vert.glsl" />
-    <None Include="..\shaders\fullscreen_quad.glsl" />
-    <None Include="..\shaders\gauss_blur.glsl" />
-    <None Include="..\shaders\gpass_frag.glsl" />
-    <None Include="..\shaders\gpass_vert.glsl" />
-    <None Include="..\shaders\laplacian.glsl" />
-    <None Include="..\shaders\line_frag.glsl" />
-    <None Include="..\shaders\line_vert.glsl" />
-    <None Include="..\shaders\mesh_frag.glsl" />
-    <None Include="..\shaders\mesh_vert.glsl" />
-    <None Include="..\shaders\particleCompute.glsl" />
-    <None Include="..\shaders\pointLight_frag.glsl" />
-    <None Include="..\shaders\pointLight_vert.glsl" />
-    <None Include="..\shaders\raymarch.glsl" />
-    <None Include="..\shaders\raymarch_bounds.glsl" />
-    <None Include="..\shaders\shadow.glsl" />
+    <ClCompile Include="ModularFluid.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

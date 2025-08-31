@@ -159,8 +159,8 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	fluidSim.bindConfigUBO(FLUID_CONFIG_UBO);
 	fluidSim.bindParticleSSBO(FLUID_DATA_SSBO);
 
-	fluidSim.spawnRandomParticles(80000);
-	fluidSim.sendDataToGPU();
+	fluidSim.spawnRandomParticles(20000);
+	//fluidSim.sendDataToGPU();
 
 
 	// Uniform Buffer Objects
@@ -246,7 +246,7 @@ bool GameEngine::update() {
 		ImGui::BeginChild("Fluid Engine", { 0.f, 170.f }, ImGuiChildFlags_Border);
 		ImGui::TextColored({ 0.2f, 0.5f, 0.9f, 1.f }, "Fluid Engine");
 		bool toggledActive = ImGui::Checkbox("Is Fluid Active", &fluidEngineActive);
-		bool toggledGPU = ImGui::Checkbox("Run on GPU", fluidSim.shouldRunOnGPU());
+		//bool toggledGPU = ImGui::Checkbox("Run on GPU", fluidSim.shouldRunOnGPU());
 		ImGui::Text("Particle count: %i", fluidSim.getParticleCount());
 
 		ImGui::Text("Spawn particles");
@@ -258,28 +258,28 @@ bool GameEngine::update() {
 
 		ImGui::End();
 
-		if (toggledGPU) {
-			if (fluidSim.isRunningOnGPU()) {
-				fluidSim.resetSpatialGrid();
-				fluidSim.sendDataToGPU();
-			}
-			else {
-				fluidSim.pullDataFromGPU();
-			}
-		}
+		//if (toggledGPU) {
+		//	if (fluidSim.isRunningOnGPU()) {
+		//		fluidSim.resetSpatialGrid();
+		//		fluidSim.sendDataToGPU();
+		//	}
+		//	else {
+		//		fluidSim.pullDataFromGPU();
+		//	}
+		//}
 
 		if (spawnParticles) {
 			fluidSim.spawnRandomParticles(spawnParticleCount);
-			if (!fluidEngineActive) {
-				fluidSim.updateSpatialGrid();
-				if (fluidSim.isRunningOnGPU())
-					fluidSim.sendDataToGPU();
-			}
+			//if (!fluidEngineActive) {
+			//	fluidSim.updateSpatialGrid();
+			//	if (fluidSim.isRunningOnGPU())
+			//		fluidSim.sendDataToGPU();
+			//}
 		}
 
 		if (clearParticles) {
 			fluidSim.clearParticles();
-			fluidSim.sendDataToGPU();
+			//fluidSim.sendDataToGPU();
 		}
 	}
 
