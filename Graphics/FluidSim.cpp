@@ -59,6 +59,8 @@ void FluidSimSPH::tickSimGPU() {
 	dispatchIndirect.bindToIndex(3);
 	dispatchIndirect.clear();
 
+
+	
 	particleComputeShader.use();
 	glDispatchCompute((particleCount / WORKGROUP_SIZE_X) + ((particleCount % WORKGROUP_SIZE_X) != 0), 1, 1);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
@@ -70,11 +72,9 @@ void FluidSimSPH::tickSimGPU() {
 	dispatchIndirect.bind();
 	glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
 
-
-	for (unsigned int iteration = 0; iteration < 2; iteration++) {
-		computeDensityShader.use();
-		glDispatchComputeIndirect(0);
-		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	computeDensityShader.use();
+	glDispatchComputeIndirect(0);
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
 		computePressureShader.use();
 		int time = (int)std::time(0);
@@ -116,20 +116,8 @@ void FluidSimSPH::tickSimCPU() {
 	// Build spatial hash grid with projected positions
 	spatialHashGrid.generateHashTable(particleCount, positions);
 
-	//// Calculate and cache densities
-	//for (unsigned int i = 0; i < particleCount; i++) {
-	//	calculateDensity(i);
-	//}
 
-	//// Apply pressure as displacement
-	//for (unsigned int i = 0; i < particleCount; i++) {
-	//	// Issue: displacements do not occur in parallel and each iteration affects subsequent iterations
-	//	// since there's a final radial distance check between particles
-	//	applyPressure(i);
-	//}
-
-
-	for (unsigned int iteration = 0; iteration < 6; iteration++) {
+	for (unsigned int iteration = 0; iteration < solverIterations; iteration++) {
 		for (unsigned int particleIndex = 0; particleIndex < particleCount; particleIndex++) {
 			calculateLambda(particleIndex);
 		}
@@ -143,7 +131,7 @@ void FluidSimSPH::tickSimCPU() {
 		}
 
 		// Boundaries
-		for (unsigned int particleIndex = 0; particleIndex< particleCount; particleIndex++) {
+		for (unsigned int particleIndex = 0; particleIndex < particleCount; particleIndex++) {
 			applyBoundaryConstraints(particleIndex);
 		}
 	}
@@ -159,8 +147,6 @@ void FluidSimSPH::calculateLambda(unsigned int particleIndex) {
 
 	float constraintGradient = 0.f;
 	auto func = [&](unsigned int otherParticleIndex) {
-		//if (particleIndex == otherParticleIndex) return;
-
 		vec3 toParticle = vec3(positions[otherParticleIndex]) - particlePos;
 		float sqrDist = dot(toParticle, toParticle);
 
@@ -168,9 +154,8 @@ void FluidSimSPH::calculateLambda(unsigned int particleIndex) {
 
 		localDensity += particleMass * polySixKernelSqr(sqrDist, sqrSmoothingRadius, normFactor_P6);
 
-		//if (particleIndex == otherParticleIndex) return;
-
 		float dist = sqrt(sqrDist);
+
 		float densityDerivative = particleMass * spikyKernelGradient(dist, smoothingRadius, normFactor_S);
 		localDensityGradient += densityDerivative;
 
@@ -217,7 +202,6 @@ void FluidSimSPH::calculateDisplacement(unsigned int particleIndex) {
 	};
 
 	spatialHashGrid.iterate3x3x3(cellCoords, func);
-
 
 	displacements[particleIndex] = displacement / restDensity;
 }
