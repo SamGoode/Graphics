@@ -36,6 +36,10 @@ public:
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
 
+	void clearNamedSubData(GLenum internalFormat, GLintptr offset, GLsizeiptr size, GLenum format, GLenum type, const void* data) {
+		glClearNamedBufferSubData(ssbo, internalFormat, offset, size, format, type, data);
+	}
+
 	void getSubData(int offset, int size, const void* data) {
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
 		glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, size, data);
