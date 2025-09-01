@@ -276,7 +276,7 @@ public:
 			particleCount += batchCount;
 		}
 
-		syncUBO();
+		//syncUBO();
 	}
 
 

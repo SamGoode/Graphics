@@ -160,7 +160,7 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	fluidSim.bindParticleSSBO(FLUID_DATA_SSBO);
 
 	fluidSim.spawnRandomParticles(1024);
-	//fluidSim.sendDataToGPU();
+	fluidSim.sendDataToGPU();
 
 
 	// Uniform Buffer Objects

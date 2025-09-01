@@ -222,6 +222,8 @@ public:
 
 		//configUBO.subData();
 		//particleSSBO.subData();
+		modularFluids.syncUBO();
+		modularFluids.resetHashDataSSBO();
 	}
 
 	//void pullDataFromGPU() {
