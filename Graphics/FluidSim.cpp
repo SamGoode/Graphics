@@ -81,7 +81,7 @@ void FluidSimSPH::tickSimGPU() {
 		computePressureShader.bindUniform(time, "time");
 		glDispatchComputeIndirect(0);
 		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-	}
+	//}
 }
 
 void FluidSimSPH::tickSimCPU() {

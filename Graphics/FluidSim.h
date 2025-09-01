@@ -31,6 +31,7 @@ private:
 	const unsigned int maxTicksPerUpdate = 8;
 	const float fixedTimeStep = 0.01f;
 	float accumulatedTime = 0.f;
+	float solverIterations = 2;
 
 	bool isSimGPU = true;
 
