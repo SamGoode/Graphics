@@ -170,7 +170,8 @@ private:
 
 	const float fixedTimeStep = 0.01f;
 
-	vec3 gravity = vec3(0, 0, -1);
+	vec3 gravity = vec3(0.f);
+	float particleRadius;
 	float smoothingRadius;
 	float restDensity;
 	float particleMass;
@@ -179,7 +180,6 @@ private:
 	float nearStiffness;
 
 	unsigned int particleCount = 0;
-	float particleRadius;
 
 	UBO configUBO;
 	SSBO particleSSBO;
@@ -188,6 +188,9 @@ private:
 	vec4 positionBuffer[1024];
 
 public:
+	SPHCompute() {}
+	~SPHCompute() {}
+
 	void init(vec3 _position, vec3 _bounds, vec3 _gravity, float _particleRadius = 0.4f,
 		float _restDensity = 1000.f, float _stiffness = 20.f, float _nearStiffness = 80.f) {
 
