@@ -23,8 +23,6 @@ bool App3D::init(int windowWidth, int windowHeight) {
 	printf("GL: %i.%i\n", GLVersion.major, GLVersion.minor);
 
 
-
-
 	//lineShader.init("line_vert.glsl", "line_frag.glsl");
 	//meshShader.init("mesh_vert.glsl", "mesh_frag.glsl");
 

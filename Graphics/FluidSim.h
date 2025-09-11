@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ModularFluids.h"
+
 #include "glad.h"
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -13,7 +15,6 @@
 #include "ShaderStorageBuffer.h"
 #include "Shader.h"
 
-#include "ModularFluids.h"
 
 using glm::uvec2;
 using glm::uvec3;
@@ -126,16 +127,25 @@ private:
 	ComputeShader computeDensityShader;
 	ComputeShader computePressureShader;
 
-	SPHCompute modularFluids;
+	ISPH_Compute* sim;
 
 public:
 	FluidSimSPH() {}
-	~FluidSimSPH() {}
+	~FluidSimSPH() { ModularFluids::Destroy(sim); }
 
 	void init(vec3 _position, vec3 _bounds, vec3 _gravity, float _particleRadius = 0.4f,
 		float _restDensity = 1000.f, float _stiffness = 20.f, float _nearStiffness = 80.f) {
 		
-		modularFluids.init(_position, _bounds, _gravity, _particleRadius, _restDensity, _stiffness, _nearStiffness);
+		
+		//ModularFluids::InitialiseLibrary();
+		//ModularFluids::SetContext(glfwGetCurrentContext());
+		sim = ModularFluids::Create();
+
+		ModularFluids::Init(sim, _position, _bounds, _gravity, _particleRadius, _restDensity, _stiffness, _nearStiffness);
+
+		//auto test = Create();
+		
+		//modularFluids->init(_position, _bounds, _gravity, _particleRadius, _restDensity, _stiffness, _nearStiffness);
 
 		//position = _position;
 		//bounds = _bounds;
@@ -184,9 +194,15 @@ public:
 	bool isRunningOnGPU() { return isSimGPU; }
 	bool* shouldRunOnGPU() { return &isSimGPU; }
 
-	unsigned int getParticleCount() { return modularFluids.getParticleCount(); }
+	unsigned int getParticleCount() { 
+		//return modularFluids->getParticleCount();
+		return ModularFluids::GetParticleCount(sim);
+	}
 	//void addParticle(vec3 localPosition);
-	void clearParticles() { modularFluids.clearParticles(); }
+	void clearParticles() { 
+		//modularFluids->clearParticles();
+		ModularFluids::ClearParticles(sim);
+	}
 	void spawnRandomParticles(unsigned int spawnCount);
 
 	//void updateSpatialGrid() { spatialHashGrid.generateHashTable(particleCount, positions); }
@@ -222,7 +238,7 @@ public:
 
 		//configUBO.subData();
 		//particleSSBO.subData();
-		modularFluids.syncUBO();
+		//modularFluids.syncUBO();
 		//modularFluids.resetHashDataSSBO();
 	}
 
@@ -233,12 +249,14 @@ public:
 
 	void bindConfigUBO(GLuint bindingIndex) {
 		//configUBO.bind(bindingIndex);
-		modularFluids.bindConfigUBO(bindingIndex);
+		//modularFluids->bindConfigUBO(bindingIndex);
+		ModularFluids::BindConfigUBO(sim, bindingIndex);
 	}
 
 	void bindParticleSSBO(GLuint bindingIndex) {
 		//particleSSBO.bind(bindingIndex);
-		modularFluids.bindParticleSSBO(bindingIndex);
+		//modularFluids->bindParticleSSBO(bindingIndex);
+		ModularFluids::BindParticleSSBO(sim, bindingIndex);
 	}
 
 private:
