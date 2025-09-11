@@ -44,8 +44,9 @@ void FluidSimSPH::update(float deltaTime) {
 			tickSimGPU();
 		}
 		else {
-			tickSimCPU();
+			//tickSimCPU();
 		}
+		break;
 	}
 }
 
@@ -62,8 +63,6 @@ void FluidSimSPH::tickSimGPU() {
 
 	dispatchIndirect.bindToIndex(3);
 	dispatchIndirect.clear();
-
-
 	
 	particleComputeShader.use();
 	glDispatchCompute((particleCount / WORKGROUP_SIZE_X) + ((particleCount % WORKGROUP_SIZE_X) != 0), 1, 1);
@@ -76,16 +75,19 @@ void FluidSimSPH::tickSimGPU() {
 	dispatchIndirect.bind();
 	glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
 
-	computeDensityShader.use();
-	glDispatchComputeIndirect(0);
-	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	for (unsigned int iteration = 0; iteration < solverIterations; iteration++) {
+		computeDensityShader.use();
+		//int time = (int)std::time(0);
+		//computeDensityShader.bindUniform(time, "tsadfime");
+		glDispatchComputeIndirect(0);
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
 		computePressureShader.use();
 		int time = (int)std::time(0);
 		computePressureShader.bindUniform(time, "time");
 		glDispatchComputeIndirect(0);
 		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-	//}
+	}
 }
 
 void FluidSimSPH::tickSimCPU() {
