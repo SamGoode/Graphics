@@ -138,7 +138,7 @@ void main() {
 	data.velocities[particleIndex] += vec4(config.gravity.xyz * config.timeStep, 0);
 
 	// Project current particle position
-	data.positions[particleIndex] += data.velocities[particleIndex] * config.timeStep;
+	//data.positions[particleIndex] += data.velocities[particleIndex] * config.timeStep;
 
 	// Boundaries
 	//applyBoundaryConstraints(particleIndex);

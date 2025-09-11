@@ -65,22 +65,22 @@ void FluidSimSPH::tickSimGPU() {
 	glDispatchCompute((particleCount / WORKGROUP_SIZE_X) + ((particleCount % WORKGROUP_SIZE_X) != 0), 1, 1);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
-	computeHashTableShader.use();
-	glDispatchCompute((particleCount / WORKGROUP_SIZE_X) + ((particleCount % WORKGROUP_SIZE_X) != 0), 1, 1);
-	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	//computeHashTableShader.use();
+	//glDispatchCompute((particleCount / WORKGROUP_SIZE_X) + ((particleCount % WORKGROUP_SIZE_X) != 0), 1, 1);
+	//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
-	dispatchIndirect.bind();
-	glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
+	//dispatchIndirect.bind();
+	//glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
 
-	computeDensityShader.use();
-	glDispatchComputeIndirect(0);
-	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	//computeDensityShader.use();
+	//glDispatchComputeIndirect(0);
+	//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
-		computePressureShader.use();
-		int time = (int)std::time(0);
-		computePressureShader.bindUniform(time, "time");
-		glDispatchComputeIndirect(0);
-		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	//	computePressureShader.use();
+	//	int time = (int)std::time(0);
+	//	computePressureShader.bindUniform(time, "time");
+	//	glDispatchComputeIndirect(0);
+	//	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	//}
 }
 
