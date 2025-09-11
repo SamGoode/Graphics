@@ -166,7 +166,7 @@ struct ssboData {
 class SPHCompute {
 private:
 	vec3 position = vec3(0);
-    vec3 bounds = vec3(1);
+    vec3 bounds = vec3(0);
 
 	const float fixedTimeStep = 0.01f;
 
@@ -217,7 +217,7 @@ public:
 
 		GLsizeiptr sizePerParticle = sizeof(vec4) * 3 + sizeof(float) * 6 + sizeof(float) * MAX_PARTICLES_PER_CELL;
 		particleSSBO.init(MAX_PARTICLES * sizePerParticle + sizeof(unsigned int));
-		resetHashDataSSBO();
+		//resetHashDataSSBO();
 	}
 
 	// Stores simulation parameters in a buffer and then sends buffer data to GPU.

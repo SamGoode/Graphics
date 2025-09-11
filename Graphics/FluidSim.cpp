@@ -63,8 +63,8 @@ void FluidSimSPH::tickSimGPU() {
 
 	unsigned int particleCount = modularFluids.getParticleCount();
 
-	modularFluids.bindConfigUBO(FLUID_CONFIG_UBO);
-	modularFluids.bindParticleSSBO(FLUID_DATA_SSBO);
+	//modularFluids.bindConfigUBO(FLUID_CONFIG_UBO);
+	//modularFluids.bindParticleSSBO(FLUID_DATA_SSBO);
 
 	dispatchIndirect.bindToIndex(3);
 	dispatchIndirect.clear();
@@ -80,16 +80,16 @@ void FluidSimSPH::tickSimGPU() {
 	dispatchIndirect.bind();
 	glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
 
-	for (unsigned int iteration = 0; iteration < solverIterations; iteration++) {
-		computeDensityShader.use();
-		glDispatchComputeIndirect(0);
-		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-		computePressureShader.use();
-		int time = (int)std::time(0);
-		computePressureShader.bindUniform(time, "time");
-		glDispatchComputeIndirect(0);
-		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-	}
+	//for (unsigned int iteration = 0; iteration < solverIterations; iteration++) {
+		//computeDensityShader.use();
+		//glDispatchComputeIndirect(0);
+		//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+		//computePressureShader.use();
+		//int time = (int)std::time(0);
+		//computePressureShader.bindUniform(time, "time");
+		//glDispatchComputeIndirect(0);
+		//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	//}
 }
 
 //void FluidSimSPH::tickSimCPU() {
