@@ -63,6 +63,9 @@ void FluidSimSPH::tickSimGPU() {
 
 	unsigned int particleCount = modularFluids.getParticleCount();
 
+	modularFluids.bindConfigUBO(FLUID_CONFIG_UBO);
+	modularFluids.bindParticleSSBO(FLUID_DATA_SSBO);
+
 	dispatchIndirect.bindToIndex(3);
 	dispatchIndirect.clear();
 	

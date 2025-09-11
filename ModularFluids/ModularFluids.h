@@ -212,7 +212,7 @@ public:
 		nearStiffness = _nearStiffness;
 
 		// Buffers
-		configUBO.init(sizeof(configUBO));
+		configUBO.init(sizeof(uboData));
 		syncUBO();
 
 		GLsizeiptr sizePerParticle = sizeof(vec4) * 3 + sizeof(float) * 6 + sizeof(float) * MAX_PARTICLES_PER_CELL;
@@ -272,6 +272,7 @@ public:
 			// Fill position and previous position memory chunk.
 			particleSSBO.subData((particleCount) * sizeof(vec4), batchCount * sizeof(vec4), positionBuffer);
 			particleSSBO.subData((MAX_PARTICLES + particleCount) * sizeof(vec4), batchCount * sizeof(vec4), positionBuffer);
+			glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
 
 			particleCount += batchCount;
 		}
