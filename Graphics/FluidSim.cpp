@@ -14,7 +14,6 @@
 void FluidSimSPH::spawnRandomParticles(unsigned int spawnCount) {
 	//assert(particleCount + spawnCount <= MAX_PARTICLES);
 
-	//modularFluids->spawnRandomParticles(spawnCount);
 	ModularFluids::SpawnParticles(sim, spawnCount);
 
 	//for (unsigned int i = 0; i < spawnCount; i++) {
@@ -40,7 +39,6 @@ void FluidSimSPH::spawnRandomParticles(unsigned int spawnCount) {
 void FluidSimSPH::update(float deltaTime) {
 	accumulatedTime += deltaTime;
 
-	//modularFluids->syncUBO();
 	ModularFluids::SyncUBO(sim);
 
 	for (unsigned int step = 0; step < maxTicksPerUpdate && accumulatedTime > fixedTimeStep; step++) {
@@ -64,7 +62,6 @@ void FluidSimSPH::tickSimGPU() {
 	//modularFluids->resetHashDataSSBO();
 	ModularFluids::ResetHashData(sim);
 
-	//unsigned int particleCount = modularFluids->getParticleCount();
 	unsigned int particleCount = ModularFluids::GetParticleCount(sim);
 
 	dispatchIndirect.bindToIndex(3);

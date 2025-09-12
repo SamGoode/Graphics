@@ -11,6 +11,7 @@
 
 #include "ModularFluids.h"
 
+
 #include <string>
 
 GameEngine::GameEngine() {
@@ -127,9 +128,6 @@ GameEngine::GameEngine() {
 	std::cout << (unsigned int)ecs.getEntityCount() << " entities created" << std::endl;
 }
 
-void* getProcAddress(const char* name) {
-	return (void*)glfwGetProcAddress(name);
-}
 
 bool GameEngine::init(int windowWidth, int windowHeight) {
 	if (!App3D::init(windowWidth, windowHeight)) return false;
@@ -138,7 +136,7 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 
 
 	std::cout << "Graphics glGenBuffers: " << glad_glGenBuffers << std::endl;
-	ModularFluids::InitialiseLibrary(getProcAddress);
+	ModularFluids::LoadLib(glfwGetProcAddress);
 	std::cout << "Graphics glGenBuffers: " << glad_glGenBuffers << std::endl;
 
 
@@ -284,6 +282,7 @@ bool GameEngine::update() {
 
 		if (spawnParticles) {
 			fluidSim.spawnRandomParticles(spawnParticleCount);
+			
 			//if (!fluidEngineActive) {
 			//	fluidSim.updateSpatialGrid();
 			//	if (fluidSim.isRunningOnGPU())
@@ -293,6 +292,7 @@ bool GameEngine::update() {
 
 		if (clearParticles) {
 			fluidSim.clearParticles();
+			
 			//fluidSim.sendDataToGPU();
 		}
 	}
