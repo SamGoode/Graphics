@@ -27,100 +27,12 @@ using glm::uvec4;
 // SPH Fluid simulation within a bounding box
 class FluidSimSPH {
 private:
-	//vec3 position = vec3(0);
-	//vec3 bounds = vec3(0);
-
 	const unsigned int maxTicksPerUpdate = 8;
 	const float fixedTimeStep = 0.01f;
 	float accumulatedTime = 0.f;
-
-	bool isSimGPU = true;
 	const unsigned int solverIterations = 2;
 
-	// units in metres and kgs
-	// particle spherical volume would be pi*4*r^3/3
-	// 0.004*pi/3 metres cubed
-	// water density is 1000 kg per cube metre
-	// with water density, 0.1 m radius sphere would have mass PI*4/3 kgs.
-	// approx. 4.18879 kilograms
-	// divide this evenly among estimated number of neighbouring particles (30-40) n = 30 for now.
-
-	//vec3 gravity = vec3(0);
-	//float particleRadius = 0.f;
-	//float smoothingRadius = 0.f; // density kernel radius
-	//float restDensity = 0.f;
-	//float particleMass = 0.f;
-
-	//// Precomputed values
-	//float sqrSmoothingRadius = 0.f;
-	//float normFactor_P6 = 0.f;
-	//float normFactor_S = 0.f;
-
-
-	//// Mullen.M parameters
-	//float epsilon = 0.f;
-	//float k = 0.f;
-	//int N = 0;
-	//float densityDeltaQ = 0.f;
-
-	//// Clavet.S parameters
-	//float stiffness = 0.f;
-	//float nearStiffness = 0.f;
-
-	//unsigned int particleCount = 0;
-	//vec3 positions[MAX_PARTICLES];
-	//vec3 previousPositions[MAX_PARTICLES];
-	//vec3 velocities[MAX_PARTICLES];
-
-	//float lambdas[MAX_PARTICLES];
-	//vec3 displacements[MAX_PARTICLES];
-	//
-	//float densities[MAX_PARTICLES];
-	//float nearDensities[MAX_PARTICLES];
-
-
-	//struct uboData {
-	//	vec4 boundsMin;
-	//	vec4 boundsMax;
-
-	//	vec4 gravity;
-	//	float smoothingRadius;
-	//	float restDensity;
-	//	float particleMass;
-
-	//	float stiffness;
-	//	float nearStiffness;
-
-	//	float timeStep;
-	//	unsigned int particleCount;
-	//};
-
-	//struct ssboData {
-	//	vec4 positions[MAX_PARTICLES];
-	//	vec4 previousPositions[MAX_PARTICLES];
-	//	vec4 velocities[MAX_PARTICLES];
-
-	//	float lambdas[MAX_PARTICLES];
-	//	float densities[MAX_PARTICLES];
-	//	float nearDensities[MAX_PARTICLES];
-
-	//	unsigned int usedCells;
-	//	unsigned int hashes[MAX_PARTICLES];
-	//	unsigned int hashTable[MAX_PARTICLES];
-	//	unsigned int cellEntries[MAX_PARTICLES];
-	//	unsigned int cells[MAX_PARTICLES * MAX_PARTICLES_PER_CELL];
-	//};
-
-	SpatialHashGrid spatialHashGrid;
-
-	//UniformBuffer<uboData> configUBO;
-	//ShaderStorageBuffer<ssboData> particleSSBO;
-	DispatchIndirectBuffer dispatchIndirect;
-
-	//vec4* positions = particleSSBO.buffer.positions;
-	//vec4* previousPositions = particleSSBO.buffer.previousPositions;
-	//vec4* velocities = particleSSBO.buffer.velocities;
-
+	//DispatchIndirectBuffer dispatchIndirect;
 
 	ComputeShader particleComputeShader;
 	ComputeShader computeHashTableShader;
@@ -137,50 +49,10 @@ public:
 		float _restDensity = 1000.f, float _stiffness = 20.f, float _nearStiffness = 80.f) {
 		
 		sim = ModularFluids::Create();
+		sim->init(_position, _bounds, _gravity, _particleRadius, _restDensity, _stiffness, _nearStiffness);
+		//ModularFluids::Init(sim, _position, _bounds, _gravity, _particleRadius, _restDensity, _stiffness, _nearStiffness);
 
-		ModularFluids::Init(sim, _position, _bounds, _gravity, _particleRadius, _restDensity, _stiffness, _nearStiffness);
-
-		//auto test = Create();
-		
-		//modularFluids->init(_position, _bounds, _gravity, _particleRadius, _restDensity, _stiffness, _nearStiffness);
-
-		//position = _position;
-		//bounds = _bounds;
-
-		//gravity = _gravity;
-
-		//particleRadius = _particleRadius;
-		//smoothingRadius = particleRadius / 4.f; // (recommended on compsci stack exchange)
-		//restDensity = _restDensity;
-		//
-		//// particle mass calculation based on radius and rest density
-		//float particleVolume = (particleRadius * particleRadius * particleRadius * 4.f * glm::pi<float>()) / 3.f; // metres^3
-		//constexpr unsigned int estimatedNeighbours = 20;
-		//particleMass = (particleVolume * restDensity) / (float)estimatedNeighbours; // kgs
-
-		//// Precomputed values
-		//sqrSmoothingRadius = smoothingRadius * smoothingRadius;
-		//normFactor_P6 = 315.f / (64.f * glm::pi<float>() * glm::pow<float>(smoothingRadius, 9));
-		//normFactor_S = 45.f / (glm::pi<float>() * glm::pow<float>(smoothingRadius, 6));
-
-
-		//// Mullen.M parameters
-		//epsilon = 0.5f;
-		//k = 0.1f;
-		//N = 4;
-		//float deltaQ = 0.3f * smoothingRadius;
-		//densityDeltaQ = particleMass * polySixKernel(deltaQ, smoothingRadius, normFactor_P6);
-
-
-		//// Clavet.S parameters
-		//stiffness = _stiffness;
-		//nearStiffness = _nearStiffness;
-
-		//spatialHashGrid.init(0.1f, MAX_PARTICLES, MAX_PARTICLES_PER_CELL);
-		
-		//configUBO.init();
-		//particleSSBO.init();
-		dispatchIndirect.init();
+		//dispatchIndirect.init();
 
 		particleComputeShader.init("shaders/particleCompute.glsl");
 		computeHashTableShader.init("shaders/buildHashTable.glsl");
@@ -188,120 +60,63 @@ public:
 		computePressureShader.init("shaders/computePressure.glsl");
 	}
 
-	bool isRunningOnGPU() { return isSimGPU; }
-	bool* shouldRunOnGPU() { return &isSimGPU; }
-
-	unsigned int getParticleCount() { 
-		//return modularFluids->getParticleCount();
-		return ModularFluids::GetParticleCount(sim);
-	}
-	//void addParticle(vec3 localPosition);
-	void clearParticles() { 
-		//modularFluids->clearParticles();
-		ModularFluids::ClearParticles(sim);
-	}
+	unsigned int getParticleCount() { return sim->getParticleCount(); }
 	void spawnRandomParticles(unsigned int spawnCount);
-
-	//void updateSpatialGrid() { spatialHashGrid.generateHashTable(particleCount, positions); }
-	//void resetSpatialGrid() { spatialHashGrid.resetHashTable(); }
+	void clearParticles() { sim->clearParticles(); }
 
 	void update(float deltaTime);
 	void tickSimGPU();
-	//void tickSimCPU();
 
-	void sendDataToGPU() {
-		// This whole current SSBO template buffer system is scuffed
-		// temporary for now, will change later
+	void bindConfigUBO(GLuint bindingIndex) { sim->bindConfigUBO(bindingIndex); }
+	void bindParticleSSBO(GLuint bindingIndex) { sim->bindParticleSSBO(bindingIndex); }
 
-		//configUBO.buffer = {
-		//	.boundsMin = vec4(position, 0),
-		//	.boundsMax = vec4(position + bounds, 0),
-
-		//	.gravity = vec4(gravity, 0),
-		//	.smoothingRadius = smoothingRadius,
-		//	.restDensity = restDensity,
-		//	.particleMass = particleMass,
-
-		//	.stiffness = stiffness,
-		//	.nearStiffness = nearStiffness,
-
-		//	.timeStep = fixedTimeStep,
-		//	.particleCount = particleCount
-		//};
-
-		//std::memcpy(particleSSBO.buffer.hashTable, spatialHashGrid.getHashTable(), MAX_PARTICLES * sizeof(unsigned int));
-		//std::memcpy(particleSSBO.buffer.cellEntries, spatialHashGrid.getCellEntries(), MAX_PARTICLES * sizeof(unsigned int));
-		//std::memcpy(particleSSBO.buffer.cells, spatialHashGrid.getCells(), spatialHashGrid.getUsedCells() * MAX_PARTICLES_PER_CELL * sizeof(unsigned int));
-
-		//configUBO.subData();
-		//particleSSBO.subData();
-		//modularFluids.syncUBO();
-		//modularFluids.resetHashDataSSBO();
-	}
-
-	//void pullDataFromGPU() {
-	//	particleSSBO.subData(0, particleCount * sizeof(vec4), particleSSBO.buffer.positions);
-	//	particleSSBO.subData(MAX_PARTICLES * sizeof(vec4), particleCount * sizeof(vec4), particleSSBO.buffer.previousPositions);
-	//}
-
-	void bindConfigUBO(GLuint bindingIndex) {
-		//configUBO.bind(bindingIndex);
-		//modularFluids->bindConfigUBO(bindingIndex);
-		ModularFluids::BindConfigUBO(sim, bindingIndex);
-	}
-
-	void bindParticleSSBO(GLuint bindingIndex) {
-		//particleSSBO.bind(bindingIndex);
-		//modularFluids->bindParticleSSBO(bindingIndex);
-		ModularFluids::BindParticleSSBO(sim, bindingIndex);
-	}
 
 private:
-	// Muller.M kernels
-	static float polySixKernel(float dist, float radius, float normFactor) {
-		float value = radius * radius - dist * dist;
-		return value * value * value * normFactor;
-	}
+	//// Muller.M kernels
+	//static float polySixKernel(float dist, float radius, float normFactor) {
+	//	float value = radius * radius - dist * dist;
+	//	return value * value * value * normFactor;
+	//}
 
-	static float polySixKernelSqr(float sqrDist, float sqrRadius, float normFactor) {
-		float value = sqrRadius - sqrDist;
-		return value * value * value * normFactor;
-	}
+	//static float polySixKernelSqr(float sqrDist, float sqrRadius, float normFactor) {
+	//	float value = sqrRadius - sqrDist;
+	//	return value * value * value * normFactor;
+	//}
 
-	// just for show, this never gets used
-	static float spikyKernel(float dist, float radius) {
-		constexpr float a = 15 / glm::pi<float>();
-		float normalizationFactor = a * (float)glm::pow(radius, -6);
+	//// just for show, this never gets used
+	//static float spikyKernel(float dist, float radius) {
+	//	constexpr float a = 15 / glm::pi<float>();
+	//	float normalizationFactor = a * (float)glm::pow(radius, -6);
 
-		float value = radius - dist;
-		return value * value * value * normalizationFactor;
-	}
+	//	float value = radius - dist;
+	//	return value * value * value * normalizationFactor;
+	//}
 
-	static float spikyKernelGradient(float dist, float radius, float normFactor) {
-		float value = radius - dist;
-		return value * value * normFactor;
-	}
+	//static float spikyKernelGradient(float dist, float radius, float normFactor) {
+	//	float value = radius - dist;
+	//	return value * value * normFactor;
+	//}
 
 
-	// Clavet.S kernels
-	static float densityKernel(float dist, float radius) {
-		float value = 1 - (dist / radius);
-		return value * value;
-	}
+	//// Clavet.S kernels
+	//static float densityKernel(float dist, float radius) {
+	//	float value = 1 - (dist / radius);
+	//	return value * value;
+	//}
 
-	static float nearDensityKernel(float dist, float radius) {
-		float value = 1 - (dist / radius);
-		return value * value * value;
-	}
+	//static float nearDensityKernel(float dist, float radius) {
+	//	float value = 1 - (dist / radius);
+	//	return value * value * value;
+	//}
 
-	static float calculatePressure(float density, float restDensity, float stiffness) {
-		return (density - restDensity) * stiffness;
-	}
+	//static float calculatePressure(float density, float restDensity, float stiffness) {
+	//	return (density - restDensity) * stiffness;
+	//}
 
-	static float calculatePressureForce(float dist, float radius, float pressure, float nearPressure) {
-		float weight = 1 - (dist / radius);
-		return pressure * weight + nearPressure * weight * weight * 0.5f;
-	}
+	//static float calculatePressureForce(float dist, float radius, float pressure, float nearPressure) {
+	//	float weight = 1 - (dist / radius);
+	//	return pressure * weight + nearPressure * weight * weight * 0.5f;
+	//}
 
 
 	//// Muller paper on enforcing incompressibility as a position constraint

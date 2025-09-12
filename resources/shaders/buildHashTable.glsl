@@ -1,4 +1,4 @@
-#version 430 core
+#version 460
 
 #include "common.h"
 
@@ -59,8 +59,9 @@ void main() {
 	
 	data.cells[cellEntryIndex] = particleIndex;
 
+	uint dispatchCount = (data.usedCells / COMPUTE_CELLS_PER_WORKGROUP) + uint((data.usedCells % COMPUTE_CELLS_PER_WORKGROUP) != 0);
 
-	indirectCmd.num_groups_x = (data.usedCells / COMPUTE_CELLS_PER_WORKGROUP) + uint((data.usedCells % COMPUTE_CELLS_PER_WORKGROUP) != 0);
-    indirectCmd.num_groups_y = 1;
-	indirectCmd.num_groups_z = 1;
+	indirectCmd.num_groups_x = dispatchCount;
+    indirectCmd.num_groups_y = uint(dispatchCount != 0);
+	indirectCmd.num_groups_z = uint(dispatchCount != 0);
 }

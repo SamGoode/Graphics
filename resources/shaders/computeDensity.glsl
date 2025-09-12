@@ -1,10 +1,10 @@
-#version 430 core
+#version 460
 
 #include "common.h"
 
 
 layout(local_size_x = COMPUTE_CELLS_PER_WORKGROUP, local_size_y = MAX_PARTICLES_PER_CELL, local_size_z = 1) in;
-
+//layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 layout(binding = FLUID_CONFIG_UBO, std140) uniform FluidConfig {
 	vec4 boundsMin;

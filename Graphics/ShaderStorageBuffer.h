@@ -67,8 +67,6 @@ public:
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, gl_id);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, 3 * sizeof(unsigned int), NULL, GL_DYNAMIC_DRAW);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
-		std::cout << "indirect id: " << gl_id << std::endl;
 	}
 
 	void clear() {
@@ -76,6 +74,13 @@ public:
 
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, gl_id);
 		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 3 * sizeof(unsigned int), empty);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	}
+
+	// 3 uints
+	void getData(void* data) {
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, gl_id);
+		glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 3 * sizeof(unsigned int), data);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
 

@@ -6,6 +6,7 @@
 
 #include "ResourceManager.h"
 
+
 void Shader::init(const char* vertFileName, const char* fragFileName) {
 	assert(gl_id == 0 && "Shader already initialized");
 

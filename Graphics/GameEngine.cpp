@@ -135,9 +135,8 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	if(cameraEnabled) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 
-	std::cout << "Graphics glGenBuffers: " << glad_glGenBuffers << std::endl;
+	std::cout << "Graphics gldfsdDispatchComputeIndirect: " << glad_glDispatchComputeIndirect << std::endl;
 	ModularFluids::LoadLib(glfwGetProcAddress);
-	std::cout << "Graphics glGenBuffers: " << glad_glGenBuffers << std::endl;
 
 
 	PhysicsSystem* physicsSystem = ecs.getSystem<PhysicsSystem>();
@@ -180,6 +179,7 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	pvmUBO.buffer.projectionInverse = glm::inverse(projection);
 	pvmUBO.init();
 	pvmUBO.bind(PROJECTIONVIEW_UBO);
+
 
 	// Shaders
 	shadowShader.init("shaders/shadow.glsl", "shaders/empty.glsl");
@@ -281,7 +281,7 @@ bool GameEngine::update() {
 		//}
 
 		if (spawnParticles) {
-			fluidSim.spawnRandomParticles(spawnParticleCount);
+			//fluidSim.spawnRandomParticles(spawnParticleCount);
 			
 			//if (!fluidEngineActive) {
 			//	fluidSim.updateSpatialGrid();
@@ -349,9 +349,9 @@ void GameEngine::render() {
 	RenderSystem* renderSystem = ecs.getSystem<RenderSystem>();
 	renderSystem->addMeshInstances(ecs, meshes);
 
-	if (!fluidSim.isRunningOnGPU()) {
-		fluidSim.sendDataToGPU();
-	}
+	//if (!fluidSim.isRunningOnGPU()) {
+	//	fluidSim.sendDataToGPU();
+	//}
 
 	// Shadow Pass
 	shadowFBO.bind();
