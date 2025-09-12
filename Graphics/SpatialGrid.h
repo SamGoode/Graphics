@@ -3,7 +3,7 @@
 #include <functional>
 #include <algorithm>
 
-#include <glm/ext.hpp>
+#include <glm/glm/ext.hpp>
 
 using glm::ivec2;
 using glm::ivec3;

@@ -1,10 +1,15 @@
 #include "GameEngine.h"
 
+#include <windows.h>
+#include <wingdi.h>
+
 #include "glmAddon.h"
 #include "ECSComponents.h"
 #include "PhysicsSystem.h"
 #include "CollisionSystem.h"
 #include "RenderSystem.h"
+
+#include "ModularFluids.h"
 
 #include <string>
 
@@ -126,6 +131,12 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	if (!App3D::init(windowWidth, windowHeight)) return false;
 
 	if(cameraEnabled) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+	std::cout << "Graphics HGLRC: " << wglGetCurrentContext() << std::endl;
+	std::cout << "Graphics HDC: " << wglGetCurrentDC() << std::endl;
+	//std::cout << "Graphics GLFWwindow ptr: " << glfwGetCurrentContext() << std::endl;
+
+	ModularFluids::InitialiseLibrary();
 
 
 	PhysicsSystem* physicsSystem = ecs.getSystem<PhysicsSystem>();

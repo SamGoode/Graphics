@@ -2,9 +2,9 @@
 
 #include "glad.h"
 #include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/ext.hpp>
-#include <glm/fwd.hpp>
+#include <glm/glm/glm.hpp>
+#include <glm/glm/ext.hpp>
+#include <glm/glm/fwd.hpp>
 
 #include "Mesh.h"
 

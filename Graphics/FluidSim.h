@@ -4,9 +4,9 @@
 
 #include "glad.h"
 #include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/ext.hpp>
-#include <glm/fwd.hpp>
+#include <glm/glm/glm.hpp>
+#include <glm/glm/ext.hpp>
+#include <glm/glm/fwd.hpp>
 
 #include "common.h"
 
@@ -138,7 +138,8 @@ public:
 		
 		
 		//ModularFluids::InitialiseLibrary();
-		//ModularFluids::SetContext(glfwGetCurrentContext());
+		//GLFWwindow* windowContext = glfwGetCurrentContext();
+		//ModularFluids::SetContext(windowContext);
 		sim = ModularFluids::Create();
 
 		ModularFluids::Init(sim, _position, _bounds, _gravity, _particleRadius, _restDensity, _stiffness, _nearStiffness);

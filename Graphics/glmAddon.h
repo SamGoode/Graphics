@@ -1,6 +1,6 @@
 #pragma once
 
-#include <glm/ext.hpp>
+#include <glm/glm/ext.hpp>
 #include <iostream>
 
 using glm::vec2;
