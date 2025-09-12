@@ -127,16 +127,19 @@ GameEngine::GameEngine() {
 	std::cout << (unsigned int)ecs.getEntityCount() << " entities created" << std::endl;
 }
 
+void* getProcAddress(const char* name) {
+	return (void*)glfwGetProcAddress(name);
+}
+
 bool GameEngine::init(int windowWidth, int windowHeight) {
 	if (!App3D::init(windowWidth, windowHeight)) return false;
 
 	if(cameraEnabled) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-	std::cout << "Graphics HGLRC: " << wglGetCurrentContext() << std::endl;
-	std::cout << "Graphics HDC: " << wglGetCurrentDC() << std::endl;
-	//std::cout << "Graphics GLFWwindow ptr: " << glfwGetCurrentContext() << std::endl;
 
-	ModularFluids::InitialiseLibrary();
+	std::cout << "Graphics glGenBuffers: " << glad_glGenBuffers << std::endl;
+	ModularFluids::InitialiseLibrary(getProcAddress);
+	std::cout << "Graphics glGenBuffers: " << glad_glGenBuffers << std::endl;
 
 
 	PhysicsSystem* physicsSystem = ecs.getSystem<PhysicsSystem>();
@@ -181,16 +184,16 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	pvmUBO.bind(PROJECTIONVIEW_UBO);
 
 	// Shaders
-	shadowShader.init("shadow.glsl", "empty.glsl");
-	gpassShader.init("gpass_vert.glsl", "gpass_frag.glsl");
+	shadowShader.init("shaders/shadow.glsl", "shaders/empty.glsl");
+	gpassShader.init("shaders/gpass_vert.glsl", "shaders/gpass_frag.glsl");
 	
-	fluidDepthShader.init("fluidDepth_vert.glsl", "fluidDepth_frag.glsl");
-	gaussBlurShader.init("fullscreen_quad.glsl", "gauss_blur.glsl");
-	raymarchShader.init("fullscreen_quad.glsl", "raymarch.glsl");
+	fluidDepthShader.init("shaders/fluidDepth_vert.glsl", "shaders/fluidDepth_frag.glsl");
+	gaussBlurShader.init("shaders/fullscreen_quad.glsl", "shaders/gauss_blur.glsl");
+	raymarchShader.init("shaders/fullscreen_quad.glsl", "shaders/raymarch.glsl");
 	
-	lightShader.init("fullscreen_quad.glsl", "directional_light.glsl");
-	pointLightShader.init("pointLight_vert.glsl", "pointLight_frag.glsl");
-	compositeShader.init("fullscreen_quad.glsl", "composite.glsl");
+	lightShader.init("shaders/fullscreen_quad.glsl", "shaders/directional_light.glsl");
+	pointLightShader.init("shaders/pointLight_vert.glsl", "shaders/pointLight_frag.glsl");
+	compositeShader.init("shaders/fullscreen_quad.glsl", "shaders/composite.glsl");
 
 	// Compute Shaders
 

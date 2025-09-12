@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 
 #include "stb_image.h"
+#include "ResourceManager.h"
 
 
 struct ITexture {
@@ -101,10 +102,13 @@ public:
 	void loadFromFile(const char* fileName, bool shouldFlip = false) {
 		assert(gl_id == 0);
 
+		std::string fullpath = RESOURCE_PATH;
+		fullpath += fileName;
+
 		stbi_set_flip_vertically_on_load(shouldFlip);
 
 		int nrChannels;
-		data = stbi_load(fileName, &width, &height, &nrChannels, 0);
+		data = stbi_load(fullpath.c_str(), &width, &height, &nrChannels, 0);
 
 		format = GL_RGBA;
 		if (nrChannels == 3) format = GL_RGB;

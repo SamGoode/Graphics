@@ -22,8 +22,6 @@ class Shader {
 protected:
 	unsigned int gl_id = 0;
 
-	std::string path = "shaders/";
-
 public:
 	Shader() {}
 	virtual ~Shader() { glDeleteProgram(gl_id); }

@@ -81,18 +81,18 @@ void FluidSimSPH::tickSimGPU() {
 	dispatchIndirect.bind();
 	glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
 
-	//for (unsigned int iteration = 0; iteration < solverIterations; iteration++) {
-		//computeDensityShader.use();
+	for (unsigned int iteration = 0; iteration < solverIterations; iteration++) {
+		computeDensityShader.use();
 		//int time = (int)std::time(0);
 		//computeDensityShader.bindUniform(time, "time");
-		//glDispatchComputeIndirect(0);
-		//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+		glDispatchComputeIndirect(0);
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 		computePressureShader.use();
 		int time = (int)std::time(0);
 		computePressureShader.bindUniform(time, "time");
 		glDispatchComputeIndirect(0);
 		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-	//}
+	}
 }
 
 //void FluidSimSPH::tickSimCPU() {

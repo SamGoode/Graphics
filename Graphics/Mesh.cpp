@@ -4,6 +4,7 @@
 #include <assimp/cimport.h>
 #include <vector>
 
+#include "ResourceManager.h"
 
 
 bool Mesh::init() {
@@ -70,7 +71,10 @@ bool Mesh::init() {
 void Mesh::loadFromFile(const char* name) {
 	assert(vertexBuffer == nullptr && indexBuffer == nullptr);
 
-	const aiScene* scene = aiImportFile(name, 0);
+	std::string fullpath = RESOURCE_PATH;
+	fullpath += name;
+
+	const aiScene* scene = aiImportFile(fullpath.c_str(), 0);
 	
 	assert(scene != nullptr && "File does not exist");
 

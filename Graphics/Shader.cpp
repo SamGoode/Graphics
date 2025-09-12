@@ -4,6 +4,8 @@
 #include <string>
 #include <iostream>
 
+#include "ResourceManager.h"
+
 void Shader::init(const char* vertFileName, const char* fragFileName) {
 	assert(gl_id == 0 && "Shader already initialized");
 
@@ -37,8 +39,11 @@ void Shader::init(const char* vertFileName, const char* fragFileName) {
 unsigned int Shader::loadShaderFromFile(GLenum type, const char* fileName) {
 	unsigned int shader = glCreateShader(type);
 
+	std::string fullpath = RESOURCE_PATH;
+	fullpath += fileName;
+
 	std::ifstream fileStream;
-	fileStream.open(path + fileName, std::ios::in | std::ios::binary);
+	fileStream.open(fullpath, std::ios::in | std::ios::binary);
 
 	std::string fileString;
 	
@@ -48,7 +53,8 @@ unsigned int Shader::loadShaderFromFile(GLenum type, const char* fileName) {
 			if (line.substr(1, 7) == "include") {
 				size_t nameStart = line.find_first_of('"', 7) + 1;
 				size_t nameEnd = line.find_first_of('"', nameStart);
-				std::string name = line.substr(nameStart, nameEnd - nameStart);
+				std::string name = RESOURCE_PATH;
+				name += line.substr(nameStart, nameEnd - nameStart);
 
 				std::ifstream includeFile;
 				includeFile.open(name, std::ios::in | std::ios::binary);

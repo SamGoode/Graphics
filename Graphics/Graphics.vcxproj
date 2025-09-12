@@ -113,7 +113,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)dep;$(SolutionDir)dep\assimp\include;$(SolutionDir)dep\glfw\include;$(SolutionDir)dep\imgui;..\..\ModularFluids\ModularFluids;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)resources;$(SolutionDir)dep;$(SolutionDir)dep\assimp\include;$(SolutionDir)dep\glfw\include;$(SolutionDir)dep\imgui;..\..\ModularFluids\ModularFluids;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
@@ -135,7 +135,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)dep;$(SolutionDir)dep\assimp\include;$(SolutionDir)dep\glfw\include;$(SolutionDir)dep\imgui;..\..\ModularFluids\ModularFluids;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)resources;$(SolutionDir)dep;$(SolutionDir)dep\assimp\include;$(SolutionDir)dep\glfw\include;$(SolutionDir)dep\imgui;..\..\ModularFluids\ModularFluids;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
@@ -195,6 +195,7 @@
     <ClInclude Include="PhysicsSystem.h" />
     <ClInclude Include="PointLight.h" />
     <ClInclude Include="RenderSystem.h" />
+    <ClInclude Include="ResourceManager.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="IPhysicsEngine.h" />
     <ClInclude Include="Mesh.h" />

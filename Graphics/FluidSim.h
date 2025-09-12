@@ -136,10 +136,6 @@ public:
 	void init(vec3 _position, vec3 _bounds, vec3 _gravity, float _particleRadius = 0.4f,
 		float _restDensity = 1000.f, float _stiffness = 20.f, float _nearStiffness = 80.f) {
 		
-		
-		//ModularFluids::InitialiseLibrary();
-		//GLFWwindow* windowContext = glfwGetCurrentContext();
-		//ModularFluids::SetContext(windowContext);
 		sim = ModularFluids::Create();
 
 		ModularFluids::Init(sim, _position, _bounds, _gravity, _particleRadius, _restDensity, _stiffness, _nearStiffness);
@@ -186,10 +182,10 @@ public:
 		//particleSSBO.init();
 		dispatchIndirect.init();
 
-		particleComputeShader.init("particleCompute.glsl");
-		computeHashTableShader.init("buildHashTable.glsl");
-		computeDensityShader.init("computeDensity.glsl");
-		computePressureShader.init("computePressure.glsl");
+		particleComputeShader.init("shaders/particleCompute.glsl");
+		computeHashTableShader.init("shaders/buildHashTable.glsl");
+		computeDensityShader.init("shaders/computeDensity.glsl");
+		computePressureShader.init("shaders/computePressure.glsl");
 	}
 
 	bool isRunningOnGPU() { return isSimGPU; }

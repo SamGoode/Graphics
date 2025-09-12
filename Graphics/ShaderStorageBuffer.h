@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 // Data layout must follow std430 format
 template<typename DataLayout>
 class ShaderStorageBuffer {
@@ -65,6 +67,8 @@ public:
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, gl_id);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, 3 * sizeof(unsigned int), NULL, GL_DYNAMIC_DRAW);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+		std::cout << "indirect id: " << gl_id << std::endl;
 	}
 
 	void clear() {
