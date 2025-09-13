@@ -23,43 +23,11 @@ void FluidSimSPH::update(float deltaTime) {
 }
 
 void FluidSimSPH::tickSimGPU() {
-	ModularFluids::StepSim(sim);
-	//sim->stepSim();
+	//ModularFluids::StepSim(sim);
+	sim->stepSim();
 	//ModularFluids::ResetHashData(sim);
 	//glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
 
-	//unsigned int particleCount = ModularFluids::GetParticleCount(sim);
-
-	//sim->bindIndirectCmdsSSBO(3);
-
-	//particleComputeShader.use();
-	//glDispatchCompute((particleCount / WORKGROUP_SIZE_X) + ((particleCount % WORKGROUP_SIZE_X) != 0), 1, 1);
-	//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-
-	//computeHashTableShader.use();
-	//glDispatchCompute((particleCount / WORKGROUP_SIZE_X) + ((particleCount % WORKGROUP_SIZE_X) != 0), 1, 1);
-	//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-
-	//sim->useIndirectCmdsSSBO();
-	//glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
-
-	////unsigned int cmd[3];
-	////sim->getIndirectCmdsData(cmd);
-	////std::cout << "x: " << cmd[0] << ", y: " << cmd[1] << ", z: " << cmd[2] << std::endl;
-
-	////for (unsigned int iteration = 0; iteration < solverIterations; iteration++) {
-	//	int time = (int)std::time(0);
-
-	//	computeDensityShader.use();
-	//	//computeDensityShader.bindUniform(time, "time");
-	//	glDispatchComputeIndirect(0);
-	//	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-
-	//	computePressureShader.use();
-	//	computePressureShader.bindUniform(time, "time");
-	//	glDispatchComputeIndirect(0);
-	//	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-	////}
 }
 
 //void FluidSimSPH::tickSimCPU() {

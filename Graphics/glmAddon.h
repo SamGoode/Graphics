@@ -1,7 +1,9 @@
 #pragma once
 
 #include <glm/glm/ext.hpp>
+
 #include <iostream>
+
 
 using glm::vec2;
 using glm::vec3;

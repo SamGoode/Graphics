@@ -1,6 +1,6 @@
 #pragma once
 
-#include <iostream>
+//#include <iostream>
 
 // Data layout must follow std430 format
 template<typename DataLayout>

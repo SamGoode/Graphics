@@ -1,7 +1,7 @@
 #include "GameEngine.h"
 
-#include <windows.h>
-#include <wingdi.h>
+//#include <windows.h>
+//#include <wingdi.h>
 
 #include "glmAddon.h"
 #include "ECSComponents.h"
