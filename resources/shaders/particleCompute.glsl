@@ -153,6 +153,8 @@ void main() {
 	// this could probably be replaced with atomicExchange
 	uint hashStatus = atomicCompSwap(data.hashTable[cellHash], 0xFFFFFFFF, 0x8FFFFFFF);
 
+	//atomicAdd(data.usedCells, 1);
+
 	// Cell Hash Status
 	// 0xFFFFFFFF : unassigned
 	// 0x8FFFFFFF : pending assignment

@@ -1,7 +1,5 @@
 #include "GameEngine.h"
 
-//#include <windows.h>
-//#include <wingdi.h>
 
 #include "glmAddon.h"
 #include "ECSComponents.h"
@@ -11,8 +9,9 @@
 
 #include "ModularFluids.h"
 
-
 #include <string>
+
+
 
 GameEngine::GameEngine() {
 	worldUp = vec3(0, 0, 1);
@@ -135,7 +134,7 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	if(cameraEnabled) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 
-	std::cout << "Graphics gldfsdDispatchComputeIndirect: " << glad_glDispatchComputeIndirect << std::endl;
+	std::cout << "Graphics glDispatchComputeIndirect: " << glad_glDispatchComputeIndirect << std::endl;
 	ModularFluids::LoadLib(glfwGetProcAddress);
 
 
