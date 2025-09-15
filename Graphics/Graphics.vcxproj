@@ -208,12 +208,7 @@
     <ClInclude Include="UniformBuffer.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\resources\shaders\buildHashTable.glsl">
-      <FileType>Document</FileType>
-    </None>
     <None Include="..\resources\shaders\composite.glsl" />
-    <None Include="..\resources\shaders\computeDensity.glsl" />
-    <None Include="..\resources\shaders\computePressure.glsl" />
     <None Include="..\resources\shaders\directional_light.glsl" />
     <None Include="..\resources\shaders\empty.glsl" />
     <None Include="..\resources\shaders\fluidDepth_frag.glsl" />
@@ -227,7 +222,6 @@
     <None Include="..\resources\shaders\line_vert.glsl" />
     <None Include="..\resources\shaders\mesh_frag.glsl" />
     <None Include="..\resources\shaders\mesh_vert.glsl" />
-    <None Include="..\resources\shaders\particleCompute.glsl" />
     <None Include="..\resources\shaders\pointLight_frag.glsl" />
     <None Include="..\resources\shaders\pointLight_vert.glsl" />
     <None Include="..\resources\shaders\raymarch.glsl" />

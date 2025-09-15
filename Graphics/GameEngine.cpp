@@ -134,7 +134,7 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	if(cameraEnabled) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 
-	std::cout << "Graphics glDispatchComputeIndirect: " << glad_glDispatchComputeIndirect << std::endl;
+	std::cout << "Graphics DispatchComputeIndirect: " << glad_glDispatchComputeIndirect << std::endl;
 	ModularFluids::LoadLib(glfwGetProcAddress);
 
 
@@ -169,7 +169,8 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	fluidSim.bindConfigUBO(FLUID_CONFIG_UBO);
 	fluidSim.bindParticleSSBO(FLUID_DATA_SSBO);
 
-	fluidSim.spawnRandomParticles(1024);
+	fluidSim.spawnRandomParticles(64000);
+	//fluidSim.spawnRandomParticles(1024);
 	//fluidSim.sendDataToGPU();
 
 

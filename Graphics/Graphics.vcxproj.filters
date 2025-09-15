@@ -184,12 +184,6 @@
     <None Include="..\resources\shaders\composite.glsl">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\resources\shaders\computeDensity.glsl">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\resources\shaders\computePressure.glsl">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="..\resources\shaders\directional_light.glsl">
       <Filter>Resource Files</Filter>
     </None>
@@ -229,9 +223,6 @@
     <None Include="..\resources\shaders\mesh_vert.glsl">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\resources\shaders\particleCompute.glsl">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="..\resources\shaders\pointLight_frag.glsl">
       <Filter>Resource Files</Filter>
     </None>
@@ -245,9 +236,6 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="..\resources\shaders\shadow.glsl">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\resources\shaders\buildHashTable.glsl">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
