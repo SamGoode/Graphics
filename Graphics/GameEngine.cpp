@@ -1,5 +1,6 @@
 #include "GameEngine.h"
 
+#include "common.h"
 
 #include "glmAddon.h"
 #include "ECSComponents.h"
@@ -141,6 +142,7 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	PhysicsSystem* physicsSystem = ecs.getSystem<PhysicsSystem>();
 	physicsSystem->generateInertiaTensors(&ecs);
 
+
 	meshes[0].generateCube();
 	meshes[0].textureID = 1;
 	meshes[1].generateSphere();
@@ -169,9 +171,9 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	fluidSim.bindConfigUBO(FLUID_CONFIG_UBO);
 	fluidSim.bindParticleSSBO(FLUID_DATA_SSBO);
 
-	fluidSim.spawnRandomParticles(64000);
+
+	fluidSim.spawnRandomParticles(32000);
 	//fluidSim.spawnRandomParticles(1024);
-	//fluidSim.sendDataToGPU();
 
 
 	// Uniform Buffer Objects
@@ -258,7 +260,6 @@ bool GameEngine::update() {
 		ImGui::BeginChild("Fluid Engine", { 0.f, 170.f }, ImGuiChildFlags_Border);
 		ImGui::TextColored({ 0.2f, 0.5f, 0.9f, 1.f }, "Fluid Engine");
 		bool toggledActive = ImGui::Checkbox("Is Fluid Active", &fluidEngineActive);
-		//bool toggledGPU = ImGui::Checkbox("Run on GPU", fluidSim.shouldRunOnGPU());
 		ImGui::Text("Particle count: %i", fluidSim.getParticleCount());
 
 		ImGui::Text("Spawn particles");
@@ -270,30 +271,12 @@ bool GameEngine::update() {
 
 		ImGui::End();
 
-		//if (toggledGPU) {
-		//	if (fluidSim.isRunningOnGPU()) {
-		//		fluidSim.resetSpatialGrid();
-		//		fluidSim.sendDataToGPU();
-		//	}
-		//	else {
-		//		fluidSim.pullDataFromGPU();
-		//	}
-		//}
-
 		if (spawnParticles) {
-			//fluidSim.spawnRandomParticles(spawnParticleCount);
-			
-			//if (!fluidEngineActive) {
-			//	fluidSim.updateSpatialGrid();
-			//	if (fluidSim.isRunningOnGPU())
-			//		fluidSim.sendDataToGPU();
-			//}
+			fluidSim.spawnRandomParticles(spawnParticleCount);
 		}
 
 		if (clearParticles) {
 			fluidSim.clearParticles();
-			
-			//fluidSim.sendDataToGPU();
 		}
 	}
 
@@ -349,9 +332,7 @@ void GameEngine::render() {
 	RenderSystem* renderSystem = ecs.getSystem<RenderSystem>();
 	renderSystem->addMeshInstances(ecs, meshes);
 
-	//if (!fluidSim.isRunningOnGPU()) {
-	//	fluidSim.sendDataToGPU();
-	//}
+
 
 	// Shadow Pass
 	shadowFBO.bind();
@@ -416,8 +397,6 @@ void GameEngine::render() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	fluidDepthShader.use();
-	//glEnable(GL_PROGRAM_POINT_SIZE);
-	//glDrawArrays(GL_POINTS, 0, fluidSim.getParticleCount());
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	glDrawArraysInstanced(GL_QUADS, 0, 4, fluidSim.getParticleCount()); // change this later
 
