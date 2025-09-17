@@ -190,16 +190,7 @@
     <None Include="..\resources\shaders\empty.glsl">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\resources\shaders\fluidDepth_frag.glsl">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\resources\shaders\fluidDepth_vert.glsl">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="..\resources\shaders\fullscreen_quad.glsl">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\resources\shaders\gauss_blur.glsl">
       <Filter>Resource Files</Filter>
     </None>
     <None Include="..\resources\shaders\gpass_frag.glsl">
@@ -227,12 +218,6 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="..\resources\shaders\pointLight_vert.glsl">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\resources\shaders\raymarch.glsl">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\resources\shaders\raymarch_bounds.glsl">
       <Filter>Resource Files</Filter>
     </None>
     <None Include="..\resources\shaders\shadow.glsl">

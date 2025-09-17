@@ -73,11 +73,11 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>$(SolutionDir)dep\assimp\out\build\x64-$(Configuration)\include;$(SolutionDir);$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)dep\assimp\out\build\x64-$(Configuration)\lib;$(SolutionDir)dep\glfw\lib-vc2022;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)dep\assimp\out\build\x64-$(Configuration)\lib;$(SolutionDir)dep\glfw\lib-vc2022;$(SolutionDIr)dep\ModularFluids\x64\$(Configuration);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(SolutionDir)dep\assimp\out\build\x64-$(Configuration)\include;$(SolutionDir);$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)dep\assimp\out\build\x64-$(Configuration)\lib;$(SolutionDir)dep\glfw\lib-vc2022;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)dep\assimp\out\build\x64-$(Configuration)\lib;$(SolutionDir)dep\glfw\lib-vc2022;$(SolutionDIr)dep\ModularFluids\x64\$(Configuration);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -113,14 +113,15 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)resources;$(SolutionDir)dep;$(SolutionDir)dep\assimp\include;$(SolutionDir)dep\glfw\include;$(SolutionDir)dep\imgui;..\..\ModularFluids\ModularFluids;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)resources;$(SolutionDir)dep;$(SolutionDir)dep\assimp\include;$(SolutionDir)dep\glfw\include;$(SolutionDir)dep\imgui;$(SolutionDir)dep\ModularFluids;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\..\ModularFluids\$(IntDir)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
       <AdditionalDependencies>glfw3dll.lib;ModularFluids.lib;assimp-vc143-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
@@ -135,7 +136,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)resources;$(SolutionDir)dep;$(SolutionDir)dep\assimp\include;$(SolutionDir)dep\glfw\include;$(SolutionDir)dep\imgui;..\..\ModularFluids\ModularFluids;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)resources;$(SolutionDir)dep;$(SolutionDir)dep\assimp\include;$(SolutionDir)dep\glfw\include;$(SolutionDir)dep\imgui;$(SolutionDir)dep\ModularFluids;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
@@ -144,7 +145,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\..\ModularFluids\$(IntDir)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
       <AdditionalDependencies>glfw3dll.lib;ModularFluids.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
@@ -211,10 +213,7 @@
     <None Include="..\resources\shaders\composite.glsl" />
     <None Include="..\resources\shaders\directional_light.glsl" />
     <None Include="..\resources\shaders\empty.glsl" />
-    <None Include="..\resources\shaders\fluidDepth_frag.glsl" />
-    <None Include="..\resources\shaders\fluidDepth_vert.glsl" />
     <None Include="..\resources\shaders\fullscreen_quad.glsl" />
-    <None Include="..\resources\shaders\gauss_blur.glsl" />
     <None Include="..\resources\shaders\gpass_frag.glsl" />
     <None Include="..\resources\shaders\gpass_vert.glsl" />
     <None Include="..\resources\shaders\laplacian.glsl" />
@@ -224,8 +223,6 @@
     <None Include="..\resources\shaders\mesh_vert.glsl" />
     <None Include="..\resources\shaders\pointLight_frag.glsl" />
     <None Include="..\resources\shaders\pointLight_vert.glsl" />
-    <None Include="..\resources\shaders\raymarch.glsl" />
-    <None Include="..\resources\shaders\raymarch_bounds.glsl" />
     <None Include="..\resources\shaders\shadow.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

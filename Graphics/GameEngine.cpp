@@ -135,7 +135,7 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	if(cameraEnabled) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 
-	std::cout << "Graphics DispatchComputeIndirect: " << glad_glDispatchComputeIndirect << std::endl;
+	//std::cout << "Graphics DispatchComputeIndirect: " << glad_glDispatchComputeIndirect << std::endl;
 	ModularFluids::LoadLib(glfwGetProcAddress);
 
 
@@ -168,12 +168,7 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	pointLights.init();
 
 	fluidSim.init(vec3(8, -4, 0), vec3(8, 8, 8), physicsEngine.gravity);
-	fluidSim.bindConfigUBO(FLUID_CONFIG_UBO);
-	fluidSim.bindParticleSSBO(FLUID_DATA_SSBO);
-
-
-	fluidSim.spawnRandomParticles(32000);
-	//fluidSim.spawnRandomParticles(1024);
+	fluidSim.spawnRandomParticles(128000);
 
 
 	// Uniform Buffer Objects
@@ -186,10 +181,6 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	// Shaders
 	shadowShader.init("shaders/shadow.glsl", "shaders/empty.glsl");
 	gpassShader.init("shaders/gpass_vert.glsl", "shaders/gpass_frag.glsl");
-	
-	//fluidDepthShader.init("shaders/fluidDepth_vert.glsl", "shaders/fluidDepth_frag.glsl");
-	//gaussBlurShader.init("shaders/fullscreen_quad.glsl", "shaders/gauss_blur.glsl");
-	//raymarchShader.init("shaders/fullscreen_quad.glsl", "shaders/raymarch.glsl");
 	
 	lightShader.init("shaders/fullscreen_quad.glsl", "shaders/directional_light.glsl");
 	pointLightShader.init("shaders/pointLight_vert.glsl", "shaders/pointLight_frag.glsl");
@@ -240,45 +231,45 @@ bool GameEngine::update() {
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 
-	if (showDebug) {
-		ImGui::Begin("Debug", &showDebug);
-		ImGui::Text("FPS: %.01f", (ImGui::GetIO().Framerate));
-		ImGui::Text("%.01f ms", (1000.f / ImGui::GetIO().Framerate));
+	//if (showDebug) {
+	//	ImGui::Begin("Debug", &showDebug);
+	//	ImGui::Text("FPS: %.01f", (ImGui::GetIO().Framerate));
+	//	ImGui::Text("%.01f ms", (1000.f / ImGui::GetIO().Framerate));
 
-		ImGui::Dummy({ 0.f, 20.f }); // Spacing
+	//	ImGui::Dummy({ 0.f, 20.f }); // Spacing
 
-		ImGui::BeginChild("Physics Engine", {0.f, 130.f}, ImGuiChildFlags_Border);
-		ImGui::TextColored({ 0.2f, 0.5f, 0.9f, 1.f }, "Physics Engine");
-		ImGui::Checkbox("Is Active", &physicsEngineActive);
-		ImGui::InputFloat3("Gravity", (float*)&physicsEngine.gravity);
-		ImGui::InputFloat("Elasticity", &physicsEngine.elasticity);
-		ImGui::InputFloat("Friction", &physicsEngine.friction);
-		ImGui::EndChild();
+	//	ImGui::BeginChild("Physics Engine", {0.f, 130.f}, ImGuiChildFlags_Border);
+	//	ImGui::TextColored({ 0.2f, 0.5f, 0.9f, 1.f }, "Physics Engine");
+	//	ImGui::Checkbox("Is Active", &physicsEngineActive);
+	//	ImGui::InputFloat3("Gravity", (float*)&physicsEngine.gravity);
+	//	ImGui::InputFloat("Elasticity", &physicsEngine.elasticity);
+	//	ImGui::InputFloat("Friction", &physicsEngine.friction);
+	//	ImGui::EndChild();
 
-		ImGui::Dummy({ 0.f, 20.f }); // Spacing
-		
-		ImGui::BeginChild("Fluid Engine", { 0.f, 170.f }, ImGuiChildFlags_Border);
-		ImGui::TextColored({ 0.2f, 0.5f, 0.9f, 1.f }, "Fluid Engine");
-		bool toggledActive = ImGui::Checkbox("Is Fluid Active", &fluidEngineActive);
-		ImGui::Text("Particle count: %i", fluidSim.getParticleCount());
+	//	ImGui::Dummy({ 0.f, 20.f }); // Spacing
+	//	
+	//	ImGui::BeginChild("Fluid Engine", { 0.f, 170.f }, ImGuiChildFlags_Border);
+	//	ImGui::TextColored({ 0.2f, 0.5f, 0.9f, 1.f }, "Fluid Engine");
+	//	bool toggledActive = ImGui::Checkbox("Is Fluid Active", &fluidEngineActive);
+	//	ImGui::Text("Particle count: %i", fluidSim.getParticleCount());
 
-		ImGui::Text("Spawn particles");
-		ImGui::InputInt(" ", &spawnParticleCount);
-		ImGui::SameLine();
-		bool spawnParticles = ImGui::Button("Spawn");
-		bool clearParticles = ImGui::Button("Clear Particles");
-		ImGui::EndChild();
+	//	ImGui::Text("Spawn particles");
+	//	ImGui::InputInt(" ", &spawnParticleCount);
+	//	ImGui::SameLine();
+	//	bool spawnParticles = ImGui::Button("Spawn");
+	//	bool clearParticles = ImGui::Button("Clear Particles");
+	//	ImGui::EndChild();
 
-		ImGui::End();
+	//	ImGui::End();
 
-		if (spawnParticles) {
-			fluidSim.spawnRandomParticles(spawnParticleCount);
-		}
+	//	if (spawnParticles) {
+	//		fluidSim.spawnRandomParticles(spawnParticleCount);
+	//	}
 
-		if (clearParticles) {
-			fluidSim.clearParticles();
-		}
-	}
+	//	if (clearParticles) {
+	//		fluidSim.clearParticles();
+	//	}
+	//}
 
 	// Left alt key toggles mouse
 	if (canToggleCamera && keyPressed(GLFW_KEY_LEFT_ALT)) {
@@ -396,9 +387,6 @@ void GameEngine::render() {
 	glClearColor(1, 0, 0, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
-	//ModularFluids::FluidDepthUse();
-	//fluidDepthShader.use();
 	fluidSim.getSim()->useFluid();
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	glDrawArraysInstanced(GL_QUADS, 0, 4, fluidSim.getParticleCount()); // change this later
@@ -416,10 +404,6 @@ void GameEngine::render() {
 
 	fluidSim.getSim()->useGauss();
 	fluidSim.getSim()->bindGauss(0, "fluidDepthPass");
-	//ModularFluids::GaussBlurUse();
-	//ModularFluids::GaussBlurBindUniform(0, "fluidDepthPass");
-	//gaussBlurShader.use();
-	//gaussBlurShader.bindUniform(0, "fluidDepthPass");
 	fluidDepthFBO.getRenderTexture(0)->bind(GL_TEXTURE0);
 
 	glDrawArrays(GL_TRIANGLES, 0, 3);
@@ -435,15 +419,11 @@ void GameEngine::render() {
 
 	glStencilFunc(GL_EQUAL, 2 | 1, 0x02);
 	glStencilMask(0x01);
-	
 
 	fluidSim.getSim()->useRaymarch();
 	fluidSim.getSim()->bindRaymarch(0, "fluidDepthPass");
 	fluidSim.getSim()->bindRaymarch(1, "smoothDepthPass");
-	//raymarchShader.use();
-	//raymarchShader.bindUniform(0, "fluidDepthPass");
 	fluidDepthFBO.getRenderTexture(0)->bind(GL_TEXTURE0);
-	//raymarchShader.bindUniform(1, "smoothDepthPass");
 	smoothDepthFBO.getRenderTexture(0)->bind(GL_TEXTURE1);
 
 	glDrawArrays(GL_TRIANGLES, 0, 3);
