@@ -22,3 +22,8 @@ void FluidSimSPH::clearParticles() { sim->clearParticles(); }
 
 void FluidSimSPH::bindConfigUBO(unsigned int bindingIndex) { sim->bindConfigUBO(bindingIndex); }
 void FluidSimSPH::bindParticleSSBO(unsigned int bindingIndex) { sim->bindParticleSSBO(bindingIndex); }
+
+ISPH_Compute* FluidSimSPH::getSim()
+{
+	return sim;
+}

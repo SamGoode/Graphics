@@ -27,4 +27,6 @@ public:
 
 	void bindConfigUBO(unsigned int bindingIndex);
 	void bindParticleSSBO(unsigned int bindingIndex);
+
+	ISPH_Compute* getSim();
 };

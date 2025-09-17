@@ -187,9 +187,9 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	shadowShader.init("shaders/shadow.glsl", "shaders/empty.glsl");
 	gpassShader.init("shaders/gpass_vert.glsl", "shaders/gpass_frag.glsl");
 	
-	fluidDepthShader.init("shaders/fluidDepth_vert.glsl", "shaders/fluidDepth_frag.glsl");
-	gaussBlurShader.init("shaders/fullscreen_quad.glsl", "shaders/gauss_blur.glsl");
-	raymarchShader.init("shaders/fullscreen_quad.glsl", "shaders/raymarch.glsl");
+	//fluidDepthShader.init("shaders/fluidDepth_vert.glsl", "shaders/fluidDepth_frag.glsl");
+	//gaussBlurShader.init("shaders/fullscreen_quad.glsl", "shaders/gauss_blur.glsl");
+	//raymarchShader.init("shaders/fullscreen_quad.glsl", "shaders/raymarch.glsl");
 	
 	lightShader.init("shaders/fullscreen_quad.glsl", "shaders/directional_light.glsl");
 	pointLightShader.init("shaders/pointLight_vert.glsl", "shaders/pointLight_frag.glsl");
@@ -396,9 +396,13 @@ void GameEngine::render() {
 	glClearColor(1, 0, 0, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	fluidDepthShader.use();
+
+	//ModularFluids::FluidDepthUse();
+	//fluidDepthShader.use();
+	fluidSim.getSim()->useFluid();
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	glDrawArraysInstanced(GL_QUADS, 0, 4, fluidSim.getParticleCount()); // change this later
+
 
 	// Generate smoothed fluid depth texture
 	smoothDepthFBO.bind();
@@ -410,8 +414,12 @@ void GameEngine::render() {
 	glClearColor(1, 0, 0, 0);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	gaussBlurShader.use();
-	gaussBlurShader.bindUniform(0, "fluidDepthPass");
+	fluidSim.getSim()->useGauss();
+	fluidSim.getSim()->bindGauss(0, "fluidDepthPass");
+	//ModularFluids::GaussBlurUse();
+	//ModularFluids::GaussBlurBindUniform(0, "fluidDepthPass");
+	//gaussBlurShader.use();
+	//gaussBlurShader.bindUniform(0, "fluidDepthPass");
 	fluidDepthFBO.getRenderTexture(0)->bind(GL_TEXTURE0);
 
 	glDrawArrays(GL_TRIANGLES, 0, 3);
@@ -427,12 +435,15 @@ void GameEngine::render() {
 
 	glStencilFunc(GL_EQUAL, 2 | 1, 0x02);
 	glStencilMask(0x01);
+	
 
-	raymarchShader.use();
-
-	raymarchShader.bindUniform(0, "fluidDepthPass");
+	fluidSim.getSim()->useRaymarch();
+	fluidSim.getSim()->bindRaymarch(0, "fluidDepthPass");
+	fluidSim.getSim()->bindRaymarch(1, "smoothDepthPass");
+	//raymarchShader.use();
+	//raymarchShader.bindUniform(0, "fluidDepthPass");
 	fluidDepthFBO.getRenderTexture(0)->bind(GL_TEXTURE0);
-	raymarchShader.bindUniform(1, "smoothDepthPass");
+	//raymarchShader.bindUniform(1, "smoothDepthPass");
 	smoothDepthFBO.getRenderTexture(0)->bind(GL_TEXTURE1);
 
 	glDrawArrays(GL_TRIANGLES, 0, 3);

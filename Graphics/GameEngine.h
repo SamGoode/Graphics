@@ -66,9 +66,9 @@ protected:
 	Shader shadowShader;
 	Shader gpassShader;
 
-	Shader fluidDepthShader;
-	Shader gaussBlurShader;
-	Shader raymarchShader;
+	//Shader fluidDepthShader;
+	//Shader gaussBlurShader;
+	//Shader raymarchShader;
 
 	Shader lightShader;
 	Shader pointLightShader;
