@@ -3,7 +3,7 @@
 layout(location = 0) in vec3 Position;
 
 // per-instance data
-layout(location = 3) in struct instanceData {
+layout(location = 3) in struct InstanceData {
 	mat4 transform;
 	vec3 baseColor;
 	float gloss;

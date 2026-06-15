@@ -63,7 +63,7 @@ GameEngine::GameEngine() {
 	ecs.addComponent<CollisionComponent>(floor, { enumGeometry::PLANE });
 	ECS::uint bunny = ecs.createEntity();
 	ecs.addComponent<MeshComponent>(bunny, { 3 }); // bunny mesh
-	ecs.addComponent<TransformComponent>(bunny, { vec3(10, 10, 0), eulerToQuat(vec3(0, 0, 0)), vec3(0.5f) });
+	ecs.addComponent<TransformComponent>(bunny, { vec3(10, 10, 0), eulerToQuat(vec3(0, 0, 0)), vec3(5.0f) });
 	ecs.addComponent<MaterialComponent>(bunny, { MaterialProperties{vec3(1, 1, 0.86f), 0.5f} });
 
 	ECS::uint sphere = ecs.createEntity();
@@ -168,7 +168,7 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	pointLights.init();
 
 	fluidSim.init(vec3(8, -4, 0), vec3(8, 8, 8), physicsEngine.gravity);
-	fluidSim.spawnRandomParticles(128000);
+	fluidSim.spawnRandomParticles(1000);
 
 
 	// Uniform Buffer Objects
@@ -176,7 +176,6 @@ bool GameEngine::init(int windowWidth, int windowHeight) {
 	pvmUBO.buffer.projectionInverse = glm::inverse(projection);
 	pvmUBO.init();
 	pvmUBO.bind(PROJECTIONVIEW_UBO);
-
 
 	// Shaders
 	shadowShader.init("shaders/shadow.glsl", "shaders/empty.glsl");

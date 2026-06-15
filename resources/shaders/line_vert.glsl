@@ -1,4 +1,4 @@
-#version 410
+#version 460 core
 
 in vec4 Position;
 in vec4 Normal;
